@@ -1,18 +1,91 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
 
+const PrivilegeIcon = ({ icon, className = "w-4 h-4 text-[#20b875]" }) => {
+  switch (icon) {
+    case 'overview':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+      );
+    case 'users':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+        </svg>
+      );
+    case 'employees':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      );
+    case 'projects':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+      );
+    case 'teams':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      );
+    case 'time-tracker':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+    case 'reviews':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+    case 'daily-plans':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      );
+    case 'analytics':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      );
+    case 'audit-logs':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      );
+    case 'settings':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+};
+
 const PAGE_PRIVILEGES_LIST = [
-  { key: 'canViewOverview', label: '📊 Dashboard Overview', path: '/dashboard/overview' },
-  { key: 'canViewUsers', label: '🔑 User Accounts', path: '/dashboard/users' },
-  { key: 'canViewEmployees', label: '👥 Employee Directory', path: '/dashboard/employees' },
-  { key: 'canViewProjects', label: '📁 Projects & Modules', path: '/dashboard/projects' },
-  { key: 'canViewTeams', label: '🏢 Teams & Tasks', path: '/dashboard/teams' },
-  { key: 'canViewTimeTracker', label: '⏱️ Time Tracker', path: '/dashboard/time-tracker' },
-  { key: 'canViewReviews', label: '✅ Task Approvals Queue', path: '/dashboard/reviews' },
-  { key: 'canViewDailyPlans', label: '📅 Daily Work Plans', path: '/dashboard/daily-plans' },
-  { key: 'canViewAnalytics', label: '📈 Performance & Reports', path: '/dashboard/analytics' },
-  { key: 'canViewAuditLogs', label: '🛡️ System Audit Logs', path: '/dashboard/audit-logs' },
-  { key: 'canViewSettings', label: '⚙️ System Settings', path: '/dashboard/settings' }
+  { key: 'canViewOverview', label: 'Dashboard Overview', icon: 'overview', path: '/dashboard/overview' },
+  { key: 'canViewUsers', label: 'User Accounts', icon: 'users', path: '/dashboard/users' },
+  { key: 'canViewEmployees', label: 'Employee Directory', icon: 'employees', path: '/dashboard/employees' },
+  { key: 'canViewProjects', label: 'Projects & Modules', icon: 'projects', path: '/dashboard/projects' },
+  { key: 'canViewTeams', label: 'Teams & Tasks', icon: 'teams', path: '/dashboard/teams' },
+  { key: 'canViewTimeTracker', label: 'Time Tracker', icon: 'time-tracker', path: '/dashboard/time-tracker' },
+  { key: 'canViewReviews', label: 'Task Approvals Queue', icon: 'reviews', path: '/dashboard/reviews' },
+  { key: 'canViewDailyPlans', label: 'Daily Work Plans', icon: 'daily-plans', path: '/dashboard/daily-plans' },
+  { key: 'canViewAnalytics', label: 'Performance & Reports', icon: 'analytics', path: '/dashboard/analytics' },
+  { key: 'canViewAuditLogs', label: 'System Audit Logs', icon: 'audit-logs', path: '/dashboard/audit-logs' },
+  { key: 'canViewSettings', label: 'System Settings', icon: 'settings', path: '/dashboard/settings' }
 ];
 
 export default function SettingsPage({ currentUser }) {
@@ -197,10 +270,13 @@ export default function SettingsPage({ currentUser }) {
                     {!isSuperAdmin && (currentUser?.role === 'superior' || currentUser?.role === 'superadmin') && (
                       <button
                         onClick={() => handleDeleteRole(role)}
-                        className="px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold rounded-lg transition-colors"
+                        className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1"
                         title="Delete Role"
                       >
-                        🗑️ Delete
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
                       </button>
                     )}
                   </div>
@@ -208,7 +284,12 @@ export default function SettingsPage({ currentUser }) {
 
                 {isSuperAdmin ? (
                   <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 font-semibold space-y-1">
-                    <p className="font-bold">👑 SuperAdmin Default Access</p>
+                    <p className="font-bold flex items-center gap-1.5">
+                      <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                      SuperAdmin Default Access
+                    </p>
                     <p className="text-[11px] text-amber-800">SuperAdmin possesses permanent full Read & Write privileges across all system pages.</p>
                   </div>
                 ) : (
@@ -220,23 +301,33 @@ export default function SettingsPage({ currentUser }) {
                         <button
                           type="button"
                           onClick={() => setBulkRolePermissions(role._id, 'read')}
-                          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200"
+                          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200 flex items-center gap-1"
                         >
-                          👁️ All Read
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          All Read
                         </button>
                         <button
                           type="button"
                           onClick={() => setBulkRolePermissions(role._id, 'write')}
-                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200"
+                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200 flex items-center gap-1"
                         >
-                          ✏️ All Write
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                          All Write
                         </button>
                         <button
                           type="button"
                           onClick={() => setBulkRolePermissions(role._id, 'none')}
-                          className="px-2.5 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[10px] font-bold"
+                          className="px-2.5 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[10px] font-bold flex items-center gap-1"
                         >
-                          🚫 Clear
+                          <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                          </svg>
+                          Clear
                         </button>
                       </div>
                     </div>
@@ -248,9 +339,14 @@ export default function SettingsPage({ currentUser }) {
 
                         return (
                           <div key={page.key} className="flex items-center justify-between p-2.5 bg-gray-50/70 rounded-xl hover:bg-gray-100/60 border border-gray-100">
-                            <div>
-                              <span className="font-bold text-gray-900 block">{page.label}</span>
-                              <small className="text-gray-400 font-mono text-[10px]">{page.path}</small>
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
+                                <PrivilegeIcon icon={page.icon} />
+                              </div>
+                              <div>
+                                <span className="font-bold text-gray-900 block">{page.label}</span>
+                                <small className="text-gray-400 font-mono text-[10px]">{page.path}</small>
+                              </div>
                             </div>
 
                             <div className="flex gap-1">

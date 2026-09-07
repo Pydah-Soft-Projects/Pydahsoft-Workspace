@@ -182,7 +182,9 @@ export default function DashboardOverview({ user, setActiveTab }) {
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Projects</span>
               <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#20b875] flex items-center justify-center font-bold text-sm">
-                📊
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
               </div>
             </div>
             <div className="mt-3 flex items-baseline justify-between">
@@ -204,7 +206,9 @@ export default function DashboardOverview({ user, setActiveTab }) {
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Teams & Members</span>
               <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
-                👥
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
               </div>
             </div>
             <div className="mt-3 flex items-baseline justify-between">
@@ -226,7 +230,9 @@ export default function DashboardOverview({ user, setActiveTab }) {
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Projects At Risk</span>
               <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm">
-                ⚠️
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
               </div>
             </div>
             <div className="mt-3 flex items-baseline justify-between">
@@ -248,7 +254,9 @@ export default function DashboardOverview({ user, setActiveTab }) {
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Org Efficiency</span>
               <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
-                ⚡
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
               </div>
             </div>
             <div className="mt-3 flex items-baseline justify-between">
@@ -380,8 +388,12 @@ export default function DashboardOverview({ user, setActiveTab }) {
 
               {/* Summary Indicator Card */}
               <div className="p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🎯</span>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100/80 text-emerald-700 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                   <div>
                     <strong className="text-xs font-bold text-emerald-900 block">Execution Status</strong>
                     <span className="text-[11px] text-emerald-700">
