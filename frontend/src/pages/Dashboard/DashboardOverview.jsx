@@ -156,36 +156,6 @@ export default function DashboardOverview({
 
     return (
       <div className="space-y-6">
-        {/* Admin Employee Dashboard Inspector Bar */}
-        {employeeList.length > 0 && (
-          <div className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <span className="text-xs font-bold text-[#09233d] block">
-                Individual Employee Dashboard Viewer
-              </span>
-              <span className="text-[11px] text-gray-400">
-                Inspect live performance, donut charts, and trend analytics for any staff member
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value=""
-                onChange={(e) => {
-                  if (e.target.value) setViewAsEmployeeId(e.target.value);
-                }}
-                className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 focus:outline-hidden focus:ring-2 focus:ring-[#10b981]"
-              >
-                <option value="">-- Inspect Employee Dashboard --</option>
-                {employeeList.map((emp) => (
-                  <option key={emp._id} value={emp._id}>
-                    {emp.name} ({emp.username || emp.employeeId || 'Staff'})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
-
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Active Projects Card */}
