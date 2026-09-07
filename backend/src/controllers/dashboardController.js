@@ -38,7 +38,8 @@ const getTeamLeadDash = async (req, res) => {
 
 const getEmployeeDash = async (req, res) => {
   try {
-    const data = await getEmployeeDashboard(req.user._id);
+    const targetEmployeeId = req.query.employeeId || req.user._id;
+    const data = await getEmployeeDashboard(targetEmployeeId);
     res.status(200).json({
       success: true,
       data,

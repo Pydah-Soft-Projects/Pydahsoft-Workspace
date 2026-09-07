@@ -80,17 +80,29 @@ function DashboardLayout({ user, onLogout }) {
       />
 
       <main className="flex-1 h-screen overflow-y-auto">
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-40 shadow-sm">
-          <h1 className="text-lg font-black text-[#09233d]">
-            {getTabTitle(activeTab)}
-          </h1>
+        <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-xs">
+          {activeTab === 'overview' ? (
+            <div>
+              <h1 className="text-xl font-black text-[#09233d] tracking-tight">
+                Welcome back, <span className="text-[#10b981]">{user.name}!</span>
+              </h1>
+              <p className="text-xs text-gray-500 font-medium mt-0.5">
+                Here's what's happening with your work today.
+              </p>
+            </div>
+          ) : (
+            <h1 className="text-lg font-black text-[#09233d]">
+              {getTabTitle(activeTab)}
+            </h1>
+          )}
           <div className="flex items-center gap-3 text-xs">
-            <span className="bg-[#20b875]/10 border border-[#20b875]/30 text-[#09233d] font-bold px-3 py-1 rounded-xl">
+            <span className="bg-[#20b875]/10 border border-[#20b875]/30 text-[#09233d] font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#20b875]" />
               User: <strong className="text-[#20b875]">{user.name}</strong> ({user.role?.toUpperCase()})
             </span>
             <Link
               to="/"
-              className="border border-gray-200 bg-white hover:bg-gray-50 font-bold px-3 py-1 rounded-xl text-gray-700 transition-colors"
+              className="border border-gray-200 bg-white hover:bg-gray-50 font-bold px-3 py-1.5 rounded-xl text-gray-700 transition-colors flex items-center gap-1.5 shadow-2xs"
             >
               Landing Page
             </Link>
