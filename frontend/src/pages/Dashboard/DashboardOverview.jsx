@@ -56,96 +56,340 @@ export default function DashboardOverview({ user, setActiveTab }) {
   if (user.role === 'superior' || user.role === 'superadmin') {
     const summary = data?.summary || {};
     const timeData = data?.timeUtilization || {};
+    const activeProjects = data?.activeProjects || [];
+
+    // Calculate project statuses for Pie / Donut Chart
+    const totalProj = activeProjects.length || summary.totalProjects || 0;
+    const completedProj = activeProjects.filter((p) => (p.progress || 0) >= 100).length;
+    const inProgressProj = activeProjects.filter((p) => (p.progress || 0) > 0 && (p.progress || 0) < 100).length;
+    const notStartedProj = activeProjects.filter((p) => (p.progress || 0) === 0).length;
+    const atRiskProj = summary.projectsAtRisk || 0;
+
+    // Donut chart calculations
+    const donutData = [
+      { label: 'In Progress', count: inProgressProj, color: '#20b875' },
+      { label: 'Completed', count: completedProj, color: '#09233d' },
+      { label: 'Not Started', count: notStartedProj, color: '#94a3b8' },
+      { label: 'At Risk', count: atRiskProj, color: '#e11d48' },
+    ];
+    const validDonutTotal = donutData.reduce((acc, curr) => acc + curr.count, 0) || 1;
+
+    // SVG Donut Path calculations
+    let cumulativePercent = 0;
+    const donutSlices = donutData.map((item) => {
+      const percent = item.count / validDonutTotal;
+      const startPercent = cumulativePercent;
+      cumulativePercent += percent;
+      return {
+        ...item,
+        percent,
+        dashArray: `${percent * 283} 283`,
+        dashOffset: -startPercent * 283,
+      };
+    });
+
+    // Fix Org Efficiency display calculation
+    const estHours = timeData.totalEstimatedHours || 0;
+    const actHours = timeData.totalActualHours || 0;
+    let safeEfficiency = 100;
+    if (actHours > 0 && estHours > 0) {
+      if (actHours <= estHours) {
+        safeEfficiency = 100;
+      } else {
+        safeEfficiency = Math.max(0, Math.round((estHours / actHours) * 100));
+      }
+    }
 
     return (
       <div className="space-y-6">
-        {/* KPI Cards */}
+        {/* Header Banner */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gradient-to-r from-[#09233d] to-[#11375c] p-6 rounded-2xl text-white shadow-md">
+          <div>
+            <h1 className="text-xl font-black tracking-tight flex items-center gap-2">
+              <span>Executive Analytics & Overview</span>
+              <span className="text-[10px] uppercase font-bold bg-[#20b875] text-white px-2 py-0.5 rounded-full">
+                Super Admin
+              </span>
+            </h1>
+            <p className="text-xs text-slate-300 mt-1">
+              Visual performance metrics, project lifecycle progress, and risk breakdown at a glance.
+            </p>
+          </div>
+          <button
+            onClick={() => setActiveTab('projects')}
+            className="mt-3 sm:mt-0 px-4 py-2 bg-[#20b875] hover:bg-[#199d63] text-white text-xs font-bold rounded-xl transition-all shadow-sm"
+          >
+            + Create New Project
+          </button>
+        </div>
+
+        {/* Top KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Projects</span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-3xl font-black text-[#09233d]">{summary.totalProjects || 0}</span>
+          {/* Active Projects Card */}
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Projects</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#20b875] flex items-center justify-center font-bold text-sm">
+                📊
+              </div>
+            </div>
+            <div className="mt-3 flex items-baseline justify-between">
+              <span className="text-3xl font-black text-[#09233d]">{totalProj}</span>
               <button
                 onClick={() => setActiveTab('projects')}
-                className="text-xs font-bold text-[#20b875] hover:underline"
+                className="text-xs font-bold text-[#20b875] hover:underline flex items-center gap-1"
               >
                 View All →
               </button>
             </div>
+            <div className="w-full bg-gray-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div className="bg-[#20b875] h-full rounded-full" style={{ width: '100%' }}></div>
+            </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Teams & Staff</span>
-            <div className="mt-2 flex items-baseline justify-between">
+          {/* Total Teams & Staff Card */}
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Teams & Members</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+                👥
+              </div>
+            </div>
+            <div className="mt-3 flex items-baseline justify-between">
               <span className="text-3xl font-black text-[#09233d]">
-                {summary.totalTeams || 0} <small className="text-xs font-semibold text-gray-400">Teams</small>
+                {summary.totalTeams || 0}{' '}
+                <small className="text-xs font-semibold text-gray-400">Teams</small>
               </span>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
                 {summary.totalEmployees || 0} Members
               </span>
             </div>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Projects At Risk</span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-3xl font-black text-rose-600">{summary.projectsAtRisk || 0}</span>
-              <span className="text-xs font-medium text-gray-500">
-                {summary.delayedTasksCount || 0} Delayed / {summary.blockedTasksCount || 0} Blocked
-              </span>
+            <div className="w-full bg-gray-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div className="bg-blue-500 h-full rounded-full" style={{ width: '85%' }}></div>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Org Efficiency</span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-3xl font-black text-emerald-600">
-                {timeData.orgEfficiencyPercentage || 100}%
+          {/* Projects At Risk Card */}
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Projects At Risk</span>
+              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm">
+                ⚠️
+              </div>
+            </div>
+            <div className="mt-3 flex items-baseline justify-between">
+              <span className="text-3xl font-black text-rose-600">{summary.projectsAtRisk || 0}</span>
+              <span className="text-xs font-medium text-gray-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                {summary.delayedTasksCount || 0} Delayed / {summary.blockedTasksCount || 0} Blocked
               </span>
+            </div>
+            <div className="w-full bg-gray-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div
+                className={`h-full rounded-full ${summary.projectsAtRisk > 0 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                style={{ width: summary.projectsAtRisk > 0 ? '100%' : '0%' }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Org Efficiency Card */}
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Org Efficiency</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+                ⚡
+              </div>
+            </div>
+            <div className="mt-3 flex items-baseline justify-between">
+              <span className="text-3xl font-black text-emerald-600">{safeEfficiency}%</span>
               <span className="text-xs font-medium text-gray-500">
-                Est: {timeData.totalEstimatedHours || 0}h / Act: {timeData.totalActualHours || 0}h
+                Est: {estHours}h / Act: {actHours}h
               </span>
+            </div>
+            <div className="w-full bg-gray-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div
+                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, safeEfficiency)}%` }}
+              ></div>
             </div>
           </div>
         </div>
 
-        {/* Active Projects List */}
+        {/* Visual Graphical Analytics Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Chart 1: Project Status & Risk Allocation Donut Chart */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-base font-bold text-[#09233d]">Project Status & Risk Breakdown</h2>
+                <p className="text-xs text-gray-400">Distribution of projects across lifecycle stages</p>
+              </div>
+              <span className="text-xs font-bold text-[#20b875] bg-emerald-50 px-2.5 py-1 rounded-lg">
+                Pie / Donut Graph
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-around py-4 gap-6">
+              {/* SVG Donut Chart */}
+              <div className="relative w-44 h-44 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="transparent" stroke="#f1f5f9" strokeWidth="10" />
+                  {donutSlices.map((slice, i) => (
+                    <circle
+                      key={i}
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="transparent"
+                      stroke={slice.color}
+                      strokeWidth="10"
+                      strokeDasharray={slice.dashArray}
+                      strokeDashoffset={slice.dashOffset}
+                      className="transition-all duration-700 ease-out hover:opacity-90"
+                    />
+                  ))}
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-2xl font-black text-[#09233d]">{totalProj}</span>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Projects</span>
+                </div>
+              </div>
+
+              {/* Legend & Breakdown Stats */}
+              <div className="space-y-3 w-full sm:w-auto">
+                {donutData.map((item, idx) => {
+                  const pct = Math.round((item.count / validDonutTotal) * 100);
+                  return (
+                    <div key={idx} className="flex items-center justify-between gap-4 p-2 rounded-lg bg-gray-50 border border-gray-100 min-w-[170px]">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-xs font-bold text-gray-700">{item.label}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-black text-[#09233d] block">{item.count}</span>
+                        <span className="text-[10px] font-medium text-gray-400">{pct}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Chart 2: Resource Time Utilization Bar Graph */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-base font-bold text-[#09233d]">Resource Time Allocation Graph</h2>
+                <p className="text-xs text-gray-400">Comparison of Estimated vs Actual logged hours</p>
+              </div>
+              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                Bar Chart
+              </span>
+            </div>
+
+            <div className="py-2 space-y-6">
+              {/* Estimated Hours Bar */}
+              <div>
+                <div className="flex justify-between items-center text-xs font-bold mb-1.5">
+                  <span className="text-gray-600 flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block"></span> Total Estimated Hours
+                  </span>
+                  <span className="text-[#09233d] font-black">{estHours} Hours</span>
+                </div>
+                <div className="w-full bg-gray-100 h-6 rounded-xl overflow-hidden p-1 border border-gray-100 flex items-center">
+                  <div
+                    className="bg-blue-500 h-full rounded-lg transition-all duration-700 flex items-center justify-end pr-2 text-[10px] text-white font-bold"
+                    style={{ width: `${estHours > 0 ? 100 : 5}%` }}
+                  >
+                    {estHours}h
+                  </div>
+                </div>
+              </div>
+
+              {/* Actual Logged Hours Bar */}
+              <div>
+                <div className="flex justify-between items-center text-xs font-bold mb-1.5">
+                  <span className="text-gray-600 flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-[#20b875] inline-block"></span> Total Actual Logged Hours
+                  </span>
+                  <span className="text-[#09233d] font-black">{actHours} Hours</span>
+                </div>
+                <div className="w-full bg-gray-100 h-6 rounded-xl overflow-hidden p-1 border border-gray-100 flex items-center">
+                  <div
+                    className="bg-[#20b875] h-full rounded-lg transition-all duration-700 flex items-center justify-end pr-2 text-[10px] text-white font-bold"
+                    style={{
+                      width: `${estHours > 0 ? Math.min(100, Math.max(5, (actHours / estHours) * 100)) : 5}%`,
+                    }}
+                  >
+                    {actHours}h
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary Indicator Card */}
+              <div className="p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🎯</span>
+                  <div>
+                    <strong className="text-xs font-bold text-emerald-900 block">Execution Status</strong>
+                    <span className="text-[11px] text-emerald-700">
+                      {actHours <= estHours ? 'Project work is within allocated budget limits.' : 'Actual hours exceed estimated allocation.'}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-xs font-black text-emerald-700 bg-white px-3 py-1 rounded-lg border border-emerald-200 shadow-2xs">
+                  {safeEfficiency}% Efficiency
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Project Lifecycle Progress Section */}
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-base font-bold text-[#09233d]">Live Project Lifecycle Progress</h2>
+            <div>
+              <h2 className="text-base font-bold text-[#09233d]">Live Project Lifecycle Progress</h2>
+              <p className="text-xs text-gray-400">Visual progress indicators for active company projects</p>
+            </div>
             <button
               onClick={() => setActiveTab('projects')}
               className="text-xs font-bold text-[#20b875] hover:underline"
             >
-              Manage Projects
+              Manage Projects →
             </button>
           </div>
 
           <div className="space-y-4">
-            {data?.activeProjects?.length === 0 ? (
-              <p className="text-xs text-gray-500 py-4">No active projects created yet.</p>
+            {activeProjects.length === 0 ? (
+              <p className="text-xs text-gray-500 py-6 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                No active projects created yet.
+              </p>
             ) : (
-              data?.activeProjects?.map((proj) => (
-                <div key={proj._id} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className="flex justify-between items-center mb-2">
-                    <div>
-                      <span className="text-xs font-bold text-[#20b875] bg-emerald-50 px-2 py-0.5 rounded mr-2">
-                        {proj.projectId || 'PRJ'}
+              activeProjects.map((proj) => {
+                const prog = proj.progress || 0;
+                return (
+                  <div key={proj._id} className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-emerald-200 transition-colors">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-[#20b875] bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-100">
+                          {proj.projectId || 'PRJ'}
+                        </span>
+                        <strong className="text-sm font-bold text-[#09233d]">{proj.name}</strong>
+                      </div>
+                      <span className="text-xs font-extrabold text-slate-700 bg-white px-2.5 py-1 rounded-md border border-gray-200 shadow-2xs">
+                        {prog}% Completed
                       </span>
-                      <strong className="text-sm font-bold text-[#09233d]">{proj.name}</strong>
                     </div>
-                    <span className="text-xs font-bold text-gray-600">
-                      {proj.progress || 0}% Completed
-                    </span>
+                    <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden p-0.5">
+                      <div
+                        className="bg-gradient-to-r from-[#20b875] to-emerald-400 h-full transition-all duration-700 rounded-full"
+                        style={{ width: `${prog}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 h-2.5 rounded-full overflow-hidden">
-                    <div
-                      className="bg-[#20b875] h-full transition-all duration-500 rounded-full"
-                      style={{ width: `${proj.progress || 0}%` }}
-                    />
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

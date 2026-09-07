@@ -114,8 +114,9 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout }) {
   const menuItems = getRoleMenuItems(user);
 
   return (
-    <aside className="w-64 bg-[#072b1e] text-[#ffffff] flex flex-col justify-between h-screen sticky top-0 p-4 border-r border-[#0e4733] shrink-0 shadow-xl z-50 overflow-y-auto">
-      <div>
+    <aside className="w-64 bg-[#072b1e] text-[#ffffff] flex flex-col justify-between h-screen sticky top-0 p-4 border-r border-[#0e4733] shrink-0 shadow-xl z-50">
+      {/* Scrollable Top Header & Navigation Container */}
+      <div className="flex-1 overflow-y-auto min-h-0 pr-1">
         <div className="flex items-center gap-2.5 mb-6 pb-4 border-b border-[#0e4733]">
           <span className="bg-[#20b875] text-[#ffffff] font-extrabold px-2.5 py-1 rounded-lg text-xs shadow-md shadow-[#20b875]/20">&lt;&gt;</span>
           <div>
@@ -147,20 +148,34 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout }) {
         </nav>
       </div>
 
-      <div className="pt-4 border-t border-[#0e4733]">
-        <div className="mb-3 px-2">
-          <p className="text-xs font-bold text-[#4ade80] truncate">{user?.name}</p>
-          <p className="text-[11px] text-[#d1d5db] capitalize font-medium">Role: {user?.role}</p>
-          {user?.employeeId && (
-            <p className="text-[10px] text-[#9ca3af]">ID: {user.employeeId}</p>
-          )}
+      {/* Constantly Fixed / Pinned Bottom User Profile Card */}
+      <div className="pt-3 mt-2 border-t border-[#0e4733] shrink-0">
+        <div className="flex items-center justify-between p-2.5 bg-[#0b3828] rounded-xl border border-[#13523c] shadow-sm">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            {/* Avatar Circle */}
+            <div className="w-8 h-8 rounded-full bg-[#20b875] text-white font-black flex items-center justify-center text-xs shrink-0 shadow-xs">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            </div>
+            {/* User Details */}
+            <div className="truncate">
+              <p className="text-xs font-bold text-white truncate leading-tight">{user?.name || 'User'}</p>
+              <p className="text-[10px] text-[#4ade80] capitalize font-medium leading-tight mt-0.5">
+                {user?.role || 'Employee'}
+              </p>
+            </div>
+          </div>
+
+          {/* Logout Action */}
+          <button
+            onClick={onLogout}
+            title="Sign Out"
+            className="p-1.5 text-rose-300 hover:text-white hover:bg-rose-600/30 rounded-lg transition-colors shrink-0 ml-1"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
         </div>
-        <button
-          onClick={onLogout}
-          className="w-full bg-[#dc2626] hover:bg-[#b91c1c] text-[#ffffff] font-bold py-2 px-3 rounded-xl text-xs text-center transition-colors shadow-sm"
-        >
-          Sign Out
-        </button>
       </div>
     </aside>
   );

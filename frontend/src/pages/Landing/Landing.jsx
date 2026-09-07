@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 const presenterImg = '/project_leadership_presenter.png';
 const aboutImg = '/about_collaboration.jpg';
 const servicesImg = '/services_analytics.jpg';
+const card1Img = '/service_governance.jpg';
+const card2Img = '/service_agile_sprints.jpg';
 
 export default function Landing({ user }) {
   const navigate = useNavigate();
@@ -11,6 +13,8 @@ export default function Landing({ user }) {
   const [processedImg, setProcessedImg] = useState(null);
   const [processedAboutImg, setProcessedAboutImg] = useState(null);
   const [processedServicesImg, setProcessedServicesImg] = useState(null);
+  const [processedCard1, setProcessedCard1] = useState(null);
+  const [processedCard2, setProcessedCard2] = useState(null);
 
   useEffect(() => {
     function processImage(src, setter) {
@@ -45,6 +49,32 @@ export default function Landing({ user }) {
     processImage(presenterImg, setProcessedImg);
     processImage(aboutImg, setProcessedAboutImg);
     processImage(servicesImg, setProcessedServicesImg);
+    processImage(card1Img, setProcessedCard1);
+    processImage(card2Img, setProcessedCard2);
+  }, []);
+
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px 0px -40px 0px',
+      threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        } else {
+          // Remove class when scrolled out of view so animation repeats when scrolling back
+          entry.target.classList.remove('is-visible');
+        }
+      });
+    }, observerOptions);
+
+    const animatedElements = document.querySelectorAll('.reveal-on-scroll, .reveal-slide-left, .reveal-slide-right, .reveal-scale');
+    animatedElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -198,9 +228,12 @@ export default function Landing({ user }) {
             ) : (
               <Link
                 to="/login"
-                className="rounded-full bg-[#09233d] px-5 py-3 text-xs font-bold text-white transition-transform hover:-translate-y-0.5"
+                className="flex items-center gap-2 rounded-full bg-[#20b875] px-6 py-2.5 text-xs font-extrabold text-white shadow-[0_6px_16px_rgba(32,184,117,0.3)] transition-all hover:-translate-y-0.5 hover:bg-[#169a61] hover:shadow-[0_10px_22px_rgba(32,184,117,0.4)]"
               >
-                Sign In <span aria-hidden="true">↗</span>
+                <span>Sign In</span>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                </svg>
               </Link>
             )}
           </div>
@@ -267,9 +300,9 @@ export default function Landing({ user }) {
       </div>
 
       {/* Expanded About Section with Seamless Transparent Illustration */}
-      <section id="about" className="border-y border-[#dfeee6] bg-[#edf9f2]/40 backdrop-blur-xs">
+      <section id="about" className="reveal-on-scroll border-y border-[#dfeee6] bg-[#edf9f2]/40 backdrop-blur-xs">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:px-10 lg:py-24">
-          <div>
+          <div className="reveal-slide-left">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#169a61]">About the platform</p>
             <h2 className="mt-4 max-w-md text-4xl font-black leading-tight tracking-[-0.05em] text-[#09233d]">
               One unbroken chain of accountability.
@@ -277,28 +310,28 @@ export default function Landing({ user }) {
             <p className="mt-4 text-sm font-semibold text-[#119b62]">
               Superior → Project → Team → Team Lead → Members → Daily Tasks → Time Tracking → Performance
             </p>
-            <div className="mt-6 space-y-4 text-base leading-8 text-[#61798a]">
+            <div className="mt-6 space-y-3 text-base leading-7 text-[#61798a]">
               <p>
-                The <strong>Employee Project, Task &amp; Performance Management System (EPTPMS)</strong> is designed to manage a company&apos;s projects across their complete lifecycle — from initial project creation by Superiors, through module breakdown and team assignment, down to daily execution, real-time time tracking, and comprehensive performance analytics.
+                <strong>EPTPMS</strong> manages enterprise projects across their complete lifecycle — from initial creation down to daily task execution, real-time time tracking, and performance analytics.
               </p>
               <p>
-                Unlike traditional task trackers, EPTPMS preserves a strict, traceable hierarchy where every single hour logged and task completed directly feeds into team efficiency metrics and employee performance scores.
+                Every hour logged and task completed directly feeds into team efficiency metrics and employee performance scores.
               </p>
             </div>
           </div>
 
           {/* Seamless Transparent About Section Illustration */}
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-center reveal-slide-right">
             <img
               src={processedAboutImg || aboutImg}
               alt="Team Project Collaboration & Workflow Illustration"
-              className="w-full h-auto max-h-[440px] object-contain drop-shadow-[0_20px_40px_rgba(20,154,97,0.2)] transition-transform duration-700 hover:scale-[1.02]"
+              className="float-animation w-full h-auto max-h-[440px] object-contain drop-shadow-[0_20px_40px_rgba(20,154,97,0.2)] transition-transform duration-700 hover:scale-[1.02]"
             />
           </div>
         </div>
 
         {/* 4 Feature Columns for About with Vector SVG Icons & Interactive Hover */}
-        <div className="mx-auto grid max-w-7xl gap-6 px-6 pb-16 sm:grid-cols-2 lg:grid-cols-4 lg:px-10 lg:pb-24">
+        <div className="mx-auto grid max-w-7xl gap-6 px-6 pb-16 sm:grid-cols-2 lg:grid-cols-4 lg:px-10 lg:pb-24 reveal-on-scroll">
           <div className="group rounded-2xl border border-[#b9dfc8] bg-white p-6 shadow-xs transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_16px_36px_rgba(32,184,117,0.2)]">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
               <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -349,192 +382,32 @@ export default function Landing({ user }) {
         </div>
       </section>
 
-      {/* Expanded Services Section with Seamless Transparent Analytics Illustration */}
-      <section id="services" className="border-y border-[#dfeee6] bg-white/60 backdrop-blur-xs">
+      {/* Services Section */}
+      <section id="services" className="reveal-on-scroll border-y border-[#dfeee6] bg-white/60 backdrop-blur-xs">
         <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-24">
-          <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#169a61]">Core services &amp; Capabilities</p>
-              <h2 className="mt-3 max-w-lg text-4xl font-black leading-tight tracking-[-0.04em] text-[#09233d]">
-                Everything your organization needs to execute efficiently.
+          <div className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="reveal-slide-left">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#169a61]">Enterprise IT Services &amp; Platform Capabilities</p>
+              <h2 className="mt-4 max-w-xl text-4xl font-black leading-tight tracking-[-0.04em] text-[#09233d]">
+                End-to-end IT services &amp; workforce execution solutions.
               </h2>
-              <p className="mt-4 max-w-xl text-sm leading-7 text-[#708794]">
-                A complete operational platform combining project management, daily task workflows, precise time tracking, and automated performance analytics.
-              </p>
+              <div className="mt-6 space-y-4 text-base leading-8 text-[#61798a]">
+                <p>
+                  <strong>PydahSoft</strong> delivers high-impact IT services and specialized software management platforms engineered to accelerate business operations and elevate team productivity across corporate projects.
+                </p>
+                <p>
+                  Our services unite strategic project planning, agile sprint distribution, real-time employee time tracking, multi-tier quality reviews, and executive KPI intelligence into a single connected workflow.
+                </p>
+              </div>
             </div>
 
             {/* Seamless Transparent Services Section Illustration */}
-            <div className="relative flex items-center justify-center">
+            <div className="relative flex items-center justify-center reveal-slide-right">
               <img
                 src={processedServicesImg || servicesImg}
-                alt="Time Tracking & Performance Analytics Illustration"
-                className="w-full h-auto max-h-[380px] object-contain drop-shadow-[0_20px_40px_rgba(20,154,97,0.2)] transition-transform duration-700 hover:scale-[1.02]"
+                alt="Services Capabilities & Performance Analytics Illustration"
+                className="float-animation w-full h-auto max-h-[400px] object-contain drop-shadow-[0_20px_40px_rgba(20,154,97,0.2)] transition-transform duration-700 hover:scale-[1.02]"
               />
-            </div>
-          </div>
-
-          {/* 6 Core Service Pillars Grid */}
-          <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Card 1 */}
-            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
-              <div className="flex items-center justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
-                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">01 / GOVERNANCE</span>
-              </div>
-              <h3 className="mt-5 text-xl font-black text-[#09233d]">Enterprise Project Governance</h3>
-              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
-                Empower your executive leadership with complete 360° portfolio oversight. Define strategic deliverables, build cross-functional teams, and delegate Team Leads effortlessly.
-              </p>
-              <div className="mt-5 space-y-2">
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Multi-project portfolio steering
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Team &amp; Lead role assignment
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Company-wide directory integration
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2 */}
-            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
-              <div className="flex items-center justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
-                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                </div>
-                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">02 / WORKFLOWS</span>
-              </div>
-              <h3 className="mt-5 text-xl font-black text-[#09233d]">Agile Modules &amp; Daily Plans</h3>
-              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
-                Break high-level goals into milestone modules and targeted daily work plans. Keep every developer and manager focused on top-priority sprint deliverables.
-              </p>
-              <div className="mt-5 space-y-2">
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Milestone module decomposition
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Automated daily plan distribution
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Priority &amp; deadline optimization
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3 */}
-            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
-              <div className="flex items-center justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
-                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">03 / TRACKING</span>
-              </div>
-              <h3 className="mt-5 text-xl font-black text-[#09233d]">Precision Time &amp; Task Engine</h3>
-              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
-                Eliminate time leakage with real-time tracking. Employees log active hours using an integrated stopwatch, attach work evidence, and submit progress logs seamlessly.
-              </p>
-              <div className="mt-5 space-y-2">
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Live stopwatch &amp; manual timer
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Verifiable proof &amp; URL attachments
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Estimated vs. actual hour tracking
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4 */}
-            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
-              <div className="flex items-center justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
-                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                  </svg>
-                </div>
-                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">04 / QUALITY</span>
-              </div>
-              <h3 className="mt-5 text-xl font-black text-[#09233d]">Quality &amp; Review Queue</h3>
-              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
-                Enforce uncompromising quality standards. Team Leads review daily submissions, provide instant feedback, approve top-tier work, or trigger rapid rework loops.
-              </p>
-              <div className="mt-5 space-y-2">
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Multi-tier quality verification
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Instant feedback &amp; rework loops
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Rating &amp; quality score logging
-                </div>
-              </div>
-            </div>
-
-            {/* Card 5 */}
-            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
-              <div className="flex items-center justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
-                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">05 / ANALYTICS</span>
-              </div>
-              <h3 className="mt-5 text-xl font-black text-[#09233d]">Performance &amp; KPI Insights</h3>
-              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
-                Transform raw execution data into clear executive insights. Track on-time delivery rates, employee efficiency percentages, and sprint velocities seamlessly.
-              </p>
-              <div className="mt-5 space-y-2">
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Employee productivity metrics
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Velocity &amp; bottleneck detection
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Instant executive report exports
-                </div>
-              </div>
-            </div>
-
-            {/* Card 6 */}
-            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
-              <div className="flex items-center justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
-                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">06 / SECURITY</span>
-              </div>
-              <h3 className="mt-5 text-xl font-black text-[#09233d]">Enterprise Security &amp; Audit</h3>
-              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
-                Protect enterprise assets with strict Role-Based Access Control (RBAC). Maintain an unbroken, tamper-proof historical log of every system action across your organization.
-              </p>
-              <div className="mt-5 space-y-2">
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Strict Role-Based Access Control
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> Complete activity audit records
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
-                  <span className="text-[#20b875] font-black">✓</span> JWT authentication &amp; session security
-                </div>
-              </div>
             </div>
           </div>
         </div>
