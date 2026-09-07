@@ -468,8 +468,6 @@ export default function DashboardOverview({
             )}
           </div>
         </div>
-      </>
-    )}
     </div>
   );
 }
