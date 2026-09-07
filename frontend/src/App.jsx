@@ -38,6 +38,7 @@ function DashboardLayout({ user, onLogout }) {
   };
 
   const [activeTab, setActiveTabState] = useState(getInitialTab);
+  const [subTab, setSubTab] = useState('default');
 
   const setActiveTab = (tab) => {
     setActiveTabState(tab);
@@ -48,6 +49,11 @@ function DashboardLayout({ user, onLogout }) {
   useEffect(() => {
     localStorage.setItem('pydahsoft_active_tab', activeTab);
     window.location.hash = activeTab;
+
+    if (activeTab === 'projects') setSubTab('projects');
+    else if (activeTab === 'teams') setSubTab('teams');
+    else if (activeTab === 'analytics') setSubTab('analytics');
+    else setSubTab('default');
   }, [activeTab]);
 
   const getTabTitle = (tab) => {
@@ -95,11 +101,101 @@ function DashboardLayout({ user, onLogout }) {
               {getTabTitle(activeTab)}
             </h1>
           )}
+
+          {/* Sub-tab Pill Switcher in Header Top Right */}
           <div className="flex items-center gap-3 text-xs">
-            <span className="bg-[#20b875]/10 border border-[#20b875]/30 text-[#09233d] font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#20b875]" />
-              User: <strong className="text-[#20b875]">{user.name}</strong> ({user.role?.toUpperCase()})
-            </span>
+            {activeTab === 'projects' && (
+              <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
+                <button
+                  onClick={() => setSubTab('projects')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    subTab === 'projects'
+                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  Projects Lifecycle
+                </button>
+                <button
+                  onClick={() => setSubTab('modules')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    subTab === 'modules'
+                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  Modules Breakdown
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'teams' && (
+              <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
+                <button
+                  onClick={() => setSubTab('teams')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    subTab === 'teams'
+                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  Teams & Roster
+                </button>
+                <button
+                  onClick={() => setSubTab('tasks')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    subTab === 'tasks'
+                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                  Tasks Management
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'analytics' && (
+              <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
+                <button
+                  onClick={() => setSubTab('analytics')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    subTab === 'analytics'
+                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  Performance Analytics
+                </button>
+                <button
+                  onClick={() => setSubTab('reports')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    subTab === 'reports'
+                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Executive Reports
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
@@ -110,12 +206,12 @@ function DashboardLayout({ user, onLogout }) {
             )}
             {activeTab === 'users' && <UserManagement currentUser={user} />}
             {activeTab === 'employees' && <EmployeeManagement currentUser={user} />}
-            {activeTab === 'projects' && <ProjectsAndModules currentUser={user} />}
-            {activeTab === 'teams' && <TeamsAndTasks currentUser={user} />}
+            {activeTab === 'projects' && <ProjectsAndModules currentUser={user} activeSubTab={subTab} />}
+            {activeTab === 'teams' && <TeamsAndTasks currentUser={user} activeSubTab={subTab} />}
             {activeTab === 'time-tracker' && <TimeTracker currentUser={user} />}
             {activeTab === 'reviews' && <TaskReviewQueue currentUser={user} />}
             {activeTab === 'daily-plans' && <DailyWorkPlans currentUser={user} />}
-            {activeTab === 'analytics' && <PerformanceAndReports currentUser={user} />}
+            {activeTab === 'analytics' && <PerformanceAndReports currentUser={user} activeSubTab={subTab} />}
             {activeTab === 'audit-logs' && <AuditLogsView currentUser={user} />}
             {activeTab === 'settings' && <SettingsPage currentUser={user} />}
           </Suspense>
