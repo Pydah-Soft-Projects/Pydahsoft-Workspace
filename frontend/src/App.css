@@ -49,8 +49,7 @@
 }
 
 .hero-card-3d:hover {
-  transform: rotateX(4deg) rotateY(-5deg) translateZ(25px) scale(1.02);
-  box-shadow: 0 35px 80px -15px rgba(32, 184, 117, 0.35);
+  box-shadow: none;
 }
 
 @keyframes hero-card-float {
