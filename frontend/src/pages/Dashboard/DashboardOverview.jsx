@@ -1,21 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { fetchApi } from '../../config/api';
 import EmployeeDashboardView from './EmployeeDashboardView';
 
-export default function DashboardOverview({ user, setActiveTab }) {
+export default function DashboardOverview({
+  user,
+  setActiveTab,
+  viewAsEmployeeId: propViewAsEmployeeId,
+  setViewAsEmployeeId: propSetViewAsEmployeeId,
+  employeeList: propEmployeeList,
+}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [viewAsEmployeeId, setViewAsEmployeeId] = useState(null);
-  const [employeeList, setEmployeeList] = useState([]);
+  const [localViewAsEmployeeId, setLocalViewAsEmployeeId] = useState(null);
+  const [localEmployeeList, setLocalEmployeeList] = useState([]);
+
+  const viewAsEmployeeId = propViewAsEmployeeId !== undefined ? propViewAsEmployeeId : localViewAsEmployeeId;
+  const setViewAsEmployeeId = propSetViewAsEmployeeId || setLocalViewAsEmployeeId;
+  const employeeList = propEmployeeList || localEmployeeList;
 
   useEffect(() => {
-    if (user.role === 'superadmin' || user.role === 'superior') {
+    if ((user.role === 'superadmin' || user.role === 'superior') && !propEmployeeList) {
       fetchApi('/employees')
-        .then((res) => setEmployeeList(res.data || []))
+        .then((res) => setLocalEmployeeList(res.data || []))
         .catch(() => {});
     }
-  }, [user]);
+  }, [user, propEmployeeList]);
 
   useEffect(() => {
     loadDashboard();
@@ -65,37 +75,19 @@ export default function DashboardOverview({ user, setActiveTab }) {
     );
   }
 
-  // If an employee is logged in, or an admin selected an employee to inspect
-  if (viewAsEmployeeId || user.role === 'employee') {
+  // If an employee is logged in directly
+  if (user.role === 'employee') {
     return (
-      <div className="space-y-4">
-        {viewAsEmployeeId && (
-          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs font-bold text-[#09233d]">
-            <span>
-              Inspecting Individual Employee Dashboard for:{' '}
-              <strong className="text-[#10b981]">
-                {data?.employeeProfile?.name || 'Selected Employee'}
-              </strong>
-            </span>
-            <button
-              onClick={() => setViewAsEmployeeId(null)}
-              className="px-3 py-1.5 bg-[#072b1e] text-white rounded-xl hover:bg-[#0d3b2b] transition-colors"
-            >
-              ← Back to Overview
-            </button>
-          </div>
-        )}
-        <EmployeeDashboardView
-          user={user}
-          data={data}
-          setActiveTab={setActiveTab}
-          reloadDashboard={loadDashboard}
-        />
-      </div>
+      <EmployeeDashboardView
+        user={user}
+        data={data}
+        setActiveTab={setActiveTab}
+        reloadDashboard={loadDashboard}
+      />
     );
   }
 
-  // Superior Dashboard
+  // Superior / Super Admin Dashboard
   if (user.role === 'superior' || user.role === 'superadmin') {
     const summary = data?.summary || {};
     const timeData = data?.timeUtilization || {};
@@ -145,35 +137,16 @@ export default function DashboardOverview({ user, setActiveTab }) {
 
     return (
       <div className="space-y-6">
-        {/* Admin Employee Dashboard Inspector Bar */}
-        {employeeList.length > 0 && (
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <span className="text-xs font-bold text-[#09233d] block">
-                Individual Employee Dashboard Viewer
-              </span>
-              <span className="text-[11px] text-gray-400">
-                Inspect live performance, donut charts, and trend analytics for any staff member
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value=""
-                onChange={(e) => {
-                  if (e.target.value) setViewAsEmployeeId(e.target.value);
-                }}
-                className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 focus:outline-hidden focus:ring-2 focus:ring-[#10b981]"
-              >
-                <option value="">-- Inspect Employee Dashboard --</option>
-                {employeeList.map((emp) => (
-                  <option key={emp._id} value={emp._id}>
-                    {emp.name} ({emp.username || emp.employeeId || 'Staff'})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
+        {/* Show Individual Employee View if Selected, or Executive Company Overview */}
+        {viewAsEmployeeId ? (
+          <EmployeeDashboardView
+            user={user}
+            data={data}
+            setActiveTab={setActiveTab}
+            reloadDashboard={loadDashboard}
+          />
+        ) : (
+          <>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -457,9 +430,11 @@ export default function DashboardOverview({ user, setActiveTab }) {
             )}
           </div>
         </div>
-      </div>
-    );
-  }
+      </>
+    )}
+    </div>
+  );
+}
 
   // Team Lead Dashboard
   if (user.role === 'teamlead') {

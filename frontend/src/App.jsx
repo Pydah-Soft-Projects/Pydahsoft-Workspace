@@ -1,8 +1,9 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom';
 import Landing from './pages/Landing/Landing';
 import Login from './pages/Login/Login';
 import Sidebar from './components/Sidebar/Sidebar';
+import { fetchApi } from './config/api';
 import './App.css';
 
 // Lazy-loaded page components for ultra-fast loading and bundle optimization
@@ -25,6 +26,153 @@ const PageLoader = () => (
   </div>
 );
 
+function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmployeeId }) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedEmp = employeeList.find((e) => e._id === viewAsEmployeeId);
+  const filteredEmployees = employeeList.filter(
+    (emp) =>
+      emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (emp.username || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (emp.employeeId || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        className="flex items-center gap-2.5 px-3.5 py-1.5 bg-white border border-emerald-300 hover:border-[#20b875] rounded-xl text-xs font-bold text-[#09233d] shadow-2xs hover:shadow-xs focus:outline-none focus:ring-2 focus:ring-[#20b875]/30 cursor-pointer transition-all min-w-[240px] justify-between group"
+      >
+        <div className="flex items-center gap-2 truncate">
+          {selectedEmp ? (
+            <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          ) : (
+            <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          )}
+          <span className="truncate">
+            {selectedEmp
+              ? `${selectedEmp.name} (${selectedEmp.username || selectedEmp.employeeId || 'Staff'})`
+              : 'Company Overview (Super Admin)'}
+          </span>
+        </div>
+        <svg
+          className={`w-3.5 h-3.5 text-[#20b875] shrink-0 transition-transform duration-200 group-hover:scale-110 ${
+            dropdownOpen ? 'transform rotate-180' : ''
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {dropdownOpen && (
+        <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-emerald-200 shadow-2xl z-50 overflow-hidden py-2 animate-in fade-in zoom-in-95 duration-150">
+          <div className="px-3.5 pb-2 border-b border-gray-100 flex items-center justify-between">
+            <span className="text-[11px] font-black text-[#09233d] uppercase tracking-wider">
+              Select Staff Member
+            </span>
+            <span className="text-[10px] text-gray-400 font-medium">{employeeList.length} Members</span>
+          </div>
+
+          {employeeList.length > 5 && (
+            <div className="p-2 border-b border-gray-100">
+              <input
+                type="text"
+                placeholder="Search employee..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-3 py-1.5 bg-slate-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#20b875]"
+              />
+            </div>
+          )}
+
+          <div className="max-h-60 overflow-y-auto custom-scrollbar p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setViewAsEmployeeId(null);
+                setDropdownOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-left transition-colors ${
+                !viewAsEmployeeId
+                  ? 'bg-emerald-50 text-[#20b875] border-l-4 border-[#20b875]'
+                  : 'text-[#09233d] hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-2 truncate">
+                <svg className="w-4 h-4 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span className="truncate">Company Overview (Super Admin)</span>
+              </div>
+              {!viewAsEmployeeId && (
+                <svg className="w-4 h-4 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+
+            {filteredEmployees.map((emp) => {
+              const isSelected = viewAsEmployeeId === emp._id;
+              return (
+                <button
+                  key={emp._id}
+                  type="button"
+                  onClick={() => {
+                    setViewAsEmployeeId(emp._id);
+                    setDropdownOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-left transition-colors ${
+                    isSelected
+                      ? 'bg-emerald-50 text-[#20b875] border-l-4 border-[#20b875]'
+                      : 'text-[#09233d] hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 truncate">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-[#20b875] flex items-center justify-center font-bold text-[10px] shrink-0">
+                      {emp.name ? emp.name.charAt(0).toUpperCase() : 'E'}
+                    </div>
+                    <div className="truncate">
+                      <span className="block text-xs font-bold text-[#09233d] truncate">{emp.name}</span>
+                      <span className="block text-[10px] text-gray-400 font-medium truncate">
+                        @{emp.username || emp.employeeId || 'staff'}
+                      </span>
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <svg className="w-4 h-4 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DashboardLayout({ user, onLogout }) {
   const navigate = useNavigate();
 
@@ -39,6 +187,16 @@ function DashboardLayout({ user, onLogout }) {
 
   const [activeTab, setActiveTabState] = useState(getInitialTab);
   const [subTab, setSubTab] = useState('default');
+  const [viewAsEmployeeId, setViewAsEmployeeId] = useState(null);
+  const [employeeList, setEmployeeList] = useState([]);
+
+  useEffect(() => {
+    if (user?.role === 'superadmin' || user?.role === 'superior') {
+      fetchApi('/employees')
+        .then((res) => setEmployeeList(res.data || []))
+        .catch(() => {});
+    }
+  }, [user]);
 
   const setActiveTab = (tab) => {
     setActiveTabState(tab);
@@ -93,7 +251,9 @@ function DashboardLayout({ user, onLogout }) {
                 Welcome back, <span className="text-[#10b981]">{user.name}!</span>
               </h1>
               <p className="text-xs text-gray-500 font-medium mt-0.5">
-                Here's what's happening with your work today.
+                {viewAsEmployeeId
+                  ? `Currently inspecting employee dashboard for: ${employeeList.find((e) => e._id === viewAsEmployeeId)?.name || 'Selected Staff'}`
+                  : "Here's what's happening with your work today."}
               </p>
             </div>
           ) : (
@@ -102,8 +262,15 @@ function DashboardLayout({ user, onLogout }) {
             </h1>
           )}
 
-          {/* Sub-tab Pill Switcher in Header Top Right */}
+          {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
           <div className="flex items-center gap-3 text-xs">
+            {activeTab === 'overview' && (user?.role === 'superadmin' || user?.role === 'superior') && employeeList.length > 0 && (
+              <HeaderEmployeeSelector
+                employeeList={employeeList}
+                viewAsEmployeeId={viewAsEmployeeId}
+                setViewAsEmployeeId={setViewAsEmployeeId}
+              />
+            )}
             {activeTab === 'projects' && (
               <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
                 <button
@@ -202,7 +369,13 @@ function DashboardLayout({ user, onLogout }) {
         <div className="p-6">
           <Suspense fallback={<PageLoader />}>
             {activeTab === 'overview' && (
-              <DashboardOverview user={user} setActiveTab={setActiveTab} />
+              <DashboardOverview
+                user={user}
+                setActiveTab={setActiveTab}
+                viewAsEmployeeId={viewAsEmployeeId}
+                setViewAsEmployeeId={setViewAsEmployeeId}
+                employeeList={employeeList}
+              />
             )}
             {activeTab === 'users' && <UserManagement currentUser={user} />}
             {activeTab === 'employees' && <EmployeeManagement currentUser={user} />}
