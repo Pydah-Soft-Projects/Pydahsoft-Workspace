@@ -3,20 +3,30 @@ import { fetchApi } from '../../config/api';
 import EmployeeDashboardView from './EmployeeDashboardView';
 import Icon from '../../components/Icon';
 
-export default function DashboardOverview({ user, setActiveTab }) {
+export default function DashboardOverview({
+  user,
+  setActiveTab,
+  viewAsEmployeeId: propViewAsEmployeeId,
+  setViewAsEmployeeId: propSetViewAsEmployeeId,
+  employeeList: propEmployeeList,
+}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [viewAsEmployeeId, setViewAsEmployeeId] = useState(null);
-  const [employeeList, setEmployeeList] = useState([]);
+  const [localViewAsEmployeeId, setLocalViewAsEmployeeId] = useState(null);
+  const [localEmployeeList, setLocalEmployeeList] = useState([]);
+
+  const viewAsEmployeeId = propViewAsEmployeeId !== undefined ? propViewAsEmployeeId : localViewAsEmployeeId;
+  const setViewAsEmployeeId = propSetViewAsEmployeeId || setLocalViewAsEmployeeId;
+  const employeeList = propEmployeeList || localEmployeeList;
 
   useEffect(() => {
-    if (user.role === 'superadmin' || user.role === 'superior') {
+    if ((user.role === 'superadmin' || user.role === 'superior') && !propEmployeeList) {
       fetchApi('/employees')
-        .then((res) => setEmployeeList(res.data || []))
+        .then((res) => setLocalEmployeeList(res.data || []))
         .catch(() => {});
     }
-  }, [user]);
+  }, [user, propEmployeeList]);
 
   useEffect(() => {
     loadDashboard();
@@ -66,8 +76,8 @@ export default function DashboardOverview({ user, setActiveTab }) {
     );
   }
 
-  // If an employee is logged in, or an admin selected an employee to inspect
-  if (viewAsEmployeeId || user.role === 'employee') {
+  // If an employee is logged in directly
+  if (user.role === 'employee') {
     return (
       <div className="space-y-4">
         {viewAsEmployeeId && (
@@ -96,7 +106,7 @@ export default function DashboardOverview({ user, setActiveTab }) {
     );
   }
 
-  // Superior Dashboard
+  // Superior / Super Admin Dashboard
   if (user.role === 'superior' || user.role === 'superadmin') {
     const summary = data?.summary || {};
     const timeData = data?.timeUtilization || {};
@@ -458,9 +468,11 @@ export default function DashboardOverview({ user, setActiveTab }) {
             )}
           </div>
         </div>
-      </div>
-    );
-  }
+      </>
+    )}
+    </div>
+  );
+}
 
   // Team Lead Dashboard
   if (user.role === 'teamlead') {

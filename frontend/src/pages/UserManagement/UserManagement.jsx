@@ -370,7 +370,7 @@ export default function UserManagement({ currentUser }) {
                       <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
                         <button
                           onClick={() => setViewingUser(u)}
-                          className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[11px] font-bold"
+                          className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
                         >
                           <span className="inline-flex items-center gap-1"><Icon name="eye" className="w-3.5 h-3.5" /> View</span>
                         </button>
@@ -378,7 +378,7 @@ export default function UserManagement({ currentUser }) {
                         {isManager && (
                           <button
                             onClick={() => setEditingUser({ ...u })}
-                            className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold"
+                            className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
                           >
                             <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3.5 h-3.5" /> Edit</span>
                           </button>
@@ -389,7 +389,7 @@ export default function UserManagement({ currentUser }) {
                             ...u,
                             permissions: getEffectivePermissions(u, roles)
                           })}
-                          className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[11px] font-bold border border-indigo-200"
+                          className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[11px] font-bold border border-indigo-200 inline-flex items-center gap-1"
                         >
                           <span className="inline-flex items-center gap-1"><Icon name="settings" className="w-3.5 h-3.5" /> Page Privileges</span>
                         </button>
@@ -447,21 +447,21 @@ export default function UserManagement({ currentUser }) {
                     <button
                       type="button"
                       onClick={() => setBulkUserPermissions('read')}
-                      className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200"
+                      className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200 inline-flex items-center gap-1"
                     >
                       <span className="inline-flex items-center gap-1"><Icon name="eye" className="w-3.5 h-3.5" /> Select All Read</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setBulkUserPermissions('write')}
-                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200"
+                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200 inline-flex items-center gap-1"
                     >
                       <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3.5 h-3.5" /> Select All Write</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setBulkUserPermissions('none')}
-                      className="px-2.5 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[10px] font-bold"
+                      className="px-2.5 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[10px] font-bold inline-flex items-center gap-1"
                     >
                       <span className="inline-flex items-center gap-1"><Icon name="close" className="w-3.5 h-3.5" /> Clear All</span>
                     </button>
