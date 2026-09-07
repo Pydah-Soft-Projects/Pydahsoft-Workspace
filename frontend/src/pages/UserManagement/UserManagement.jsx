@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import Icon from '../../components/Icon';
 
 const PrivilegeIcon = ({ icon, className = "w-3.5 h-3.5 text-[#20b875]" }) => {
   switch (icon) {
@@ -355,11 +356,8 @@ export default function UserManagement({ currentUser }) {
                         </span>
                       </td>
                       <td className="p-4">
-                        <span className="px-2.5 py-1 bg-gray-100 text-gray-700 font-bold rounded-lg text-[10px] inline-flex items-center gap-1">
-                          <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                          </svg>
-                          {activePermCount} / 11 Pages {isSuperAdmin ? '(Full Access)' : 'Allowed'}
+                        <span className="px-2.5 py-1 bg-gray-100 text-gray-700 font-bold rounded-lg text-[10px]">
+                          <span className="inline-flex items-center gap-1"><Icon name="shield" className="w-3.5 h-3.5" /> {activePermCount} / 11 Pages {isSuperAdmin ? '(Full Access)' : 'Allowed'}</span>
                         </span>
                       </td>
                       <td className="p-4">
@@ -374,11 +372,7 @@ export default function UserManagement({ currentUser }) {
                           onClick={() => setViewingUser(u)}
                           className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          View
+                          <span className="inline-flex items-center gap-1"><Icon name="eye" className="w-3.5 h-3.5" /> View</span>
                         </button>
 
                         {isManager && (
@@ -386,10 +380,7 @@ export default function UserManagement({ currentUser }) {
                             onClick={() => setEditingUser({ ...u })}
                             className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
                           >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Edit
+                            <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3.5 h-3.5" /> Edit</span>
                           </button>
                         )}
 
@@ -400,11 +391,7 @@ export default function UserManagement({ currentUser }) {
                           })}
                           className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[11px] font-bold border border-indigo-200 inline-flex items-center gap-1"
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          Page Privileges
+                          <span className="inline-flex items-center gap-1"><Icon name="settings" className="w-3.5 h-3.5" /> Page Privileges</span>
                         </button>
 
                         {isManager && !isSuperAdmin && (
@@ -413,7 +400,7 @@ export default function UserManagement({ currentUser }) {
                               onClick={() => handleToggleStatus(u)}
                               className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-[11px] font-bold border border-emerald-200"
                             >
-                              ✓ Activate
+                              <span className="inline-flex items-center gap-1"><Icon name="check" className="w-3.5 h-3.5" /> Activate</span>
                             </button>
                           ) : (
                             <button
@@ -443,12 +430,12 @@ export default function UserManagement({ currentUser }) {
                 <h3 className="text-base font-bold text-[#09233d]">Sidebar Page Access: {selectedUserPrivileges.name}</h3>
                 <p className="text-[11px] text-gray-500">Configure Read vs Write permission levels for @{selectedUserPrivileges.username}</p>
               </div>
-              <button onClick={() => setSelectedUserPrivileges(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setSelectedUserPrivileges(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600" aria-label="Close"><Icon name="close" className="w-4 h-4" /></button>
             </div>
 
             {selectedUserPrivileges.role === 'superadmin' ? (
               <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 font-semibold space-y-1">
-                <p className="font-bold">👑 Full SuperAdmin Access Enabled</p>
+                <p className="font-bold"><span className="inline-flex items-center gap-1"><Icon name="award" className="w-3.5 h-3.5" /> Full SuperAdmin Access Enabled</span></p>
                 <p className="text-[11px] text-amber-800">SuperAdmin accounts possess unrestricted Read & Write access to all system pages.</p>
               </div>
             ) : (
@@ -462,31 +449,21 @@ export default function UserManagement({ currentUser }) {
                       onClick={() => setBulkUserPermissions('read')}
                       className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200 inline-flex items-center gap-1"
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      Select All Read
+                      <span className="inline-flex items-center gap-1"><Icon name="eye" className="w-3.5 h-3.5" /> Select All Read</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setBulkUserPermissions('write')}
                       className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200 inline-flex items-center gap-1"
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Select All Write
+                      <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3.5 h-3.5" /> Select All Write</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setBulkUserPermissions('none')}
                       className="px-2.5 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[10px] font-bold inline-flex items-center gap-1"
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                      </svg>
-                      Clear All
+                      <span className="inline-flex items-center gap-1"><Icon name="close" className="w-3.5 h-3.5" /> Clear All</span>
                     </button>
                   </div>
                 </div>
@@ -566,7 +543,7 @@ export default function UserManagement({ currentUser }) {
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto space-y-4">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-base font-bold text-[#09233d]">Create Custom Role</h3>
-              <button onClick={() => setShowRoleModal(false)} className="text-xs font-bold text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setShowRoleModal(false)} className="text-xs font-bold text-gray-400 hover:text-gray-600" aria-label="Close"><Icon name="close" className="w-4 h-4" /></button>
             </div>
 
             <form onSubmit={handleCreateRole} className="space-y-3">
@@ -802,7 +779,7 @@ export default function UserManagement({ currentUser }) {
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-4">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-base font-bold text-[#09233d]">User Details: {viewingUser.name}</h3>
-              <button onClick={() => setViewingUser(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setViewingUser(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600" aria-label="Close"><Icon name="close" className="w-4 h-4" /></button>
             </div>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b"><span className="text-gray-500 font-medium">Employee ID:</span><strong className="text-[#20b875]">{viewingUser.employeeId || 'N/A'}</strong></div>

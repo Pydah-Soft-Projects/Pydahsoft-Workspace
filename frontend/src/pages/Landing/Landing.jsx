@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Icon from '../../components/Icon';
 
 const presenterImg = '/project_leadership_presenter.png';
 const aboutImg = '/about_collaboration.jpg';
@@ -223,7 +224,7 @@ export default function Landing({ user }) {
                 to="/dashboard"
                 className="rounded-full bg-[#20b875] px-5 py-2.5 text-xs font-bold text-white shadow-sm"
               >
-                Go to Dashboard →
+                <span className="inline-flex items-center gap-1.5">Go to Dashboard <Icon name="arrowRight" className="w-3.5 h-3.5" /></span>
               </Link>
             ) : (
               <Link
@@ -255,10 +256,10 @@ export default function Landing({ user }) {
                 onClick={() => navigate(user ? '/dashboard' : '/login')}
                 className="rounded-full bg-[#20b875] px-7 py-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(32,184,117,0.2)] transition-all hover:-translate-y-1 hover:bg-[#159e63]"
               >
-                Explore the system <span aria-hidden="true">→</span>
+                <span className="inline-flex items-center gap-1.5">Explore the system <Icon name="arrowRight" className="w-3.5 h-3.5" /></span>
               </button>
               <a href="#about" className="px-3 py-3 text-sm font-bold text-[#09233d] transition-colors hover:text-[#159e63]">
-                How it works <span aria-hidden="true">↘</span>
+                <span className="inline-flex items-center gap-1.5">How it works <Icon name="arrowDown" className="w-3.5 h-3.5" /></span>
               </a>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { API_BASE_URL } from '../../config/api';
+import Icon from '../../components/Icon';
 
 export default function Login({ onLoginSuccess }) {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ export default function Login({ onLoginSuccess }) {
           to="/"
           className="rounded-full border border-[#d1e8dc] bg-white px-4 py-2 text-xs font-bold text-[#09233d] transition-all hover:bg-[#edf9f2]"
         >
-          ← Back to Landing Page
+          <span className="inline-flex items-center gap-1.5"><Icon name="arrowLeft" className="w-3.5 h-3.5" /> Back to Landing Page</span>
         </Link>
       </header>
 
@@ -165,7 +166,7 @@ export default function Login({ onLoginSuccess }) {
               disabled={loading}
               className="mt-2 w-full rounded-xl bg-[#20b875] py-3.5 text-sm font-bold text-white shadow-[0_10px_20px_rgba(32,184,117,0.25)] transition-all hover:bg-[#159e63] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
             >
-              {loading ? 'Authenticating...' : 'Sign In to Workspace →'}
+              {loading ? 'Authenticating...' : <span className="inline-flex items-center gap-1.5">Sign In to Workspace <Icon name="arrowRight" className="w-3.5 h-3.5" /></span>}
             </button>
           </form>
 

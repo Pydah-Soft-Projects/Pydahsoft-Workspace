@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
 import EmployeeDashboardView from './EmployeeDashboardView';
+import Icon from '../../components/Icon';
 
 export default function DashboardOverview({
   user,
@@ -78,12 +79,30 @@ export default function DashboardOverview({
   // If an employee is logged in directly
   if (user.role === 'employee') {
     return (
-      <EmployeeDashboardView
-        user={user}
-        data={data}
-        setActiveTab={setActiveTab}
-        reloadDashboard={loadDashboard}
-      />
+      <div className="space-y-4">
+        {viewAsEmployeeId && (
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs font-bold text-[#09233d]">
+            <span>
+              Inspecting Individual Employee Dashboard for:{' '}
+              <strong className="text-[#10b981]">
+                {data?.employeeProfile?.name || 'Selected Employee'}
+              </strong>
+            </span>
+            <button
+              onClick={() => setViewAsEmployeeId(null)}
+              className="px-3 py-1.5 bg-[#072b1e] text-white rounded-xl hover:bg-[#0d3b2b] transition-colors"
+            >
+              <span className="inline-flex items-center gap-1.5"><Icon name="arrowLeft" className="w-3.5 h-3.5" /> Back to Overview</span>
+            </button>
+          </div>
+        )}
+        <EmployeeDashboardView
+          user={user}
+          data={data}
+          setActiveTab={setActiveTab}
+          reloadDashboard={loadDashboard}
+        />
+      </div>
     );
   }
 
@@ -137,21 +156,40 @@ export default function DashboardOverview({
 
     return (
       <div className="space-y-6">
-        {/* Show Individual Employee View if Selected, or Executive Company Overview */}
-        {viewAsEmployeeId ? (
-          <EmployeeDashboardView
-            user={user}
-            data={data}
-            setActiveTab={setActiveTab}
-            reloadDashboard={loadDashboard}
-          />
-        ) : (
-          <>
+        {/* Admin Employee Dashboard Inspector Bar */}
+        {employeeList.length > 0 && (
+          <div className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <span className="text-xs font-bold text-[#09233d] block">
+                Individual Employee Dashboard Viewer
+              </span>
+              <span className="text-[11px] text-gray-400">
+                Inspect live performance, donut charts, and trend analytics for any staff member
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) setViewAsEmployeeId(e.target.value);
+                }}
+                className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 focus:outline-hidden focus:ring-2 focus:ring-[#10b981]"
+              >
+                <option value="">-- Inspect Employee Dashboard --</option>
+                {employeeList.map((emp) => (
+                  <option key={emp._id} value={emp._id}>
+                    {emp.name} ({emp.username || emp.employeeId || 'Staff'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Active Projects Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="dashboard-section-hover bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Projects</span>
               <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#20b875] flex items-center justify-center font-bold text-sm">
@@ -166,7 +204,7 @@ export default function DashboardOverview({
                 onClick={() => setActiveTab('projects')}
                 className="text-xs font-bold text-[#20b875] hover:underline flex items-center gap-1"
               >
-                View All →
+                <span className="inline-flex items-center gap-1">View All <Icon name="arrowRight" className="w-3.5 h-3.5" /></span>
               </button>
             </div>
             <div className="w-full bg-gray-100 h-1.5 rounded-full mt-3 overflow-hidden">
@@ -175,7 +213,7 @@ export default function DashboardOverview({
           </div>
 
           {/* Total Teams & Staff Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="dashboard-section-hover bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Teams & Members</span>
               <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
@@ -199,7 +237,7 @@ export default function DashboardOverview({
           </div>
 
           {/* Projects At Risk Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="dashboard-section-hover bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Projects At Risk</span>
               <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm">
@@ -223,7 +261,7 @@ export default function DashboardOverview({
           </div>
 
           {/* Org Efficiency Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="dashboard-section-hover bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Org Efficiency</span>
               <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
@@ -250,7 +288,7 @@ export default function DashboardOverview({
         {/* Visual Graphical Analytics Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Chart 1: Project Status & Risk Allocation Donut Chart */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+          <div className="dashboard-section-hover bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
             <div className="flex justify-between items-center mb-4">
               <div>
                 <h2 className="text-base font-bold text-[#09233d]">Project Status & Risk Breakdown</h2>
@@ -309,7 +347,7 @@ export default function DashboardOverview({
           </div>
 
           {/* Chart 2: Resource Time Utilization Bar Graph */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+          <div className="dashboard-section-hover bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
             <div className="flex justify-between items-center mb-4">
               <div>
                 <h2 className="text-base font-bold text-[#09233d]">Resource Time Allocation Graph</h2>
@@ -383,7 +421,7 @@ export default function DashboardOverview({
         </div>
 
         {/* Live Project Lifecycle Progress Section */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="dashboard-section-hover bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-base font-bold text-[#09233d]">Live Project Lifecycle Progress</h2>
@@ -393,7 +431,7 @@ export default function DashboardOverview({
               onClick={() => setActiveTab('projects')}
               className="text-xs font-bold text-[#20b875] hover:underline"
             >
-              Manage Projects →
+              <span className="inline-flex items-center gap-1">Manage Projects <Icon name="arrowRight" className="w-3.5 h-3.5" /></span>
             </button>
           </div>
 
@@ -442,25 +480,25 @@ export default function DashboardOverview({
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="dashboard-section-hover bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Tasks</span>
             <p className="text-3xl font-black text-[#09233d] mt-2">{stats.totalTasks || 0}</p>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="dashboard-section-hover bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Pending Approvals</span>
             <p className="text-3xl font-black text-amber-600 mt-2">{stats.pendingReviewsCount || 0}</p>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="dashboard-section-hover bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">In Progress</span>
             <p className="text-3xl font-black text-blue-600 mt-2">{stats.inProgressCount || 0}</p>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="dashboard-section-hover bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Approved Tasks</span>
             <p className="text-3xl font-black text-emerald-600 mt-2">{stats.approvedCount || 0}</p>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="dashboard-section-hover bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <h2 className="text-base font-bold text-[#09233d] mb-4">Pending Task Review Queue</h2>
           {data?.pendingReviewQueue?.length === 0 ? (
             <p className="text-xs text-gray-500 py-4">No tasks waiting for review.</p>
@@ -476,7 +514,7 @@ export default function DashboardOverview({
                     onClick={() => setActiveTab('reviews')}
                     className="px-3 py-1.5 bg-[#20b875] text-white text-xs font-bold rounded-lg hover:bg-[#169e63]"
                   >
-                    Review Task →
+                    <span className="inline-flex items-center gap-1">Review Task <Icon name="arrowRight" className="w-3.5 h-3.5" /></span>
                   </button>
                 </div>
               ))}

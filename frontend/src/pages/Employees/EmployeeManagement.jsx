@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import Icon from '../../components/Icon';
 
 export default function EmployeeManagement({ currentUser }) {
   const [employees, setEmployees] = useState([]);
@@ -178,31 +179,21 @@ export default function EmployeeManagement({ currentUser }) {
                           onClick={() => setViewingEmployee(emp)}
                           className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          View
+                          <span className="inline-flex items-center gap-1"><Icon name="eye" className="w-3.5 h-3.5" /> View</span>
                         </button>
                         {(currentUser?.role === 'superior' || currentUser?.role === 'superadmin') && (
                           <button
                             onClick={() => setEditingEmployee({ ...emp })}
                             className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
                           >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Edit
+                            <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3.5 h-3.5" /> Edit</span>
                           </button>
                         )}
                         <button
                           onClick={() => viewPerformance(emp._id)}
                           className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[11px] font-bold border border-indigo-200 inline-flex items-center gap-1"
                         >
-                          <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Performance
+                          <span className="inline-flex items-center gap-1"><Icon name="award" className="w-3.5 h-3.5" /> Performance</span>
                         </button>
                         {(currentUser?.role === 'superior' || currentUser?.role === 'superadmin') && (
                           isInactive ? (
@@ -210,7 +201,7 @@ export default function EmployeeManagement({ currentUser }) {
                               onClick={() => toggleEmployeeStatus(emp)}
                               className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-[11px] font-bold border border-emerald-200"
                             >
-                              ✓ Activate
+                              <span className="inline-flex items-center gap-1"><Icon name="check" className="w-3.5 h-3.5" /> Activate</span>
                             </button>
                           ) : (
                             <button
@@ -314,7 +305,7 @@ export default function EmployeeManagement({ currentUser }) {
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-4">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-base font-bold text-[#09233d]">Employee Profile: {viewingEmployee.name}</h3>
-              <button onClick={() => setViewingEmployee(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setViewingEmployee(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600" aria-label="Close"><Icon name="close" className="w-4 h-4" /></button>
             </div>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b"><span className="text-gray-500 font-medium">Employee ID:</span><strong className="text-[#20b875]">{viewingEmployee.employeeId || 'N/A'}</strong></div>
@@ -414,7 +405,7 @@ export default function EmployeeManagement({ currentUser }) {
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-gray-100">
             <div className="flex justify-between items-center border-b pb-3 mb-4">
               <h3 className="text-base font-bold text-[#09233d]">Performance Profile: {selectedPerf.employee?.name}</h3>
-              <button onClick={() => setSelectedPerf(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setSelectedPerf(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600" aria-label="Close"><Icon name="close" className="w-4 h-4" /></button>
             </div>
             <div className="grid grid-cols-2 gap-3 text-xs mb-4">
               <div className="p-3 bg-emerald-50 rounded-xl">

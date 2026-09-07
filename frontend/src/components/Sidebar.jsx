@@ -1,11 +1,11 @@
-import React from 'react';
+import Icon from './Icon';
 
 export default function Sidebar({ activeTab, setActiveTab, user, onLogout }) {
   const menuItems = [
-    { id: 'dashboard', label: '📊 Dashboard' },
-    { id: 'users', label: '👤 User Creation' },
-    { id: 'create-task', label: '📝 Task Creation' },
-    { id: 'assignments', label: '📋 Task Assignments' }
+    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { id: 'users', label: 'User Creation', icon: 'user' },
+    { id: 'create-task', label: 'Task Creation', icon: 'edit' },
+    { id: 'assignments', label: 'Task Assignments', icon: 'dashboard' }
   ];
 
   return (
@@ -27,7 +27,10 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout }) {
                   : 'text-gray-300 hover:bg-[#133352] hover:text-white'
               }`}
             >
-              {item.label}
+              <span className="flex items-center gap-2">
+                <Icon name={item.icon} className="w-4 h-4 shrink-0" />
+                {item.label}
+              </span>
             </button>
           ))}
         </nav>
