@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { fetchApi } from '../../config/api';
+import AppIcon from '../../components/Icon';
 
 // SVG Icons helper
 const Icon = ({ name, className = 'w-4 h-4' }) => {
@@ -486,7 +487,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         {/* Card 1: My Tasks */}
         <div
           onClick={() => setActiveTab('time-tracker')}
-          className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
+          className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
         >
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#10b981]">
@@ -511,7 +512,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         {/* Card 2: Hours Logged */}
         <div
           onClick={() => setShowLogTimeModal(true)}
-          className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
+          className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
         >
           <div className="flex items-center gap-3.5 w-full mr-2">
             <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
@@ -548,7 +549,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         {/* Card 3: Projects Assigned */}
         <div
           onClick={() => setActiveTab('projects')}
-          className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
+          className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
         >
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
@@ -571,7 +572,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         {/* Card 4: My Performance Score */}
         <div
           onClick={() => setActiveTab('analytics')}
-          className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
+          className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
         >
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500">
@@ -594,7 +595,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         </div>
 
         {/* Card 5: Today */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3.5">
+        <div className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-600">
             <Icon name="calendar" className="w-5 h-5" />
           </div>
@@ -610,7 +611,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
       {/* 3. Middle Row: 3 Analytics Visual Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Chart 1: Task Status Overview (Donut Chart) */}
-        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="dashboard-section-hover lg:col-span-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
           <div className="flex items-center gap-2.5 mb-3">
             <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
               <Icon name="clock" className="w-4 h-4" />
@@ -644,7 +645,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         </div>
 
         {/* Chart 2: Task Completion Trend (Grouped Bar Graph) */}
-        <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="dashboard-section-hover lg:col-span-5 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
@@ -677,7 +678,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         </div>
 
         {/* Chart 3: Project-wise Task Count (Pie Chart) */}
-        <div className="lg:col-span-3 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="dashboard-section-hover lg:col-span-3 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
           <div className="flex items-center gap-2.5 mb-3">
             <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
               <Icon name="folder" className="w-4 h-4" />
@@ -713,7 +714,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
       {/* 4. Bottom Row: Recent Tasks, Upcoming Tasks, and Profile / Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column (5 Cols): My Recent Tasks */}
-        <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="dashboard-section-hover lg:col-span-5 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
@@ -800,7 +801,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         </div>
 
         {/* Middle Column (4 Cols): Upcoming Tasks */}
-        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="dashboard-section-hover lg:col-span-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -874,7 +875,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         {/* Right Column (3 Cols): Mini Profile Card & Quick Actions */}
         <div className="lg:col-span-3 space-y-4">
           {/* Employee Mini Profile Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm text-center flex flex-col items-center">
+          <div className="dashboard-section-hover bg-white p-5 rounded-2xl border border-gray-100 shadow-sm text-center flex flex-col items-center">
             {/* Avatar Circle */}
             <div className="w-14 h-14 rounded-full bg-[#072b1e] text-white flex items-center justify-center text-xl font-black shadow-md border-2 border-emerald-400 mb-2">
               {(profile.name || user?.name || 'V').charAt(0).toUpperCase()}
@@ -911,9 +912,9 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
           </div>
 
           {/* Quick Actions Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="dashboard-section-hover bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <h3 className="text-xs font-black text-[#09233d] uppercase tracking-wider mb-3 flex items-center gap-1.5">
-              <span className="text-amber-500">⚡</span> Quick Actions
+              <Icon name="bolt" className="w-3.5 h-3.5 text-amber-500" /> Quick Actions
             </h3>
 
             <div className="grid grid-cols-2 gap-2.5">
@@ -988,7 +989,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
                 onClick={() => setShowLogTimeModal(false)}
                 className="text-gray-400 hover:text-gray-600 font-bold text-lg"
               >
-                ✕
+                <AppIcon name="close" className="w-4 h-4" />
               </button>
             </div>
 
@@ -1076,14 +1077,14 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
                 }}
                 className="text-gray-400 hover:text-gray-600 font-bold text-lg"
               >
-                ✕
+                <AppIcon name="close" className="w-4 h-4" />
               </button>
             </div>
 
             {issueSubmitted ? (
               <div className="text-center py-6 space-y-3">
                 <div className="w-12 h-12 bg-emerald-100 text-[#10b981] rounded-full flex items-center justify-center mx-auto text-xl font-bold">
-                  ✓
+                  <AppIcon name="check" className="w-5 h-5" />
                 </div>
                 <p className="text-sm font-bold text-[#09233d]">Issue Submitted Successfully</p>
                 <p className="text-xs text-gray-500">
@@ -1162,7 +1163,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
                 onClick={() => setShowProfileModal(false)}
                 className="text-gray-400 hover:text-gray-600 font-bold text-lg"
               >
-                ✕
+                <AppIcon name="close" className="w-4 h-4" />
               </button>
             </div>
 

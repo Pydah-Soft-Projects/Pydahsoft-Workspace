@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import Icon from '../../components/Icon';
 
 const PrivilegeIcon = ({ icon, className = "w-3.5 h-3.5 text-[#20b875]" }) => {
   switch (icon) {
@@ -356,7 +357,7 @@ export default function UserManagement({ currentUser }) {
                       </td>
                       <td className="p-4">
                         <span className="px-2.5 py-1 bg-gray-100 text-gray-700 font-bold rounded-lg text-[10px]">
-                          🛡️ {activePermCount} / 11 Pages {isSuperAdmin ? '(Full Access)' : 'Allowed'}
+                          <span className="inline-flex items-center gap-1"><Icon name="shield" className="w-3.5 h-3.5" /> {activePermCount} / 11 Pages {isSuperAdmin ? '(Full Access)' : 'Allowed'}</span>
                         </span>
                       </td>
                       <td className="p-4">
@@ -371,7 +372,7 @@ export default function UserManagement({ currentUser }) {
                           onClick={() => setViewingUser(u)}
                           className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[11px] font-bold"
                         >
-                          👁️ View
+                          <span className="inline-flex items-center gap-1"><Icon name="eye" className="w-3.5 h-3.5" /> View</span>
                         </button>
 
                         {isManager && (
@@ -379,7 +380,7 @@ export default function UserManagement({ currentUser }) {
                             onClick={() => setEditingUser({ ...u })}
                             className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold"
                           >
-                            ✏️ Edit
+                            <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3.5 h-3.5" /> Edit</span>
                           </button>
                         )}
 
@@ -390,7 +391,7 @@ export default function UserManagement({ currentUser }) {
                           })}
                           className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[11px] font-bold border border-indigo-200"
                         >
-                          ⚙️ Page Privileges
+                          <span className="inline-flex items-center gap-1"><Icon name="settings" className="w-3.5 h-3.5" /> Page Privileges</span>
                         </button>
 
                         {isManager && !isSuperAdmin && (
@@ -399,7 +400,7 @@ export default function UserManagement({ currentUser }) {
                               onClick={() => handleToggleStatus(u)}
                               className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-[11px] font-bold border border-emerald-200"
                             >
-                              ✓ Activate
+                              <span className="inline-flex items-center gap-1"><Icon name="check" className="w-3.5 h-3.5" /> Activate</span>
                             </button>
                           ) : (
                             <button
@@ -429,12 +430,12 @@ export default function UserManagement({ currentUser }) {
                 <h3 className="text-base font-bold text-[#09233d]">Sidebar Page Access: {selectedUserPrivileges.name}</h3>
                 <p className="text-[11px] text-gray-500">Configure Read vs Write permission levels for @{selectedUserPrivileges.username}</p>
               </div>
-              <button onClick={() => setSelectedUserPrivileges(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setSelectedUserPrivileges(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600" aria-label="Close"><Icon name="close" className="w-4 h-4" /></button>
             </div>
 
             {selectedUserPrivileges.role === 'superadmin' ? (
               <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 font-semibold space-y-1">
-                <p className="font-bold">👑 Full SuperAdmin Access Enabled</p>
+                <p className="font-bold"><span className="inline-flex items-center gap-1"><Icon name="award" className="w-3.5 h-3.5" /> Full SuperAdmin Access Enabled</span></p>
                 <p className="text-[11px] text-amber-800">SuperAdmin accounts possess unrestricted Read & Write access to all system pages.</p>
               </div>
             ) : (
@@ -448,21 +449,21 @@ export default function UserManagement({ currentUser }) {
                       onClick={() => setBulkUserPermissions('read')}
                       className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200"
                     >
-                      👁️ Select All Read
+                      <span className="inline-flex items-center gap-1"><Icon name="eye" className="w-3.5 h-3.5" /> Select All Read</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setBulkUserPermissions('write')}
                       className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200"
                     >
-                      ✏️ Select All Write
+                      <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3.5 h-3.5" /> Select All Write</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setBulkUserPermissions('none')}
                       className="px-2.5 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[10px] font-bold"
                     >
-                      🚫 Clear All
+                      <span className="inline-flex items-center gap-1"><Icon name="close" className="w-3.5 h-3.5" /> Clear All</span>
                     </button>
                   </div>
                 </div>
@@ -542,7 +543,7 @@ export default function UserManagement({ currentUser }) {
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto space-y-4">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-base font-bold text-[#09233d]">Create Custom Role</h3>
-              <button onClick={() => setShowRoleModal(false)} className="text-xs font-bold text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setShowRoleModal(false)} className="text-xs font-bold text-gray-400 hover:text-gray-600" aria-label="Close"><Icon name="close" className="w-4 h-4" /></button>
             </div>
 
             <form onSubmit={handleCreateRole} className="space-y-3">
@@ -778,7 +779,7 @@ export default function UserManagement({ currentUser }) {
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-4">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-base font-bold text-[#09233d]">User Details: {viewingUser.name}</h3>
-              <button onClick={() => setViewingUser(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setViewingUser(null)} className="text-xs font-bold text-gray-400 hover:text-gray-600" aria-label="Close"><Icon name="close" className="w-4 h-4" /></button>
             </div>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b"><span className="text-gray-500 font-medium">Employee ID:</span><strong className="text-[#20b875]">{viewingUser.employeeId || 'N/A'}</strong></div>

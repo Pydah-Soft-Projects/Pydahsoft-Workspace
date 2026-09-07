@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import Icon from '../../components/Icon';
 
 export default function ModuleManagement({ currentUser }) {
   const [modules, setModules] = useState([]);
@@ -254,14 +255,14 @@ export default function ModuleManagement({ currentUser }) {
                                   }}
                                   className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg font-bold"
                                 >
-                                  🤝 Assign Team
+                                  <span className="inline-flex items-center gap-1"><Icon name="handshake" className="w-3.5 h-3.5" /> Assign Team</span>
                                 </button>
                                 <button
                                   onClick={() => handleDeleteModule(mod._id)}
                                   className="px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg font-bold border border-red-100"
                                   title="Remove Module"
                                 >
-                                  🗑️ Remove
+                                  <span className="inline-flex items-center gap-1"><Icon name="trash" className="w-3.5 h-3.5" /> Remove</span>
                                 </button>
                               </div>
                             )}

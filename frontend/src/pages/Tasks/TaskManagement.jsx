@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import Icon from '../../components/Icon';
 
 export default function TaskManagement({ currentUser }) {
   const [tasks, setTasks] = useState([]);
@@ -220,7 +221,7 @@ export default function TaskManagement({ currentUser }) {
                           }}
                           className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[11px] font-bold border border-indigo-200"
                         >
-                          🔄 Re-assign
+                          <span className="inline-flex items-center gap-1"><Icon name="activity" className="w-3.5 h-3.5" /> Re-assign</span>
                         </button>
                       )}
 

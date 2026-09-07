@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import Icon from '../../components/Icon';
 
 export default function TaskReviewQueue({ currentUser }) {
   const [pendingTasks, setPendingTasks] = useState([]);
@@ -67,7 +68,7 @@ export default function TaskReviewQueue({ currentUser }) {
         <div className="p-8 text-center text-xs font-semibold text-gray-500">Loading pending reviews...</div>
       ) : pendingTasks.length === 0 ? (
         <div className="bg-white p-8 rounded-2xl border border-gray-100 text-center text-xs font-semibold text-gray-500">
-          🎉 No pending tasks waiting for approval in the review queue.
+          <span className="inline-flex items-center gap-1.5"><Icon name="check" className="w-4 h-4" /> No pending tasks waiting for approval in the review queue.</span>
         </div>
       ) : (
         <div className="space-y-4">
@@ -96,13 +97,13 @@ export default function TaskReviewQueue({ currentUser }) {
                   onClick={() => setRejectModalTask(task)}
                   className="px-4 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl text-xs font-bold transition-all border border-rose-200"
                 >
-                  ✕ Reject for Rework
+                  <span className="inline-flex items-center gap-1"><Icon name="close" className="w-3.5 h-3.5" /> Reject for Rework</span>
                 </button>
                 <button
                   onClick={() => handleApprove(task._id)}
                   className="px-4 py-2 bg-[#20b875] text-white hover:bg-[#169e63] rounded-xl text-xs font-bold shadow-md transition-all"
                 >
-                  ✓ Approve & Roll-Up Progress
+                  <span className="inline-flex items-center gap-1"><Icon name="check" className="w-3.5 h-3.5" /> Approve & Roll-Up Progress</span>
                 </button>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import Icon from '../../components/Icon';
 
 export default function ReportGenerator({ currentUser }) {
   const [projects, setProjects] = useState([]);
@@ -84,7 +85,7 @@ export default function ReportGenerator({ currentUser }) {
       <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
         <div className="flex justify-between items-center border-b pb-3 border-gray-100">
           <h3 className="text-sm font-bold text-[#09233d] uppercase tracking-wider flex items-center gap-2">
-            <span>📊</span> Filter-Driven Performance Report Generator
+            <Icon name="dashboard" className="w-4 h-4" /> Filter-Driven Performance Report Generator
           </h3>
           <button
             onClick={handleResetFilters}
@@ -181,7 +182,7 @@ export default function ReportGenerator({ currentUser }) {
               disabled={loading}
               className="px-6 py-2.5 bg-[#20b875] hover:bg-[#169e63] text-white font-bold rounded-xl text-xs shadow-md transition-all disabled:opacity-60 flex items-center gap-2"
             >
-              {loading ? 'Generating Report...' : '🔍 Generate Filtered Report'}
+              {loading ? 'Generating Report...' : <><Icon name="search" className="w-3.5 h-3.5" /> Generate Filtered Report</>}
             </button>
           </div>
         </form>
@@ -205,7 +206,7 @@ export default function ReportGenerator({ currentUser }) {
               onClick={() => window.print()}
               className="px-4 py-2 bg-gray-900 hover:bg-black text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2"
             >
-              🖨️ Print / Save PDF
+              <Icon name="printer" className="w-3.5 h-3.5" /> Print / Save PDF
             </button>
           </div>
 

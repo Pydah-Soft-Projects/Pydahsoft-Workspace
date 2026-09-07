@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import Icon from '../../components/Icon';
 
 export const formatTrackedTime = (hours) => {
   const h = Number(hours) || 0;
@@ -156,7 +157,7 @@ export default function TimeTracker({ currentUser }) {
                   <div className="flex justify-between items-center pt-2">
                     {isApproved ? (
                       <div className="w-full flex justify-between items-center bg-emerald-50 px-3 py-2 rounded-xl text-emerald-800 font-bold text-xs">
-                        <span>✓ Task Approved & Completed</span>
+                        <span className="inline-flex items-center gap-1"><Icon name="check" className="w-3.5 h-3.5" /> Task Approved & Completed</span>
                         <span className="text-[10px] bg-emerald-200 px-2 py-0.5 rounded text-emerald-900 font-bold">Closed</span>
                       </div>
                     ) : isSubmitted ? (
@@ -169,7 +170,7 @@ export default function TimeTracker({ currentUser }) {
                         onClick={() => handleEndTimer(task._id)}
                         className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5"
                       >
-                        🛑 End Time & Calculate Duration
+                        <span className="inline-flex items-center gap-1.5"><Icon name="stop" className="w-3.5 h-3.5" /> End Time & Calculate Duration</span>
                       </button>
                     ) : act > 0 ? (
                       /* Step 3: End Time recorded (act > 0) -> Show Submit for Review button */
@@ -178,13 +179,13 @@ export default function TimeTracker({ currentUser }) {
                           onClick={() => handleStartTimer(task._id)}
                           className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold"
                         >
-                          ▶ Restart Time
+                          <span className="inline-flex items-center gap-1"><Icon name="arrowRight" className="w-3.5 h-3.5" /> Restart Time</span>
                         </button>
                         <button
                           onClick={() => setSelectedTask(task)}
                           className="flex-1 py-2 bg-[#20b875] hover:bg-[#169e63] text-white rounded-xl text-xs font-bold shadow-md transition-all text-center"
                         >
-                          Submit for Review →
+                          <span className="inline-flex items-center gap-1">Submit for Review <Icon name="arrowRight" className="w-3.5 h-3.5" /></span>
                         </button>
                       </div>
                     ) : (
@@ -193,7 +194,7 @@ export default function TimeTracker({ currentUser }) {
                         onClick={() => handleStartTimer(task._id)}
                         className="w-full py-2.5 bg-[#20b875] hover:bg-[#169e63] text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5"
                       >
-                        ▶ Start Time
+                        <span className="inline-flex items-center gap-1.5"><Icon name="arrowRight" className="w-3.5 h-3.5" /> Start Time</span>
                       </button>
                     )}
                   </div>
