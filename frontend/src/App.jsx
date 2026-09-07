@@ -257,9 +257,16 @@ function DashboardLayout({ user, onLogout }) {
               </p>
             </div>
           ) : (
-            <h1 className="text-lg font-black text-[#09233d]">
-              {getTabTitle(activeTab)}
-            </h1>
+            <div>
+              <h1 className="text-lg font-black text-[#09233d]">
+                {getTabTitle(activeTab)}
+              </h1>
+              {activeTab === 'audit-logs' && (
+                <p className="text-xs text-gray-500 font-medium mt-0.5">
+                  Track every change made across the platform.
+                </p>
+              )}
+            </div>
           )}
 
           {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
