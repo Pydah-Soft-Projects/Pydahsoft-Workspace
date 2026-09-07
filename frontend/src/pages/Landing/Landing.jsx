@@ -2,39 +2,49 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const presenterImg = '/project_leadership_presenter.png';
+const aboutImg = '/about_collaboration.jpg';
+const servicesImg = '/services_analytics.jpg';
 
 export default function Landing({ user }) {
   const navigate = useNavigate();
   const canvasRef = useRef(null);
   const [processedImg, setProcessedImg] = useState(null);
+  const [processedAboutImg, setProcessedAboutImg] = useState(null);
+  const [processedServicesImg, setProcessedServicesImg] = useState(null);
 
   useEffect(() => {
-    const img = new Image();
-    img.src = presenterImg;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
+    function processImage(src, setter) {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
 
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imgData.data;
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
 
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
 
-        // Make solid white background pixels 100% transparent
-        if (r > 235 && g > 235 && b > 235) {
-          data[i + 3] = 0;
+          // Make solid white background pixels 100% transparent
+          if (r > 230 && g > 230 && b > 230) {
+            data[i + 3] = 0;
+          }
         }
-      }
 
-      ctx.putImageData(imgData, 0, 0);
-      setProcessedImg(canvas.toDataURL('image/png'));
-    };
+        ctx.putImageData(imgData, 0, 0);
+        setter(canvas.toDataURL('image/png'));
+      };
+    }
+
+    processImage(presenterImg, setProcessedImg);
+    processImage(aboutImg, setProcessedAboutImg);
+    processImage(servicesImg, setProcessedServicesImg);
   }, []);
 
   useEffect(() => {
@@ -221,18 +231,15 @@ export default function Landing({ user }) {
           </div>
 
           {/* Seamless Transparent Executive Presenter & Holographic Flowchart */}
-          <div className="relative min-h-[500px] animate-[fade-up_900ms_150ms_ease-out_both] sm:min-h-[560px] flex items-center justify-center hero-card-3d-wrapper">
-            {/* Ambient Holographic Glow */}
-            <div className="absolute right-0 top-0 h-full w-full rounded-[2.5rem] bg-gradient-to-tr from-[#20b875]/25 via-[#3fb884]/15 to-transparent blur-3xl animate-pulse pointer-events-none" />
-
+          <div className="relative min-h-[500px] animate-[fade-up_900ms_150ms_ease-out_both] sm:min-h-[560px] flex items-center justify-center">
             {/* Completely Transparent Container (No card background, No borders) */}
-            <div className="relative w-full bg-transparent p-0 hero-card-3d">
+            <div className="relative w-full bg-transparent p-0">
               {/* Seamless Transparent Presenter & Flowchart Image */}
-              <div className="relative overflow-visible group flex justify-center">
+              <div className="relative overflow-visible flex justify-center">
                 <img
                   src={processedImg || presenterImg}
                   alt="Executive Presenter & Holographic Architecture Flowchart"
-                  className="w-full h-auto max-h-[520px] object-contain transition-transform duration-700 group-hover:scale-[1.02] drop-shadow-[0_20px_40px_rgba(20,154,97,0.25)]"
+                  className="w-full h-auto max-h-[520px] object-contain drop-shadow-[0_20px_40px_rgba(20,154,97,0.2)]"
                 />
               </div>
             </div>
@@ -259,55 +266,275 @@ export default function Landing({ user }) {
         </div>
       </div>
 
+      {/* Expanded About Section with Seamless Transparent Illustration */}
       <section id="about" className="border-y border-[#dfeee6] bg-[#edf9f2]/40 backdrop-blur-xs">
-        <div className="mx-auto grid max-w-7xl gap-8 px-6 py-16 lg:grid-cols-[0.8fr_1.2fr] lg:px-10 lg:py-24">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:px-10 lg:py-24">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#169a61]">About the platform</p>
-            <h2 className="mt-4 max-w-md text-4xl font-black leading-tight tracking-[-0.05em]">One clear chain of accountability.</h2>
+            <h2 className="mt-4 max-w-md text-4xl font-black leading-tight tracking-[-0.05em] text-[#09233d]">
+              One unbroken chain of accountability.
+            </h2>
+            <p className="mt-4 text-sm font-semibold text-[#119b62]">
+              Superior → Project → Team → Team Lead → Members → Daily Tasks → Time Tracking → Performance
+            </p>
+            <div className="mt-6 space-y-4 text-base leading-8 text-[#61798a]">
+              <p>
+                The <strong>Employee Project, Task &amp; Performance Management System (EPTPMS)</strong> is designed to manage a company&apos;s projects across their complete lifecycle — from initial project creation by Superiors, through module breakdown and team assignment, down to daily execution, real-time time tracking, and comprehensive performance analytics.
+              </p>
+              <p>
+                Unlike traditional task trackers, EPTPMS preserves a strict, traceable hierarchy where every single hour logged and task completed directly feeds into team efficiency metrics and employee performance scores.
+              </p>
+            </div>
           </div>
-          <p className="max-w-2xl text-lg leading-8 text-[#61798a]">
-            The Employee Project, Task & Performance Management System connects every stage of work: a Superior assigns the project, Team Leads shape modules and tasks, and Employees track time, submit work, and build a reliable performance history.
-          </p>
+
+          {/* Seamless Transparent About Section Illustration */}
+          <div className="relative flex items-center justify-center">
+            <img
+              src={processedAboutImg || aboutImg}
+              alt="Team Project Collaboration & Workflow Illustration"
+              className="w-full h-auto max-h-[440px] object-contain drop-shadow-[0_20px_40px_rgba(20,154,97,0.2)] transition-transform duration-700 hover:scale-[1.02]"
+            />
+          </div>
         </div>
-        <div className="mx-auto grid max-w-7xl gap-4 px-6 pb-16 sm:grid-cols-3 lg:px-10 lg:pb-24">
-          <div className="border-t border-[#b9dfc8] pt-4">
-            <p className="text-sm font-bold text-[#09233d]">Traceable by design</p>
-            <p className="mt-2 text-sm leading-6 text-[#61798a]">Follow decisions, work, time, and outcomes through one connected record.</p>
+
+        {/* 4 Feature Columns for About with Vector SVG Icons & Interactive Hover */}
+        <div className="mx-auto grid max-w-7xl gap-6 px-6 pb-16 sm:grid-cols-2 lg:grid-cols-4 lg:px-10 lg:pb-24">
+          <div className="group rounded-2xl border border-[#b9dfc8] bg-white p-6 shadow-xs transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_16px_36px_rgba(32,184,117,0.2)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
+              <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <h3 className="mt-4 text-base font-bold text-[#09233d]">Superior / Manager Scope</h3>
+            <p className="mt-2 text-xs leading-6 text-[#61798a]">
+              Full organizational visibility. Define projects, assign teams and Team Leads, monitor live project health, track company-wide time utilization, and generate executive performance reports.
+            </p>
           </div>
-          <div className="border-t border-[#b9dfc8] pt-4">
-            <p className="text-sm font-bold text-[#09233d]">Built for every role</p>
-            <p className="mt-2 text-sm leading-6 text-[#61798a]">Give leaders oversight while keeping each employee focused on the work ahead.</p>
+
+          <div className="group rounded-2xl border border-[#b9dfc8] bg-white p-6 shadow-xs transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_16px_36px_rgba(32,184,117,0.2)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
+              <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 className="mt-4 text-base font-bold text-[#09233d]">Team Lead Delegation</h3>
+            <p className="mt-2 text-xs leading-6 text-[#61798a]">
+              Break high-level projects into structured modules, prepare daily work plans, assign tasks to members, manage sprint timelines, and approve or reject completed task submissions.
+            </p>
           </div>
-          <div className="border-t border-[#b9dfc8] pt-4">
-            <p className="text-sm font-bold text-[#09233d]">Ready for better decisions</p>
-            <p className="mt-2 text-sm leading-6 text-[#61798a]">Turn task and time data into clear progress, useful feedback, and fair performance insight.</p>
+
+          <div className="group rounded-2xl border border-[#b9dfc8] bg-white p-6 shadow-xs transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_16px_36px_rgba(32,184,117,0.2)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
+              <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="mt-4 text-base font-bold text-[#09233d]">Employee Daily Execution</h3>
+            <p className="mt-2 text-xs leading-6 text-[#61798a]">
+              Clear, focused daily view of assigned work. Track active hours with an integrated stopwatch, log completion remarks and work evidence, and submit tasks for review smoothly.
+            </p>
+          </div>
+
+          <div className="group rounded-2xl border border-[#b9dfc8] bg-white p-6 shadow-xs transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_16px_36px_rgba(32,184,117,0.2)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
+              <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 className="mt-4 text-base font-bold text-[#09233d]">Immutable Audit Trail</h3>
+            <p className="mt-2 text-xs leading-6 text-[#61798a]">
+              Every system action, status change, deadline revision, and time log is recorded in full audit logs, ensuring complete transparency and zero data ambiguity.
+            </p>
           </div>
         </div>
       </section>
 
-      <section id="services" className="border-y border-[#dfeee6] bg-white/40 backdrop-blur-xs">
-        <div className="mx-auto grid max-w-7xl gap-8 px-6 py-16 sm:grid-cols-2 lg:grid-cols-[0.7fr_1.3fr] lg:px-10 lg:py-24">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#169a61]">Core services</p>
-            <h2 className="mt-3 max-w-xs text-3xl font-black leading-tight tracking-[-0.04em]">Everything your projects need to move.</h2>
-            <p className="mt-4 max-w-sm text-sm leading-6 text-[#708794]">A practical operating layer for planning work, managing people, and learning from delivery.</p>
+      {/* Expanded Services Section with Seamless Transparent Analytics Illustration */}
+      <section id="services" className="border-y border-[#dfeee6] bg-white/60 backdrop-blur-xs">
+        <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-24">
+          <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#169a61]">Core services &amp; Capabilities</p>
+              <h2 className="mt-3 max-w-lg text-4xl font-black leading-tight tracking-[-0.04em] text-[#09233d]">
+                Everything your organization needs to execute efficiently.
+              </h2>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-[#708794]">
+                A complete operational platform combining project management, daily task workflows, precise time tracking, and automated performance analytics.
+              </p>
+            </div>
+
+            {/* Seamless Transparent Services Section Illustration */}
+            <div className="relative flex items-center justify-center">
+              <img
+                src={processedServicesImg || servicesImg}
+                alt="Time Tracking & Performance Analytics Illustration"
+                className="w-full h-auto max-h-[380px] object-contain drop-shadow-[0_20px_40px_rgba(20,154,97,0.2)] transition-transform duration-700 hover:scale-[1.02]"
+              />
+            </div>
           </div>
-          <div className="grid gap-x-8 gap-y-8 sm:grid-cols-2">
-            <div className="border-t border-[#dfeee6] pt-4">
-              <p className="text-sm font-bold text-[#09233d]">01 / Project & team management</p>
-              <p className="mt-2 text-sm leading-6 text-[#708794]">Assign projects, form teams, choose leads, and follow progress from one view.</p>
+
+          {/* 6 Core Service Pillars Grid */}
+          <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Card 1 */}
+            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
+              <div className="flex items-center justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
+                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">01 / GOVERNANCE</span>
+              </div>
+              <h3 className="mt-5 text-xl font-black text-[#09233d]">Enterprise Project Governance</h3>
+              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
+                Empower your executive leadership with complete 360° portfolio oversight. Define strategic deliverables, build cross-functional teams, and delegate Team Leads effortlessly.
+              </p>
+              <div className="mt-5 space-y-2">
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Multi-project portfolio steering
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Team &amp; Lead role assignment
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Company-wide directory integration
+                </div>
+              </div>
             </div>
-            <div className="border-t border-[#dfeee6] pt-4">
-              <p className="text-sm font-bold text-[#09233d]">02 / Modules & daily planning</p>
-              <p className="mt-2 text-sm leading-6 text-[#708794]">Break ambitious goals into manageable modules and clear daily work plans.</p>
+
+            {/* Card 2 */}
+            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
+              <div className="flex items-center justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
+                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                </div>
+                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">02 / WORKFLOWS</span>
+              </div>
+              <h3 className="mt-5 text-xl font-black text-[#09233d]">Agile Modules &amp; Daily Plans</h3>
+              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
+                Break high-level goals into milestone modules and targeted daily work plans. Keep every developer and manager focused on top-priority sprint deliverables.
+              </p>
+              <div className="mt-5 space-y-2">
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Milestone module decomposition
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Automated daily plan distribution
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Priority &amp; deadline optimization
+                </div>
+              </div>
             </div>
-            <div className="border-t border-[#dfeee6] pt-4">
-              <p className="text-sm font-bold text-[#09233d]">03 / Tasks & time tracking</p>
-              <p className="mt-2 text-sm leading-6 text-[#708794]">Capture ownership, deadlines, remarks, evidence, and the actual time spent.</p>
+
+            {/* Card 3 */}
+            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
+              <div className="flex items-center justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
+                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">03 / TRACKING</span>
+              </div>
+              <h3 className="mt-5 text-xl font-black text-[#09233d]">Precision Time &amp; Task Engine</h3>
+              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
+                Eliminate time leakage with real-time tracking. Employees log active hours using an integrated stopwatch, attach work evidence, and submit progress logs seamlessly.
+              </p>
+              <div className="mt-5 space-y-2">
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Live stopwatch &amp; manual timer
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Verifiable proof &amp; URL attachments
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Estimated vs. actual hour tracking
+                </div>
+              </div>
             </div>
-            <div className="border-t border-[#dfeee6] pt-4">
-              <p className="text-sm font-bold text-[#09233d]">04 / Reviews & performance</p>
-              <p className="mt-2 text-sm leading-6 text-[#708794]">Approve work, surface blockers, and turn delivery history into useful KPIs.</p>
+
+            {/* Card 4 */}
+            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
+              <div className="flex items-center justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
+                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                </div>
+                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">04 / QUALITY</span>
+              </div>
+              <h3 className="mt-5 text-xl font-black text-[#09233d]">Quality &amp; Review Queue</h3>
+              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
+                Enforce uncompromising quality standards. Team Leads review daily submissions, provide instant feedback, approve top-tier work, or trigger rapid rework loops.
+              </p>
+              <div className="mt-5 space-y-2">
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Multi-tier quality verification
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Instant feedback &amp; rework loops
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Rating &amp; quality score logging
+                </div>
+              </div>
+            </div>
+
+            {/* Card 5 */}
+            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
+              <div className="flex items-center justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
+                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">05 / ANALYTICS</span>
+              </div>
+              <h3 className="mt-5 text-xl font-black text-[#09233d]">Performance &amp; KPI Insights</h3>
+              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
+                Transform raw execution data into clear executive insights. Track on-time delivery rates, employee efficiency percentages, and sprint velocities seamlessly.
+              </p>
+              <div className="mt-5 space-y-2">
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Employee productivity metrics
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Velocity &amp; bottleneck detection
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Instant executive report exports
+                </div>
+              </div>
+            </div>
+
+            {/* Card 6 */}
+            <div className="group relative rounded-2xl border border-[#dfeee6] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:bg-[#eaf8f0] hover:border-[#20b875] hover:shadow-[0_20px_40px_rgba(32,184,117,0.18)]">
+              <div className="flex items-center justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#20b875]/10 transition-colors duration-300 group-hover:bg-[#20b875]">
+                  <svg className="w-5 h-5 text-[#169a61] transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <span className="rounded-full bg-[#20b875]/10 px-3 py-1 text-[10px] font-extrabold tracking-wider text-[#169a61] uppercase">06 / SECURITY</span>
+              </div>
+              <h3 className="mt-5 text-xl font-black text-[#09233d]">Enterprise Security &amp; Audit</h3>
+              <p className="mt-2.5 text-xs leading-6 text-[#61798a]">
+                Protect enterprise assets with strict Role-Based Access Control (RBAC). Maintain an unbroken, tamper-proof historical log of every system action across your organization.
+              </p>
+              <div className="mt-5 space-y-2">
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Strict Role-Based Access Control
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> Complete activity audit records
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#20b875]/5 px-3 py-2 text-xs font-semibold text-[#09233d] border border-[#20b875]/15">
+                  <span className="text-[#20b875] font-black">✓</span> JWT authentication &amp; session security
+                </div>
+              </div>
             </div>
           </div>
         </div>
