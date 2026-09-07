@@ -100,12 +100,6 @@ function DashboardLayout({ user, onLogout }) {
               <span className="w-1.5 h-1.5 rounded-full bg-[#20b875]" />
               User: <strong className="text-[#20b875]">{user.name}</strong> ({user.role?.toUpperCase()})
             </span>
-            <Link
-              to="/"
-              className="border border-gray-200 bg-white hover:bg-gray-50 font-bold px-3 py-1.5 rounded-xl text-gray-700 transition-colors flex items-center gap-1.5 shadow-2xs"
-            >
-              Landing Page
-            </Link>
           </div>
         </header>
 
