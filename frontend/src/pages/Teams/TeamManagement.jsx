@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import Icon from '../../components/Icon';
 
 export default function TeamManagement({ currentUser }) {
   const [teams, setTeams] = useState([]);
@@ -137,13 +138,13 @@ export default function TeamManagement({ currentUser }) {
                         onClick={() => setEditingTeam({ ...team })}
                         className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold"
                       >
-                        ✏️ Edit Team
+                        <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3.5 h-3.5" /> Edit Team</span>
                       </button>
                       <button
                         onClick={() => handleDeleteTeam(team._id, team.name)}
                         className="px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-[11px] font-bold"
                       >
-                        🗑️
+                        <Icon name="trash" className="w-3.5 h-3.5" />
                       </button>
                     </>
                   )}

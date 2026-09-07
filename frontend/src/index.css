@@ -13,6 +13,14 @@ body {
   margin: 0;
 }
 
+.dashboard-section-hover {
+  transition: background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.dashboard-section-hover:hover {
+  background-color: #dff7e9;
+}
+
 #root {
   min-height: 100svh;
 }
