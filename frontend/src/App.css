@@ -21,6 +21,87 @@ html {
   scroll-behavior: smooth;
 }
 
+.loader-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(247, 252, 249, 0.76);
+}
+
+.loader-screen > div {
+  padding: 24px;
+}
+
+.loader-orbit {
+  position: relative;
+  width: 168px;
+  height: 168px;
+}
+
+.loader-orbit--sm {
+  transform: scale(0.75);
+}
+
+.loader-orbit--lg {
+  transform: scale(1.35);
+}
+
+.loader-assembly {
+  position: absolute;
+  inset: 0;
+  transform-origin: center;
+  animation: loader-assembly-turn 1.5s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  will-change: transform;
+}
+
+/* Keep the blocks visually independent while they repeatedly assemble around the center. */
+.loader-block {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 26px;
+  height: 26px;
+  margin: -13px;
+  border-radius: 2px;
+  background: #0b3d2e;
+  box-shadow: 0 0 12px rgba(11, 61, 46, 0.35);
+  will-change: transform, opacity;
+  animation: loader-block-assemble 1.5s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation-delay: var(--block-delay);
+}
+
+.loader-block--1 { --target-x: -14px; --target-y: -14px; --start-x: -150px; --start-y: -60px; --block-delay: 0s; }
+.loader-block--2 { --target-x: 14px; --target-y: -14px; --start-x: 150px; --start-y: -60px; --block-delay: 0.07s; }
+.loader-block--3 { --target-x: -14px; --target-y: 14px; --start-x: -150px; --start-y: 60px; --block-delay: 0.14s; }
+.loader-block--4 { --target-x: 14px; --target-y: 14px; --start-x: 150px; --start-y: 60px; --block-delay: 0.21s; }
+
+@keyframes loader-block-assemble {
+  0%, 8% {
+    opacity: 0.72;
+    transform: translate(var(--start-x), var(--start-y)) scale(0.42) rotate(90deg);
+  }
+  38%, 68% {
+    opacity: 1;
+    transform: translate(var(--target-x), var(--target-y)) scale(1) rotate(0deg);
+  }
+  70%, 100% {
+    opacity: 0.72;
+    transform: translate(var(--start-x), var(--start-y)) scale(0.42) rotate(90deg);
+  }
+}
+
+@keyframes loader-assembly-turn {
+  0%, 55% {
+    transform: rotate(0deg);
+  }
+  68%, 100% {
+    transform: rotate(90deg);
+  }
+}
+
 /* Scroll-Triggered Reveal & Transition Animations */
 .reveal-on-scroll {
   opacity: 0;

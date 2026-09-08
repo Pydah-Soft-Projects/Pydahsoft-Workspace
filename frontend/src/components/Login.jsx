@@ -4,11 +4,7 @@ import Icon from './Icon';
 
 export default function Login({ onBack, onLoginSuccess }) {
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-
+          if (onLoginSuccess) onLoginSuccess(mockUser);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -32,11 +28,7 @@ export default function Login({ onBack, onLoginSuccess }) {
           sessionStorage.setItem('pydahsoft_token', data.data.token);
           sessionStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
         }
-        setTimeout(() => {
-          if (onLoginSuccess) {
-            onLoginSuccess(data.data);
-          }
-        }, 1000);
+        if (onLoginSuccess) onLoginSuccess(data.data);
       } else {
         // Handle mock fallback for demo if backend server isn't running on port 5000
         if (username === 'superadmin' && password === 'superadmin123') {
