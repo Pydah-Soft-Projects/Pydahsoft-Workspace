@@ -21,7 +21,7 @@ const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
 
 // Fast loading spinner fallback
 const PageLoader = () => (
-  <div className="p-8 text-center text-xs font-semibold text-gray-400 animate-pulse">
+  <div className="min-h-[calc(100vh-8rem)] p-8 text-center text-xs font-semibold text-gray-400 animate-pulse">
     Loading page view...
   </div>
 );
@@ -403,7 +403,9 @@ function DashboardLayout({ user, onLogout }) {
 
 function App() {
   const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem('pydahsoft_user');
+    localStorage.removeItem('pydahsoft_user');
+    localStorage.removeItem('pydahsoft_token');
+    const storedUser = sessionStorage.getItem('pydahsoft_user');
     if (storedUser) {
       try {
         return JSON.parse(storedUser);
@@ -415,11 +417,17 @@ function App() {
   });
 
   const handleLogout = () => {
-    localStorage.removeItem('pydahsoft_user');
-    localStorage.removeItem('pydahsoft_token');
+    sessionStorage.removeItem('pydahsoft_user');
+    sessionStorage.removeItem('pydahsoft_token');
     localStorage.removeItem('pydahsoft_active_tab');
     setUser(null);
   };
+
+  useEffect(() => {
+    const handleSessionExpired = () => setUser(null);
+    window.addEventListener('pydahsoft:session-expired', handleSessionExpired);
+    return () => window.removeEventListener('pydahsoft:session-expired', handleSessionExpired);
+  }, []);
 
   return (
     <Routes>
