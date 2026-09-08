@@ -925,10 +925,6 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
                 <Icon name="team" className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 <span className="text-[11px] font-medium">{profile.department || 'Engineering Team'}</span>
               </div>
-              <div className="flex items-center gap-2.5">
-                <Icon name="location" className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                <span className="text-[11px] font-medium">{profile.location || 'Hyderabad, India'}</span>
-              </div>
             </div>
 
             <button
@@ -1222,10 +1218,6 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400 font-medium">Department:</span>
                 <span className="font-bold text-[#09233d]">{profile.department || 'Engineering Team'}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-gray-50">
-                <span className="text-gray-400 font-medium">Location:</span>
-                <span className="font-bold text-[#09233d]">{profile.location || 'Hyderabad, India'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400 font-medium">Joining Date:</span>
