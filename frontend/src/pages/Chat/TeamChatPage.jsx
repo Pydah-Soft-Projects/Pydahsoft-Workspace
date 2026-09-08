@@ -119,11 +119,11 @@ export default function TeamChatPage({ currentUser }) {
 
     const role = (emp.role || 'employee').toLowerCase();
     if (roleFilter === 'admin') {
-      return matchesSearch && (role === 'superadmin' || role === 'admin');
+      return matchesSearch && (role.includes('admin') || role.includes('super'));
     } else if (roleFilter === 'lead') {
-      return matchesSearch && (role === 'superior' || role === 'teamlead');
+      return matchesSearch && (role.includes('superior') || role.includes('lead') || role.includes('manager'));
     } else if (roleFilter === 'employee') {
-      return matchesSearch && role === 'employee';
+      return matchesSearch && (role.includes('employee') || role === 'staff' || role === '' || (!role.includes('admin') && !role.includes('super') && !role.includes('lead')));
     }
     return matchesSearch;
   });
@@ -154,17 +154,19 @@ export default function TeamChatPage({ currentUser }) {
             onClick={() => setSelectedRecipient({ type: 'all', data: null })}
             className={`w-full p-3 rounded-xl font-bold text-xs text-left transition-all flex items-center justify-between cursor-pointer ${
               selectedRecipient.type === 'all'
-                ? 'bg-[#09233d] text-white shadow-md'
-                : 'bg-white text-gray-700 hover:bg-emerald-50 border border-gray-200'
+                ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
+                : 'bg-white text-gray-700 hover:bg-emerald-50/50 border border-gray-200'
             }`}
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-[#20b875] text-white flex items-center justify-center font-bold text-sm shrink-0">
-                📢
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                </svg>
               </div>
               <div>
-                <span className="block font-black text-xs">Everyone (Company Broadcast)</span>
-                <span className={`block text-[10px] font-medium ${selectedRecipient.type === 'all' ? 'text-emerald-300' : 'text-gray-400'}`}>
+                <span className="block font-black text-xs text-[#09233d]">Everyone (Company Broadcast)</span>
+                <span className="block text-[10px] font-medium text-gray-500">
                   Public All-Staff Announcements
                 </span>
               </div>
@@ -194,15 +196,17 @@ export default function TeamChatPage({ currentUser }) {
                     onClick={() => setSelectedRecipient({ type: 'team', data: team })}
                     className={`w-full p-2 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                       isSelected
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white hover:bg-blue-50 text-[#09233d] border border-gray-100'
+                        ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
+                        : 'bg-white hover:bg-emerald-50/50 text-[#09233d] border border-gray-100'
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate">
-                      <span className="text-xs">👥</span>
-                      <span className="truncate text-xs font-bold">{team.name}</span>
+                      <svg className="w-4 h-4 shrink-0 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      <span className="truncate text-xs font-bold text-[#09233d]">{team.name}</span>
                     </div>
-                    <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md ${isSelected ? 'bg-blue-800 text-white' : 'bg-blue-50 text-blue-600'}`}>
+                    <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-md bg-emerald-100 text-[#20b875]">
                       Team
                     </span>
                   </button>
@@ -219,7 +223,7 @@ export default function TeamChatPage({ currentUser }) {
             onClick={() => setRoleFilter('all')}
             className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
               roleFilter === 'all'
-                ? 'bg-[#09233d] text-white shadow-2xs'
+                ? 'bg-[#20b875] text-white shadow-2xs'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
             }`}
           >
@@ -252,7 +256,7 @@ export default function TeamChatPage({ currentUser }) {
             onClick={() => setRoleFilter('employee')}
             className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
               roleFilter === 'employee'
-                ? 'bg-emerald-600 text-white shadow-2xs'
+                ? 'bg-[#20b875] text-white shadow-2xs'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
             }`}
           >
@@ -295,29 +299,21 @@ export default function TeamChatPage({ currentUser }) {
                 onClick={() => setSelectedRecipient({ type: 'individual', data: emp })}
                 className={`w-full p-2.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                   isSelected
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'bg-white hover:bg-slate-100 text-[#09233d] border border-gray-100'
+                    ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
+                    : 'bg-white hover:bg-emerald-50/40 text-[#09233d] border border-gray-100'
                 }`}
               >
                 <div className="flex items-center gap-2.5 truncate">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                      isSelected
-                        ? 'bg-white text-purple-700'
-                        : 'bg-emerald-100 text-[#20b875]'
-                    }`}
+                    className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 bg-emerald-100 text-[#20b875]"
                   >
                     {emp.name ? emp.name.charAt(0).toUpperCase() : 'E'}
                   </div>
                   <div className="truncate">
-                    <span className="block text-xs font-bold truncate">
+                    <span className="block text-xs font-bold truncate text-[#09233d]">
                       {emp.name} {isMe && '(You)'}
                     </span>
-                    <span
-                      className={`block text-[10px] font-medium truncate ${
-                        isSelected ? 'text-purple-200' : 'text-gray-400'
-                      }`}
-                    >
+                    <span className="block text-[10px] font-medium truncate text-gray-400">
                       @{emp.username || emp.employeeId || 'staff'}
                     </span>
                   </div>
@@ -325,13 +321,11 @@ export default function TeamChatPage({ currentUser }) {
 
                 <span
                   className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase shrink-0 ${
-                    isSelected
-                      ? 'bg-purple-800 text-white'
-                      : emp.role === 'superadmin' || emp.role === 'admin'
+                    emp.role === 'superadmin' || emp.role === 'admin'
                       ? 'bg-rose-100 text-rose-700'
                       : emp.role === 'superior' || emp.role === 'teamlead'
                       ? 'bg-purple-100 text-purple-700'
-                      : 'bg-emerald-50 text-emerald-700'
+                      : 'bg-emerald-50 text-[#20b875]'
                   }`}
                 >
                   {emp.role || 'Staff'}
@@ -345,32 +339,32 @@ export default function TeamChatPage({ currentUser }) {
       {/* RIGHT PANEL: Chat Stream & Message Input */}
       <div className="flex-1 flex flex-col bg-white">
         {/* Active Conversation Header */}
-        <div className="p-4 bg-[#09233d] text-white flex items-center justify-between shrink-0 shadow-xs">
+        <div className="p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
           <div className="flex items-center gap-3">
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
-                selectedRecipient.type === 'all'
-                  ? 'bg-[#20b875]'
-                  : selectedRecipient.type === 'team'
-                  ? 'bg-blue-600'
-                  : 'bg-purple-600'
-              }`}
-            >
-              {selectedRecipient.type === 'all'
-                ? '📢'
-                : selectedRecipient.type === 'team'
-                ? '👥'
-                : '👤'}
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-bold text-lg shrink-0 shadow-2xs">
+              {selectedRecipient.type === 'all' ? (
+                <svg className="w-5 h-5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                </svg>
+              ) : selectedRecipient.type === 'team' ? (
+                <svg className="w-5 h-5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              )}
             </div>
             <div>
-              <h3 className="text-sm font-black text-white">
+              <h3 className="text-sm font-black text-[#09233d]">
                 {selectedRecipient.type === 'all'
                   ? 'Everyone (Company Broadcast Channel)'
                   : selectedRecipient.type === 'team'
                   ? `Team Broadcast: ${selectedRecipient.data?.name}`
                   : `Direct 1-on-1 Chat: ${selectedRecipient.data?.name}`}
               </h3>
-              <p className="text-[11px] text-gray-300 font-medium">
+              <p className="text-[11px] text-gray-500 font-medium">
                 {selectedRecipient.type === 'all'
                   ? 'All company staff receive and view messages in this channel'
                   : selectedRecipient.type === 'team'
@@ -382,14 +376,18 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Message Stream */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50/60">
+        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
           {loadingMessages && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
               Loading chat history...
             </div>
           ) : filteredMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-8 text-gray-400">
-              <span className="text-4xl mb-2">💬</span>
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#20b875] flex items-center justify-center mb-3 shadow-2xs border border-emerald-100">
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
               <p className="text-sm font-bold text-gray-700">No messages in this conversation yet</p>
               <p className="text-xs text-gray-400 mt-1">
                 Type a message below to start chatting!
@@ -412,7 +410,7 @@ export default function TeamChatPage({ currentUser }) {
                           ? 'bg-rose-100 text-rose-700'
                           : msg.senderRole === 'superior' || msg.senderRole === 'teamlead'
                           ? 'bg-purple-100 text-purple-700'
-                          : 'bg-emerald-100 text-emerald-700'
+                          : 'bg-emerald-100 text-[#20b875]'
                       }`}
                     >
                       {msg.senderRole}
@@ -425,12 +423,8 @@ export default function TeamChatPage({ currentUser }) {
                   <div
                     className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed shadow-2xs ${
                       isMe
-                        ? 'bg-[#09233d] text-white rounded-tr-none'
-                        : selectedRecipient.type === 'all'
-                        ? 'bg-white text-gray-800 border border-emerald-200 rounded-tl-none'
-                        : selectedRecipient.type === 'team'
-                        ? 'bg-blue-50 text-blue-950 border border-blue-200 rounded-tl-none'
-                        : 'bg-purple-50 text-purple-950 border border-purple-200 rounded-tl-none'
+                        ? 'bg-[#20b875] text-white rounded-tr-none'
+                        : 'bg-white text-gray-800 border border-emerald-100 rounded-tl-none shadow-2xs'
                     }`}
                   >
                     {msg.message}

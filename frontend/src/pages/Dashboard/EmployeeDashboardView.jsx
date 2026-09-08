@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { fetchApi } from '../../config/api';
 import AppIcon from '../../components/Icon';
-import DashboardChatBox from '../../components/Chat/DashboardChatBox';
 
 // SVG Icons helper
 const Icon = ({ name, className = 'w-4 h-4' }) => {
@@ -1036,10 +1035,6 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         </div>
       </div>
 
-      {/* Live Interactive Chat Box for Announcements & Direct Messaging */}
-      <div className="mt-6">
-        <DashboardChatBox currentUser={user} />
-      </div>
 
       {/* MODAL 1: Quick Log Time Modal */}
       {showLogTimeModal && (
