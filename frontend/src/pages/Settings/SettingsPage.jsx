@@ -118,13 +118,13 @@ export default function SettingsPage({ currentUser }) {
   }, []);
 
   const loadRoles = async () => {
-    setLoading(true);
+    if (!roles || roles.length === 0) setLoading(true);
     setError('');
     try {
       const res = await fetchApi('/roles');
       setRoles(res.data);
     } catch (err) {
-      setError(err.message || 'Failed to load roles');
+      if (!roles || roles.length === 0) setError(err.message || 'Failed to load roles');
     } finally {
       setLoading(false);
     }

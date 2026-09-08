@@ -36,4 +36,7 @@ const timeEntrySchema = new mongoose.Schema(
   }
 );
 
+timeEntrySchema.index({ employee: 1, status: 1 });
+timeEntrySchema.index({ employee: 1, startTime: -1 });
+
 module.exports = mongoose.model('TimeEntry', timeEntrySchema);

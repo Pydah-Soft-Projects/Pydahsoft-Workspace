@@ -22,7 +22,7 @@ export default function TeamManagement({ currentUser }) {
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
+    if (!teams || teams.length === 0) setLoading(true);
     setError('');
     try {
       const [teamsRes, usersRes] = await Promise.all([
@@ -32,7 +32,7 @@ export default function TeamManagement({ currentUser }) {
       setTeams(teamsRes.data);
       setAllUsers(usersRes.data);
     } catch (err) {
-      setError(err.message || 'Failed to load teams data');
+      if (!teams || teams.length === 0) setError(err.message || 'Failed to load teams data');
     } finally {
       setLoading(false);
     }

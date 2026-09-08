@@ -32,13 +32,13 @@ export default function AuditLogsView() {
 
   useEffect(() => {
     const loadAuditLogs = async () => {
-      setLoading(true);
+      if (!logs || logs.length === 0) setLoading(true);
       setError('');
       try {
         const res = await fetchApi('/audit-logs');
         setLogs(res.data);
       } catch (err) {
-        setError(err.message || 'Failed to load audit logs');
+        if (!logs || logs.length === 0) setError(err.message || 'Failed to load audit logs');
       } finally {
         setLoading(false);
       }

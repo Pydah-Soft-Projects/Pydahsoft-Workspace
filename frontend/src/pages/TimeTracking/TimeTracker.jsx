@@ -25,7 +25,7 @@ export default function TimeTracker({ currentUser }) {
   }, []);
 
   const loadTimeData = async () => {
-    setLoading(true);
+    if (!assignedTasks || assignedTasks.length === 0) setLoading(true);
     try {
       const [tasksRes, timerRes] = await Promise.all([
         fetchApi('/tasks'),

@@ -82,12 +82,9 @@ const getTeamPerformance = async (teamId) => {
   if (!team) throw new Error('Team not found');
 
   const memberIds = team.members.map((m) => m._id);
-  const performanceRecords = [];
-
-  for (const memberId of memberIds) {
-    const perf = await calculateEmployeePerformance(memberId);
-    performanceRecords.push(perf);
-  }
+  const performanceRecords = await Promise.all(
+    team.members.map((member) => calculateEmployeePerformance(member._id))
+  );
 
   const totalMembers = performanceRecords.length;
   let sumScore = 0;

@@ -11,13 +11,13 @@ export default function PerformanceAnalytics({ currentUser }) {
   }, []);
 
   const loadPerformanceData = async () => {
-    setLoading(true);
+    if (!records || records.length === 0) setLoading(true);
     setError('');
     try {
       const res = await fetchApi('/analytics/performance');
       setRecords(Array.isArray(res.data) ? res.data : [res.data]);
     } catch (err) {
-      setError(err.message || 'Failed to load performance analytics');
+      if (!records || records.length === 0) setError(err.message || 'Failed to load performance analytics');
     } finally {
       setLoading(false);
     }

@@ -189,6 +189,18 @@ function DashboardLayout({ user, onLogout }) {
   const [subTab, setSubTab] = useState('default');
   const [viewAsEmployeeId, setViewAsEmployeeId] = useState(null);
   const [employeeList, setEmployeeList] = useState([]);
+  const [visitedTabs, setVisitedTabs] = useState(() => new Set([getInitialTab()]));
+
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (!prev.has(activeTab)) {
+        const next = new Set(prev);
+        next.add(activeTab);
+        return next;
+      }
+      return prev;
+    });
+  }, [activeTab]);
 
   useEffect(() => {
     if (user?.role === 'superadmin' || user?.role === 'superior') {
@@ -375,25 +387,67 @@ function DashboardLayout({ user, onLogout }) {
 
         <div className="p-6">
           <Suspense fallback={<PageLoader />}>
-            {activeTab === 'overview' && (
-              <DashboardOverview
-                user={user}
-                setActiveTab={setActiveTab}
-                viewAsEmployeeId={viewAsEmployeeId}
-                setViewAsEmployeeId={setViewAsEmployeeId}
-                employeeList={employeeList}
-              />
+            {visitedTabs.has('overview') && (
+              <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+                <DashboardOverview
+                  user={user}
+                  setActiveTab={setActiveTab}
+                  viewAsEmployeeId={viewAsEmployeeId}
+                  setViewAsEmployeeId={setViewAsEmployeeId}
+                  employeeList={employeeList}
+                />
+              </div>
             )}
-            {activeTab === 'users' && <UserManagement currentUser={user} />}
-            {activeTab === 'employees' && <EmployeeManagement currentUser={user} />}
-            {activeTab === 'projects' && <ProjectsAndModules currentUser={user} activeSubTab={subTab} />}
-            {activeTab === 'teams' && <TeamsAndTasks currentUser={user} activeSubTab={subTab} />}
-            {activeTab === 'time-tracker' && <TimeTracker currentUser={user} />}
-            {activeTab === 'reviews' && <TaskReviewQueue currentUser={user} />}
-            {activeTab === 'daily-plans' && <DailyWorkPlans currentUser={user} />}
-            {activeTab === 'analytics' && <PerformanceAndReports currentUser={user} activeSubTab={subTab} />}
-            {activeTab === 'audit-logs' && <AuditLogsView currentUser={user} />}
-            {activeTab === 'settings' && <SettingsPage currentUser={user} />}
+            {visitedTabs.has('users') && (
+              <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
+                <UserManagement currentUser={user} />
+              </div>
+            )}
+            {visitedTabs.has('employees') && (
+              <div style={{ display: activeTab === 'employees' ? 'block' : 'none' }}>
+                <EmployeeManagement currentUser={user} />
+              </div>
+            )}
+            {visitedTabs.has('projects') && (
+              <div style={{ display: activeTab === 'projects' ? 'block' : 'none' }}>
+                <ProjectsAndModules currentUser={user} activeSubTab={subTab} />
+              </div>
+            )}
+            {visitedTabs.has('teams') && (
+              <div style={{ display: activeTab === 'teams' ? 'block' : 'none' }}>
+                <TeamsAndTasks currentUser={user} activeSubTab={subTab} />
+              </div>
+            )}
+            {visitedTabs.has('time-tracker') && (
+              <div style={{ display: activeTab === 'time-tracker' ? 'block' : 'none' }}>
+                <TimeTracker currentUser={user} />
+              </div>
+            )}
+            {visitedTabs.has('reviews') && (
+              <div style={{ display: activeTab === 'reviews' ? 'block' : 'none' }}>
+                <TaskReviewQueue currentUser={user} />
+              </div>
+            )}
+            {visitedTabs.has('daily-plans') && (
+              <div style={{ display: activeTab === 'daily-plans' ? 'block' : 'none' }}>
+                <DailyWorkPlans currentUser={user} />
+              </div>
+            )}
+            {visitedTabs.has('analytics') && (
+              <div style={{ display: activeTab === 'analytics' ? 'block' : 'none' }}>
+                <PerformanceAndReports currentUser={user} activeSubTab={subTab} />
+              </div>
+            )}
+            {visitedTabs.has('audit-logs') && (
+              <div style={{ display: activeTab === 'audit-logs' ? 'block' : 'none' }}>
+                <AuditLogsView currentUser={user} />
+              </div>
+            )}
+            {visitedTabs.has('settings') && (
+              <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}>
+                <SettingsPage currentUser={user} />
+              </div>
+            )}
           </Suspense>
         </div>
       </main>
@@ -403,9 +457,7 @@ function DashboardLayout({ user, onLogout }) {
 
 function App() {
   const [user, setUser] = useState(() => {
-    localStorage.removeItem('pydahsoft_user');
-    localStorage.removeItem('pydahsoft_token');
-    const storedUser = sessionStorage.getItem('pydahsoft_user');
+    const storedUser = sessionStorage.getItem('pydahsoft_user') || localStorage.getItem('pydahsoft_user');
     if (storedUser) {
       try {
         return JSON.parse(storedUser);
@@ -419,6 +471,8 @@ function App() {
   const handleLogout = () => {
     sessionStorage.removeItem('pydahsoft_user');
     sessionStorage.removeItem('pydahsoft_token');
+    localStorage.removeItem('pydahsoft_user');
+    localStorage.removeItem('pydahsoft_token');
     localStorage.removeItem('pydahsoft_active_tab');
     setUser(null);
   };
