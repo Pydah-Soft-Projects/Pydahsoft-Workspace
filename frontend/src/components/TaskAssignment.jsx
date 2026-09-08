@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config/api';
+import LoadingSpinner from './Loader/LoadingSpinner';
 
 export default function TaskAssignment() {
   const [tasks, setTasks] = useState([]);
@@ -76,7 +77,7 @@ export default function TaskAssignment() {
       {/* Tasks Table */}
       <div className="bg-white p-6 rounded border border-gray-300 shadow-sm">
         {loading ? (
-          <p className="text-sm text-gray-500">Loading assigned tasks...</p>
+          <LoadingSpinner />
         ) : filteredTasks.length === 0 ? (
           <p className="text-sm text-gray-500">No assigned tasks found.</p>
         ) : (

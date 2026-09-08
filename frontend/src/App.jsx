@@ -22,7 +22,7 @@ const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
 import LoadingSpinner from './components/Loader/LoadingSpinner';
 
 // Fast loading spinner fallback
-const PageLoader = () => <LoadingSpinner fullScreen message="Loading page view..." />;
+const PageLoader = () => <LoadingSpinner />;
 
 function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmployeeId }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
