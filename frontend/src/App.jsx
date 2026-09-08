@@ -19,12 +19,10 @@ const PerformanceAndReports = lazy(() => import('./pages/Analytics/PerformanceAn
 const AuditLogsView = lazy(() => import('./pages/AuditLogs/AuditLogsView'));
 const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
 
+import LoadingSpinner from './components/Loader/LoadingSpinner';
+
 // Fast loading spinner fallback
-const PageLoader = () => (
-  <div className="min-h-[calc(100vh-8rem)] p-8 text-center text-xs font-semibold text-gray-400 animate-pulse">
-    Loading page view...
-  </div>
-);
+const PageLoader = () => <LoadingSpinner fullScreen message="Loading page view..." />;
 
 function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmployeeId }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);

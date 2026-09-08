@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 import Icon from '../../components/Icon';
 
 export default function TaskReviewQueue({ currentUser }) {
@@ -65,7 +66,7 @@ export default function TaskReviewQueue({ currentUser }) {
       )}
 
       {loading ? (
-        <div className="p-8 text-center text-xs font-semibold text-gray-500">Loading pending reviews...</div>
+        <LoadingSpinner message="Loading pending reviews..." />
       ) : pendingTasks.length === 0 ? (
         <div className="bg-white p-8 rounded-2xl border border-gray-100 text-center text-xs font-semibold text-gray-500">
           <span className="inline-flex items-center gap-1.5"><Icon name="check" className="w-4 h-4" /> No pending tasks waiting for approval in the review queue.</span>

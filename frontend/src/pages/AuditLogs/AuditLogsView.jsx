@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchApi } from '../../config/api';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
 const PAGE_SIZE = 7;
 
@@ -88,7 +89,7 @@ export default function AuditLogsView() {
   return (
     <div className="space-y-5">
       {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-xs font-semibold">{error}</div>}
-      {loading ? <div className="p-8 text-center text-xs font-semibold text-gray-500">Loading audit trail...</div> : (
+      {loading ? <LoadingSpinner message="Loading audit trail..." /> : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-3">
             <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm min-h-[92px]">

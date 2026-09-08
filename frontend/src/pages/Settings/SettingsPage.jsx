@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
 const PrivilegeIcon = ({ icon, className = "w-4 h-4 text-[#20b875]" }) => {
   switch (icon) {
@@ -247,7 +248,7 @@ export default function SettingsPage({ currentUser }) {
       )}
 
       {loading ? (
-        <div className="p-8 text-center text-xs font-semibold text-gray-500">Loading role configurations...</div>
+        <LoadingSpinner message="Loading role configurations..." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {roles.map((role) => {

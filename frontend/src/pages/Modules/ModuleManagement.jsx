@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
 import Icon from '../../components/Icon';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
 export default function ModuleManagement({ currentUser }) {
   const [modules, setModules] = useState([]);
@@ -146,7 +147,7 @@ export default function ModuleManagement({ currentUser }) {
       )}
 
       {loading ? (
-        <div className="p-8 text-center text-xs font-semibold text-gray-500">Loading project modules...</div>
+        <LoadingSpinner message="Loading project modules..." />
       ) : (
         <div className="space-y-6">
           {filteredProjects.length === 0 && standaloneModules.length === 0 ? (

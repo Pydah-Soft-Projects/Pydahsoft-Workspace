@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 import Icon from '../../components/Icon';
 
 export default function TeamManagement({ currentUser }) {
@@ -112,7 +113,7 @@ export default function TeamManagement({ currentUser }) {
       )}
 
       {loading ? (
-        <div className="p-8 text-center text-xs font-semibold text-gray-500">Loading teams...</div>
+        <LoadingSpinner message="Loading teams..." />
       ) : displayedTeams.length === 0 ? (
         <div className="p-8 bg-white rounded-2xl border border-gray-100 shadow-sm text-center text-xs font-medium text-gray-500">
           No assigned teams found for your employee profile.
