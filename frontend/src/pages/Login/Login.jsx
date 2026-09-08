@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { API_BASE_URL } from '../../config/api';
 import Icon from '../../components/Icon';
 
 export default function Login({ onLoginSuccess }) {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = 'PydahSoft | Login';
+  }, []);
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);

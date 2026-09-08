@@ -222,6 +222,21 @@ function DashboardLayout({ user, onLogout }) {
     else if (activeTab === 'teams') setSubTab('teams');
     else if (activeTab === 'analytics') setSubTab('analytics');
     else setSubTab('default');
+
+    const tabDocumentTitles = {
+      overview: 'PydahSoft | Dashboard Overview',
+      users: 'PydahSoft | User Accounts',
+      employees: 'PydahSoft | Employee Directory',
+      projects: 'PydahSoft | Projects & Modules',
+      teams: 'PydahSoft | Teams & Tasks',
+      'time-tracker': 'PydahSoft | Time Tracker',
+      reviews: 'PydahSoft | Task Review Queue',
+      'daily-plans': 'PydahSoft | Daily Work Plans',
+      analytics: 'PydahSoft | Performance & Reports',
+      'audit-logs': 'PydahSoft | Audit Logs',
+      settings: 'PydahSoft | Settings',
+    };
+    document.title = tabDocumentTitles[activeTab] || 'PydahSoft | Dashboard';
   }, [activeTab]);
 
   const getTabTitle = (tab) => {
