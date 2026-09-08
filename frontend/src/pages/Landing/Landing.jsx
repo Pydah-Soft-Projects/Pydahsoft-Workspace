@@ -18,6 +18,8 @@ export default function Landing({ user }) {
   const [processedCard2, setProcessedCard2] = useState(null);
 
   useEffect(() => {
+    document.title = 'PydahSoft | Employee & Performance Management System';
+
     function processImage(src, setter) {
       const img = new Image();
       img.src = src;

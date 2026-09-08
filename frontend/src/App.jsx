@@ -174,10 +174,8 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
 function DashboardLayout({ user, onLogout }) {
   const navigate = useNavigate();
 
-  // Determine initial tab from location hash, pathname, or localStorage for perfect refresh persistence
+  // Determine initial tab from localStorage for perfect refresh persistence
   const getInitialTab = () => {
-    const hash = window.location.hash.replace('#', '');
-    if (hash) return hash;
     const stored = localStorage.getItem('pydahsoft_active_tab');
     if (stored) return stored;
     return 'overview';
@@ -211,17 +209,30 @@ function DashboardLayout({ user, onLogout }) {
   const setActiveTab = (tab) => {
     setActiveTabState(tab);
     localStorage.setItem('pydahsoft_active_tab', tab);
-    window.location.hash = tab;
   };
 
   useEffect(() => {
     localStorage.setItem('pydahsoft_active_tab', activeTab);
-    window.location.hash = activeTab;
 
     if (activeTab === 'projects') setSubTab('projects');
     else if (activeTab === 'teams') setSubTab('teams');
     else if (activeTab === 'analytics') setSubTab('analytics');
     else setSubTab('default');
+
+    const tabDocumentTitles = {
+      overview: 'PydahSoft | Dashboard Overview',
+      users: 'PydahSoft | User Accounts',
+      employees: 'PydahSoft | Employee Directory',
+      projects: 'PydahSoft | Projects & Modules',
+      teams: 'PydahSoft | Teams & Tasks',
+      'time-tracker': 'PydahSoft | Time Tracker',
+      reviews: 'PydahSoft | Task Review Queue',
+      'daily-plans': 'PydahSoft | Daily Work Plans',
+      analytics: 'PydahSoft | Performance & Reports',
+      'audit-logs': 'PydahSoft | Audit Logs',
+      settings: 'PydahSoft | Settings',
+    };
+    document.title = tabDocumentTitles[activeTab] || 'PydahSoft | Dashboard';
   }, [activeTab]);
 
   const getTabTitle = (tab) => {

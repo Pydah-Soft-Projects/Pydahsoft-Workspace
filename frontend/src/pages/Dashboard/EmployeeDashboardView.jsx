@@ -187,14 +187,51 @@ function DonutChart({ data, totalLabel = 'Total Tasks', centerCount = 5 }) {
 }
 
 // Custom SVG Pie Chart Component
+// Custom SVG Pie Chart Component
 function PieChart({ data }) {
   const size = 160;
   const radius = size / 2 - 4;
   const center = size / 2;
 
+  if (!data || data.length === 0) return null;
+
+  // Single project or 100% slice rendering (prevents SVG 360deg arc zero-width collapse)
+  if (data.length === 1 || (data[0] && data[0].percentage >= 99.9)) {
+    const single = data[0];
+    const color = single.color && single.color !== '#ffffff' ? single.color : '#10b981';
+    return (
+      <div className="relative flex items-center justify-center">
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <circle
+            cx={center}
+            cy={center}
+            r={radius}
+            fill={color}
+            stroke="#ffffff"
+            strokeWidth="3"
+            className="transition-all duration-300 hover:opacity-90 cursor-pointer shadow-md"
+          />
+          <text
+            x={center}
+            y={center}
+            fill="#ffffff"
+            fontSize="14"
+            fontWeight="900"
+            textAnchor="middle"
+            dominantBaseline="central"
+            className="pointer-events-none select-none drop-shadow-lg"
+          >
+            {single.percentage || 100}%
+          </text>
+        </svg>
+      </div>
+    );
+  }
+
   let currentAngle = -90;
   const slices = data.map((item) => {
-    const angle = (item.percentage / 100) * 360;
+    const rawAngle = (item.percentage / 100) * 360;
+    const angle = Math.min(359.9, Math.max(0.1, rawAngle));
     const startAngle = currentAngle;
     const endAngle = currentAngle + angle;
     currentAngle = endAngle;
@@ -220,7 +257,7 @@ function PieChart({ data }) {
       pathData,
       labelX,
       labelY,
-      showLabel: item.percentage >= 12
+      showLabel: item.percentage >= 10
     };
   });
 
@@ -231,9 +268,9 @@ function PieChart({ data }) {
           <path
             key={i}
             d={slice.pathData}
-            fill={slice.color}
+            fill={slice.color && slice.color !== '#ffffff' ? slice.color : '#10b981'}
             stroke="#ffffff"
-            strokeWidth="2"
+            strokeWidth="2.5"
             className="transition-all duration-300 hover:opacity-90 cursor-pointer"
           />
         ))}
@@ -245,11 +282,11 @@ function PieChart({ data }) {
                 x={slice.labelX}
                 y={slice.labelY}
                 fill="#ffffff"
-                fontSize="10"
-                fontWeight="bold"
+                fontSize="12"
+                fontWeight="900"
                 textAnchor="middle"
                 dominantBaseline="central"
-                className="pointer-events-none select-none drop-shadow-sm"
+                className="pointer-events-none select-none drop-shadow-md"
               >
                 {slice.percentage}%
               </text>
@@ -925,10 +962,6 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
                 <Icon name="team" className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 <span className="text-[11px] font-medium">{profile.department || 'Engineering Team'}</span>
               </div>
-              <div className="flex items-center gap-2.5">
-                <Icon name="location" className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                <span className="text-[11px] font-medium">{profile.location || 'Hyderabad, India'}</span>
-              </div>
             </div>
 
             <button
@@ -1222,10 +1255,6 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400 font-medium">Department:</span>
                 <span className="font-bold text-[#09233d]">{profile.department || 'Engineering Team'}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-gray-50">
-                <span className="text-gray-400 font-medium">Location:</span>
-                <span className="font-bold text-[#09233d]">{profile.location || 'Hyderabad, India'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400 font-medium">Joining Date:</span>
