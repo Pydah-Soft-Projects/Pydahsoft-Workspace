@@ -7,24 +7,25 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [staffList, setStaffList] = useState(employeeList);
+  const [teamsList, setTeamsList] = useState([]);
 
-  // Recipient selection state: { type: 'all' | 'individual', data: empDoc }
+  // Recipient selection state: { type: 'all' | 'team' | 'individual', data: doc }
   const [selectedRecipient, setSelectedRecipient] = useState({ type: 'all', data: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
 
   const messagesEndRef = useRef(null);
 
-  // Fetch staff contacts with ?purpose=chat so all roles are included
+  // Fetch staff contacts with ?purpose=chat and teams list
   useEffect(() => {
-    if (employeeList && employeeList.length > 0) {
-      setStaffList(employeeList);
-    } else {
-      fetchApi('/employees?purpose=chat')
-        .then((res) => setStaffList(res.data || []))
-        .catch((err) => console.error('Failed to load chat contacts:', err));
-    }
-  }, [employeeList]);
+    fetchApi('/employees?purpose=chat')
+      .then((res) => setStaffList(res.data || []))
+      .catch((err) => console.error('Failed to load chat contacts:', err));
+
+    fetchApi('/teams')
+      .then((res) => setTeamsList(res.data || []))
+      .catch((err) => console.error('Failed to load teams list:', err));
+  }, []);
 
   // Load chat messages
   const loadMessages = async (silent = false) => {
@@ -59,6 +60,8 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
   const filteredMessages = messages.filter((msg) => {
     if (selectedRecipient.type === 'all') {
       return msg.recipientType === 'all';
+    } else if (selectedRecipient.type === 'team' && selectedRecipient.data) {
+      return msg.recipientType === 'team' && String(msg.teamId) === String(selectedRecipient.data._id);
     } else if (selectedRecipient.type === 'individual' && selectedRecipient.data) {
       const targetId = String(selectedRecipient.data._id);
       const myId = String(currentUser?._id);
@@ -83,6 +86,8 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
       const recipientType = selectedRecipient.type;
       const recipientId = recipientType === 'individual' ? selectedRecipient.data?._id : undefined;
       const recipientName = recipientType === 'individual' ? selectedRecipient.data?.name : undefined;
+      const teamId = recipientType === 'team' ? selectedRecipient.data?._id : undefined;
+      const teamName = recipientType === 'team' ? selectedRecipient.data?.name : undefined;
 
       const res = await fetchApi('/chat/send', {
         method: 'POST',
@@ -90,6 +95,8 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
           recipientType,
           recipientId,
           recipientName,
+          teamId,
+          teamName,
           message: newMessageText.trim()
         })
       });
@@ -130,7 +137,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row h-[560px]">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row h-[580px]">
       {/* LEFT PANEL: Team Messaging Hub Contact Directory */}
       <div className="w-full md:w-80 bg-slate-50 border-r border-gray-200 flex flex-col shrink-0">
         {/* Hub Header */}
@@ -139,7 +146,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
             Team Messaging Hub
             <span className="w-2.5 h-2.5 rounded-full bg-[#20b875] animate-pulse" />
           </h2>
-          <p className="text-xs text-gray-500 font-medium">Select group or individual to chat</p>
+          <p className="text-xs text-gray-500 font-medium">Select group, team, or individual to chat</p>
         </div>
 
         {/* Group Broadcast Card */}
@@ -173,6 +180,43 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
             )}
           </button>
         </div>
+
+        {/* Teams List (Team Broadcasts) */}
+        {teamsList.length > 0 && (
+          <div className="px-3 pt-2.5 pb-1 border-b border-gray-200">
+            <div className="px-1 mb-1 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+              TEAMS & DEPARTMENTS ({teamsList.length})
+            </div>
+            <div className="space-y-1 max-h-28 overflow-y-auto">
+              {teamsList.map((team) => {
+                const isSelected =
+                  selectedRecipient.type === 'team' &&
+                  selectedRecipient.data?._id === team._id;
+
+                return (
+                  <button
+                    key={team._id}
+                    type="button"
+                    onClick={() => setSelectedRecipient({ type: 'team', data: team })}
+                    className={`w-full p-2 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
+                      isSelected
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-white hover:bg-blue-50 text-[#09233d] border-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="text-xs">👥</span>
+                      <span className="truncate text-xs font-bold">{team.name}</span>
+                    </div>
+                    <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md ${isSelected ? 'bg-blue-800 text-white' : 'bg-blue-50 text-blue-600'}`}>
+                      Team
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Role Filter Pills */}
         <div className="px-3 pt-2.5 pb-1 flex items-center gap-1 overflow-x-auto bg-slate-50 shrink-0">
@@ -311,20 +355,32 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
           <div className="flex items-center gap-3">
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
-                selectedRecipient.type === 'all' ? 'bg-[#20b875]' : 'bg-[#8b2cf5]'
+                selectedRecipient.type === 'all'
+                  ? 'bg-[#20b875]'
+                  : selectedRecipient.type === 'team'
+                  ? 'bg-blue-600'
+                  : 'bg-[#8b2cf5]'
               }`}
             >
-              {selectedRecipient.type === 'all' ? '📢' : '👤'}
+              {selectedRecipient.type === 'all'
+                ? '📢'
+                : selectedRecipient.type === 'team'
+                ? '👥'
+                : '👤'}
             </div>
             <div>
               <h3 className="text-sm font-black text-white">
                 {selectedRecipient.type === 'all'
                   ? 'Everyone (Group Broadcast Chat)'
+                  : selectedRecipient.type === 'team'
+                  ? `Team Broadcast: ${selectedRecipient.data?.name}`
                   : `Direct Chat: ${selectedRecipient.data?.name}`}
               </h3>
               <p className="text-[11px] text-gray-300 font-medium">
                 {selectedRecipient.type === 'all'
                   ? 'Public all-staff announcements channel'
+                  : selectedRecipient.type === 'team'
+                  ? `Broadcast to all members of ${selectedRecipient.data?.name}`
                   : `Direct 1-on-1 private messaging with ${selectedRecipient.data?.name} (${selectedRecipient.data?.role || 'Staff'})`}
               </p>
             </div>
@@ -378,6 +434,8 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
                         ? 'bg-[#09233d] text-white rounded-tr-none'
                         : selectedRecipient.type === 'all'
                         ? 'bg-white text-gray-800 border border-emerald-200 rounded-tl-none'
+                        : selectedRecipient.type === 'team'
+                        ? 'bg-blue-50 text-blue-950 border border-blue-200 rounded-tl-none'
                         : 'bg-purple-50 text-purple-950 border border-purple-200 rounded-tl-none'
                     }`}
                   >
@@ -399,6 +457,8 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
             placeholder={
               selectedRecipient.type === 'all'
                 ? 'Type a broadcast message to everyone...'
+                : selectedRecipient.type === 'team'
+                ? `Type a team message to ${selectedRecipient.data?.name}...`
                 : `Type a direct message to ${selectedRecipient.data?.name}...`
             }
             className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 focus:border-[#20b875] focus:bg-white rounded-xl text-xs text-[#09233d] font-medium outline-none transition-all"
