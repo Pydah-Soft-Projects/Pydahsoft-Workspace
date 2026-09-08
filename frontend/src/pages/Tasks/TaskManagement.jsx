@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 import Icon from '../../components/Icon';
 
 export default function TaskManagement({ currentUser }) {
@@ -153,7 +154,7 @@ export default function TaskManagement({ currentUser }) {
       )}
 
       {loading ? (
-        <div className="p-8 text-center text-xs font-semibold text-gray-500">Loading tasks...</div>
+        <LoadingSpinner message="Loading tasks..." />
       ) : displayedTasks.length === 0 ? (
         <div className="p-8 bg-white rounded-2xl border border-gray-100 shadow-sm text-center text-xs font-medium text-gray-500">
           No assigned tasks found for your employee profile.

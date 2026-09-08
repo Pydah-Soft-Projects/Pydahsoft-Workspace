@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
 export default function PerformanceAnalytics({ currentUser }) {
   const [records, setRecords] = useState([]);
@@ -44,7 +45,7 @@ export default function PerformanceAnalytics({ currentUser }) {
       )}
 
       {loading ? (
-        <div className="p-8 text-center text-xs font-semibold text-gray-500">Loading performance data...</div>
+        <LoadingSpinner message="Loading performance data..." />
       ) : displayedRecords.length === 0 ? (
         <div className="p-8 bg-white rounded-2xl border border-gray-100 shadow-sm text-center text-xs font-medium text-gray-500">
           No performance records found for your employee profile.

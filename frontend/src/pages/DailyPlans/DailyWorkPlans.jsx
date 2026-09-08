@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
 export default function DailyWorkPlans({ currentUser }) {
   const [plans, setPlans] = useState([]);
@@ -138,7 +139,7 @@ export default function DailyWorkPlans({ currentUser }) {
       )}
 
       {loading ? (
-        <div className="p-8 text-center text-xs font-semibold text-gray-500">Loading daily work plans...</div>
+        <LoadingSpinner message="Loading daily work plans..." />
       ) : plans.length === 0 ? (
         <div className="bg-white p-8 rounded-2xl border border-gray-100 text-center text-xs font-semibold text-gray-500">
           No daily work plans generated yet. Click "+ Create Daily Work Plan" to schedule items.

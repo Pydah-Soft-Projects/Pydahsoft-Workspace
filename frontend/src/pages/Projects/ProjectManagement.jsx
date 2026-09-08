@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
 export default function ProjectManagement({ currentUser }) {
   const [projects, setProjects] = useState([]);
@@ -78,7 +79,7 @@ export default function ProjectManagement({ currentUser }) {
       )}
 
       {loading ? (
-        <div className="p-8 text-center text-xs font-semibold text-gray-500">Loading projects...</div>
+        <LoadingSpinner message="Loading projects..." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {projects.map((proj) => (
