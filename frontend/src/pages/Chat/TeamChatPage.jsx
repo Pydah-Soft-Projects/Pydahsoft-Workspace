@@ -109,11 +109,24 @@ export default function TeamChatPage({ currentUser }) {
     }
   };
 
-  const filteredStaff = staffList.filter((emp) =>
-    emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (emp.username || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (emp.employeeId || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
+
+  const filteredStaff = staffList.filter((emp) => {
+    const matchesSearch =
+      emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (emp.username || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (emp.employeeId || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+    const role = (emp.role || 'employee').toLowerCase();
+    if (roleFilter === 'admin') {
+      return matchesSearch && (role === 'superadmin' || role === 'admin');
+    } else if (roleFilter === 'lead') {
+      return matchesSearch && (role === 'superior' || role === 'teamlead');
+    } else if (roleFilter === 'employee') {
+      return matchesSearch && role === 'employee';
+    }
+    return matchesSearch;
+  });
 
   const formatTime = (dateStr) => {
     if (!dateStr) return '';
@@ -198,6 +211,54 @@ export default function TeamChatPage({ currentUser }) {
             </div>
           </div>
         )}
+
+        {/* Role Filter Pills */}
+        <div className="px-3 pt-2 pb-1 flex items-center gap-1 overflow-x-auto bg-slate-50 border-b border-gray-200">
+          <button
+            type="button"
+            onClick={() => setRoleFilter('all')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+              roleFilter === 'all'
+                ? 'bg-[#09233d] text-white shadow-2xs'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+            }`}
+          >
+            All ({staffList.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setRoleFilter('admin')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+              roleFilter === 'admin'
+                ? 'bg-rose-600 text-white shadow-2xs'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+            }`}
+          >
+            Admins
+          </button>
+          <button
+            type="button"
+            onClick={() => setRoleFilter('lead')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+              roleFilter === 'lead'
+                ? 'bg-purple-600 text-white shadow-2xs'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+            }`}
+          >
+            Team Leads
+          </button>
+          <button
+            type="button"
+            onClick={() => setRoleFilter('employee')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+              roleFilter === 'employee'
+                ? 'bg-emerald-600 text-white shadow-2xs'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+            }`}
+          >
+            Employees
+          </button>
+        </div>
 
         {/* Staff Search Box */}
         <div className="p-3 border-b border-gray-200 bg-white">

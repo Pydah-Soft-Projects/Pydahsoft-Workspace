@@ -7,26 +7,22 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [staffList, setStaffList] = useState(employeeList);
-  
-  // Recipient selection: 'all' or specific employee _id
-  const [targetType, setTargetType] = useState('all'); // 'all' | 'individual'
-  const [selectedEmpId, setSelectedEmpId] = useState('');
-  
+
+  // Recipient selection state: { type: 'all' | 'individual', data: empDoc }
+  const [selectedRecipient, setSelectedRecipient] = useState({ type: 'all', data: null });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
+
   const messagesEndRef = useRef(null);
 
-  const isSuperiorOrAdmin =
-    currentUser?.role === 'superadmin' ||
-    currentUser?.role === 'superior' ||
-    currentUser?.role === 'admin';
-
-  // Fetch staff list if empty
+  // Fetch staff contacts with ?purpose=chat so all roles are included
   useEffect(() => {
     if (employeeList && employeeList.length > 0) {
       setStaffList(employeeList);
     } else {
       fetchApi('/employees?purpose=chat')
         .then((res) => setStaffList(res.data || []))
-        .catch(() => {});
+        .catch((err) => console.error('Failed to load chat contacts:', err));
     }
   }, [employeeList]);
 
@@ -45,19 +41,38 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
     }
   };
 
-  // Initial load + periodic live polling every 4 seconds
+  // Initial load + live polling every 3 seconds
   useEffect(() => {
     loadMessages();
     const interval = setInterval(() => {
       loadMessages(true);
-    }, 4000);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to bottom of chat
+  // Auto-scroll to bottom of chat stream
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, selectedRecipient]);
+
+  // Filter messages for current active recipient view
+  const filteredMessages = messages.filter((msg) => {
+    if (selectedRecipient.type === 'all') {
+      return msg.recipientType === 'all';
+    } else if (selectedRecipient.type === 'individual' && selectedRecipient.data) {
+      const targetId = String(selectedRecipient.data._id);
+      const myId = String(currentUser?._id);
+      const msgSender = String(msg.sender);
+      const msgRecipient = String(msg.recipientId);
+
+      return (
+        msg.recipientType === 'individual' &&
+        ((msgSender === myId && msgRecipient === targetId) ||
+         (msgSender === targetId && msgRecipient === myId))
+      );
+    }
+    return false;
+  });
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -65,16 +80,9 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
 
     setSending(true);
     try {
-      let recipientType = 'all';
-      let recipientId = undefined;
-      let recipientName = undefined;
-
-      if (targetType === 'individual' && selectedEmpId) {
-        recipientType = 'individual';
-        recipientId = selectedEmpId;
-        const targetEmp = staffList.find((e) => e._id === selectedEmpId);
-        recipientName = targetEmp ? targetEmp.name || targetEmp.username : 'Employee';
-      }
+      const recipientType = selectedRecipient.type;
+      const recipientId = recipientType === 'individual' ? selectedRecipient.data?._id : undefined;
+      const recipientName = recipientType === 'individual' ? selectedRecipient.data?.name : undefined;
 
       const res = await fetchApi('/chat/send', {
         method: 'POST',
@@ -97,6 +105,24 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
     }
   };
 
+  // Filter staff by search and role filter pills
+  const filteredStaff = staffList.filter((emp) => {
+    const matchesSearch =
+      emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (emp.username || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (emp.employeeId || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+    const role = (emp.role || 'employee').toLowerCase();
+    if (roleFilter === 'admin') {
+      return matchesSearch && (role === 'superadmin' || role === 'admin');
+    } else if (roleFilter === 'lead') {
+      return matchesSearch && (role === 'superior' || role === 'teamlead');
+    } else if (roleFilter === 'employee') {
+      return matchesSearch && role === 'employee';
+    }
+    return matchesSearch;
+  });
+
   const formatTime = (dateStr) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -104,182 +130,297 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col h-[480px] overflow-hidden">
-      {/* Chat Header */}
-      <div className="bg-[#09233d] px-5 py-3.5 flex items-center justify-between text-white shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-[#20b875]">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              Team Announcement & Direct Chat
-              <span className="w-2 h-2 rounded-full bg-[#20b875] animate-pulse" />
-            </h3>
-            <p className="text-[11px] text-gray-300 font-medium">
-              Broadcast messages to all staff or send direct messages to individuals
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Recipient Target Selector Bar */}
-      <div className="bg-slate-50 px-4 py-2.5 border-b border-gray-200 flex items-center gap-3 text-xs shrink-0 flex-wrap">
-          <span className="font-extrabold text-[#09233d] uppercase text-[10px] tracking-wider shrink-0">
-            Send Message To:
-          </span>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                setTargetType('all');
-                setSelectedEmpId('');
-              }}
-              className={`px-3 py-1 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                targetType === 'all'
-                  ? 'bg-[#20b875] text-white shadow-2xs'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <span>📢</span> Everyone (Group Broadcast)
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setTargetType('individual')}
-              className={`px-3 py-1 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                targetType === 'individual'
-                  ? 'bg-purple-600 text-white shadow-2xs'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <span>👤</span> Specific Employee
-            </button>
-          </div>
-
-          {targetType === 'individual' && (
-            <select
-              value={selectedEmpId}
-              onChange={(e) => setSelectedEmpId(e.target.value)}
-              className="px-2.5 py-1 bg-white border border-purple-300 rounded-xl text-xs font-semibold text-[#09233d] focus:outline-none focus:ring-2 focus:ring-purple-400"
-            >
-              <option value="">-- Select Recipient / Staff Member --</option>
-              {staffList.map((emp) => (
-                <option key={emp._id} value={emp._id}>
-                  {emp.name} ({emp.username || emp.employeeId || 'Staff'})
-                </option>
-              ))}
-            </select>
-          )}
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row h-[560px]">
+      {/* LEFT PANEL: Team Messaging Hub Contact Directory */}
+      <div className="w-full md:w-80 bg-slate-50 border-r border-gray-200 flex flex-col shrink-0">
+        {/* Hub Header */}
+        <div className="p-4 border-b border-gray-200 bg-white">
+          <h2 className="text-base font-black text-[#09233d] flex items-center gap-2">
+            Team Messaging Hub
+            <span className="w-2.5 h-2.5 rounded-full bg-[#20b875] animate-pulse" />
+          </h2>
+          <p className="text-xs text-gray-500 font-medium">Select group or individual to chat</p>
         </div>
 
-      {/* Message Stream Area */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50/50">
-        {loading && messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
-            Loading messages...
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6 text-gray-400">
-            <svg className="w-10 h-10 mb-2 opacity-40 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <p className="text-xs font-bold text-gray-600">No messages yet</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">Start a conversation or broadcast an announcement to your team!</p>
-          </div>
-        ) : (
-          messages.map((msg) => {
-            const isMe = msg.sender === currentUser?._id;
-            const isBroadcast = msg.recipientType === 'all';
-
-            return (
-              <div
-                key={msg._id || msg.createdAt}
-                className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-              >
-                {/* Sender Info & Badges */}
-                <div className="flex items-center gap-1.5 mb-1 px-1 text-[11px]">
-                  <span className="font-bold text-[#09233d]">{msg.senderName}</span>
-                  <span
-                    className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-md ${
-                      msg.senderRole === 'superadmin' || msg.senderRole === 'admin'
-                        ? 'bg-rose-100 text-rose-700'
-                        : msg.senderRole === 'superior'
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-emerald-100 text-emerald-700'
-                    }`}
-                  >
-                    {msg.senderRole}
-                  </span>
-
-                  {/* Target Badge */}
-                  {isBroadcast ? (
-                    <span className="text-[9px] font-bold bg-emerald-50 text-[#20b875] px-1.5 py-0.2 rounded-md border border-emerald-200">
-                      📢 Broadcast
-                    </span>
-                  ) : (
-                    <span className="text-[9px] font-bold bg-purple-50 text-purple-700 px-1.5 py-0.2 rounded-md border border-purple-200">
-                      🔒 Direct to {msg.recipientName || 'Employee'}
-                    </span>
-                  )}
-
-                  <span className="text-[10px] text-gray-400 font-medium ml-1">
-                    {formatTime(msg.createdAt)}
-                  </span>
-                </div>
-
-                {/* Message Bubble */}
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed shadow-2xs ${
-                    isMe
-                      ? 'bg-[#09233d] text-white rounded-tr-none'
-                      : isBroadcast
-                      ? 'bg-white text-gray-800 border border-emerald-200/80 rounded-tl-none shadow-xs'
-                      : 'bg-purple-50/90 text-purple-950 border border-purple-200 rounded-tl-none shadow-xs'
+        {/* Group Broadcast Card */}
+        <div className="p-3 border-b border-gray-200">
+          <button
+            type="button"
+            onClick={() => setSelectedRecipient({ type: 'all', data: null })}
+            className={`w-full p-3 rounded-2xl font-bold text-xs text-left transition-all flex items-center justify-between cursor-pointer border ${
+              selectedRecipient.type === 'all'
+                ? 'bg-[#09233d] text-white border-[#09233d] shadow-md'
+                : 'bg-white text-gray-700 hover:bg-emerald-50 border-gray-200 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#20b875] text-white flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
+                📢
+              </div>
+              <div>
+                <span className="block font-black text-xs">Everyone (Group Broadcast)</span>
+                <span
+                  className={`block text-[10px] font-medium mt-0.5 ${
+                    selectedRecipient.type === 'all' ? 'text-emerald-300' : 'text-gray-400'
                   }`}
                 >
-                  {msg.message}
-                </div>
+                  Public Team Announcements
+                </span>
               </div>
+            </div>
+            {selectedRecipient.type === 'all' && (
+              <span className="w-2.5 h-2.5 rounded-full bg-[#20b875] shrink-0" />
+            )}
+          </button>
+        </div>
+
+        {/* Role Filter Pills */}
+        <div className="px-3 pt-2.5 pb-1 flex items-center gap-1 overflow-x-auto bg-slate-50 shrink-0">
+          <button
+            type="button"
+            onClick={() => setRoleFilter('all')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+              roleFilter === 'all'
+                ? 'bg-[#09233d] text-white shadow-2xs'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+            }`}
+          >
+            All ({staffList.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setRoleFilter('admin')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+              roleFilter === 'admin'
+                ? 'bg-rose-600 text-white shadow-2xs'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+            }`}
+          >
+            Admins
+          </button>
+          <button
+            type="button"
+            onClick={() => setRoleFilter('lead')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+              roleFilter === 'lead'
+                ? 'bg-purple-600 text-white shadow-2xs'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+            }`}
+          >
+            Team Leads
+          </button>
+          <button
+            type="button"
+            onClick={() => setRoleFilter('employee')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+              roleFilter === 'employee'
+                ? 'bg-emerald-600 text-white shadow-2xs'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+            }`}
+          >
+            Employees
+          </button>
+        </div>
+
+        {/* Search Input Box */}
+        <div className="p-3 border-b border-gray-200 bg-white">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search employee by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-[#09233d] font-medium focus:bg-white focus:border-[#20b875] outline-none transition-all placeholder:text-gray-400"
+            />
+            <svg className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Individual Staff List (Matching screenshot design) */}
+        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+          <div className="px-1 py-0.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+            INDIVIDUAL STAFF ({filteredStaff.length})
+          </div>
+
+          {filteredStaff.map((emp) => {
+            const isSelected =
+              selectedRecipient.type === 'individual' &&
+              selectedRecipient.data?._id === emp._id;
+            const isMe = emp._id === currentUser?._id;
+
+            return (
+              <button
+                key={emp._id}
+                type="button"
+                onClick={() => setSelectedRecipient({ type: 'individual', data: emp })}
+                className={`w-full p-3 rounded-2xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
+                  isSelected
+                    ? 'bg-[#8b2cf5] text-white border-[#8b2cf5] shadow-md'
+                    : 'bg-white hover:bg-slate-100 text-[#09233d] border-gray-100 shadow-2xs'
+                }`}
+              >
+                <div className="flex items-center gap-3 truncate">
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border ${
+                      isSelected
+                        ? 'bg-white text-[#8b2cf5] border-white'
+                        : 'bg-emerald-100 text-[#10b981] border-emerald-200'
+                    }`}
+                  >
+                    {emp.name ? emp.name.charAt(0).toUpperCase() : 'E'}
+                  </div>
+                  <div className="truncate">
+                    <span className="block text-xs font-extrabold truncate leading-tight">
+                      {emp.name} {isMe && '(You)'}
+                    </span>
+                    <span
+                      className={`block text-[11px] font-medium truncate mt-0.5 ${
+                        isSelected ? 'text-purple-200' : 'text-gray-400'
+                      }`}
+                    >
+                      @{emp.username || emp.employeeId || 'staff'}
+                    </span>
+                  </div>
+                </div>
+
+                <span
+                  className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md uppercase shrink-0 tracking-wider ${
+                    isSelected
+                      ? 'bg-purple-900/60 text-white border border-purple-400/40'
+                      : emp.role === 'superadmin' || emp.role === 'admin'
+                      ? 'bg-rose-100 text-rose-700'
+                      : emp.role === 'superior' || emp.role === 'teamlead'
+                      ? 'bg-purple-100 text-purple-700'
+                      : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {emp.role || 'EMPLOYEE'}
+                </span>
+              </button>
             );
-          })
-        )}
-        <div ref={messagesEndRef} />
+          })}
+        </div>
       </div>
 
-      {/* Message Input Box */}
-      <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-100 flex items-center gap-2 shrink-0">
-        <input
-          type="text"
-          value={newMessageText}
-          onChange={(e) => setNewMessageText(e.target.value)}
-          placeholder={
-            targetType === 'individual' && selectedEmpId
-              ? `Direct message to selected employee...`
-              : `Broadcast a message to everyone...`
-          }
-          className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 focus:border-[#20b875] focus:bg-white rounded-xl text-xs text-[#09233d] font-medium outline-none transition-all placeholder:text-gray-400"
-        />
-        <button
-          type="submit"
-          disabled={sending || !newMessageText.trim() || (targetType === 'individual' && !selectedEmpId)}
-          className="px-4 py-2 bg-[#20b875] hover:bg-[#199d63] disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-        >
-          {sending ? (
-            <span>Sending...</span>
+      {/* RIGHT PANEL: Chat Stream & Message Input */}
+      <div className="flex-1 flex flex-col bg-white">
+        {/* Active Conversation Header */}
+        <div className="p-4 bg-[#09233d] text-white flex items-center justify-between shrink-0 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
+                selectedRecipient.type === 'all' ? 'bg-[#20b875]' : 'bg-[#8b2cf5]'
+              }`}
+            >
+              {selectedRecipient.type === 'all' ? '📢' : '👤'}
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white">
+                {selectedRecipient.type === 'all'
+                  ? 'Everyone (Group Broadcast Chat)'
+                  : `Direct Chat: ${selectedRecipient.data?.name}`}
+              </h3>
+              <p className="text-[11px] text-gray-300 font-medium">
+                {selectedRecipient.type === 'all'
+                  ? 'Public all-staff announcements channel'
+                  : `Direct 1-on-1 private messaging with ${selectedRecipient.data?.name} (${selectedRecipient.data?.role || 'Staff'})`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Message Stream */}
+        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50/60">
+          {loading && messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
+              Loading chat stream...
+            </div>
+          ) : filteredMessages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8 text-gray-400">
+              <span className="text-4xl mb-2">💬</span>
+              <p className="text-sm font-bold text-gray-700">No messages in this chat yet</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Type a message below to start the conversation!
+              </p>
+            </div>
           ) : (
-            <>
-              <span>Send</span>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </>
+            filteredMessages.map((msg) => {
+              const isMe = String(msg.sender) === String(currentUser?._id);
+
+              return (
+                <div
+                  key={msg._id || msg.createdAt}
+                  className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1 px-1 text-[11px]">
+                    <span className="font-bold text-[#09233d]">{msg.senderName}</span>
+                    <span
+                      className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-md ${
+                        msg.senderRole === 'superadmin' || msg.senderRole === 'admin'
+                          ? 'bg-rose-100 text-rose-700'
+                          : msg.senderRole === 'superior' || msg.senderRole === 'teamlead'
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                      }`}
+                    >
+                      {msg.senderRole}
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-medium ml-1">
+                      {formatTime(msg.createdAt)}
+                    </span>
+                  </div>
+
+                  <div
+                    className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed shadow-2xs ${
+                      isMe
+                        ? 'bg-[#09233d] text-white rounded-tr-none'
+                        : selectedRecipient.type === 'all'
+                        ? 'bg-white text-gray-800 border border-emerald-200 rounded-tl-none'
+                        : 'bg-purple-50 text-purple-950 border border-purple-200 rounded-tl-none'
+                    }`}
+                  >
+                    {msg.message}
+                  </div>
+                </div>
+              );
+            })
           )}
-        </button>
-      </form>
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Message Form */}
+        <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-200 flex items-center gap-2 shrink-0">
+          <input
+            type="text"
+            value={newMessageText}
+            onChange={(e) => setNewMessageText(e.target.value)}
+            placeholder={
+              selectedRecipient.type === 'all'
+                ? 'Type a broadcast message to everyone...'
+                : `Type a direct message to ${selectedRecipient.data?.name}...`
+            }
+            className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 focus:border-[#20b875] focus:bg-white rounded-xl text-xs text-[#09233d] font-medium outline-none transition-all"
+          />
+          <button
+            type="submit"
+            disabled={sending || !newMessageText.trim()}
+            className="px-5 py-2.5 bg-[#20b875] hover:bg-[#18995e] disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer shrink-0"
+          >
+            {sending ? (
+              <span>Sending...</span>
+            ) : (
+              <>
+                <span>Send Message</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </>
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
