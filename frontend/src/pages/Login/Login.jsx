@@ -31,15 +31,11 @@ export default function Login({ onLoginSuccess }) {
       if (response.ok && data.success) {
         setSuccessMsg(`Welcome back, ${data.data.name} (${data.data.role.toUpperCase()})!`);
         if (data.data.token) {
-          localStorage.setItem('pydahsoft_token', data.data.token);
-          localStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
+          sessionStorage.setItem('pydahsoft_token', data.data.token);
+          sessionStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
         }
-        setTimeout(() => {
-          if (onLoginSuccess) {
-            onLoginSuccess(data.data);
-          }
-          navigate('/dashboard');
-        }, 800);
+        if (onLoginSuccess) onLoginSuccess(data.data);
+        navigate('/dashboard', { replace: true });
       } else {
         const errorMsg = data.error?.message || data.message || 'Invalid username or password';
         setError(errorMsg);

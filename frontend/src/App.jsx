@@ -6,17 +6,25 @@ import Sidebar from './components/Sidebar/Sidebar';
 import { fetchApi } from './config/api';
 import './App.css';
 
-import DashboardOverview from './pages/Dashboard/DashboardOverview';
-import UserManagement from './pages/UserManagement/UserManagement';
-import EmployeeManagement from './pages/Employees/EmployeeManagement';
-import ProjectsAndModules from './pages/Projects/ProjectsAndModules';
-import TeamsAndTasks from './pages/Teams/TeamsAndTasks';
-import TimeTracker from './pages/TimeTracking/TimeTracker';
-import TaskReviewQueue from './pages/Reviews/TaskReviewQueue';
-import DailyWorkPlans from './pages/DailyPlans/DailyWorkPlans';
-import PerformanceAndReports from './pages/Analytics/PerformanceAndReports';
-import AuditLogsView from './pages/AuditLogs/AuditLogsView';
-import SettingsPage from './pages/Settings/SettingsPage';
+// Lazy-loaded page components for ultra-fast loading and bundle optimization
+const DashboardOverview = lazy(() => import('./pages/Dashboard/DashboardOverview'));
+const UserManagement = lazy(() => import('./pages/UserManagement/UserManagement'));
+const EmployeeManagement = lazy(() => import('./pages/Employees/EmployeeManagement'));
+const ProjectsAndModules = lazy(() => import('./pages/Projects/ProjectsAndModules'));
+const TeamsAndTasks = lazy(() => import('./pages/Teams/TeamsAndTasks'));
+const TimeTracker = lazy(() => import('./pages/TimeTracking/TimeTracker'));
+const TaskReviewQueue = lazy(() => import('./pages/Reviews/TaskReviewQueue'));
+const DailyWorkPlans = lazy(() => import('./pages/DailyPlans/DailyWorkPlans'));
+const PerformanceAndReports = lazy(() => import('./pages/Analytics/PerformanceAndReports'));
+const AuditLogsView = lazy(() => import('./pages/AuditLogs/AuditLogsView'));
+const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
+
+// Fast loading spinner fallback
+const PageLoader = () => (
+  <div className="min-h-[calc(100vh-8rem)] p-8 text-center text-xs font-semibold text-gray-400 animate-pulse">
+    Loading page view...
+  </div>
+);
 
 function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmployeeId }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -447,7 +455,9 @@ function DashboardLayout({ user, onLogout }) {
 
 function App() {
   const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem('pydahsoft_user');
+    localStorage.removeItem('pydahsoft_user');
+    localStorage.removeItem('pydahsoft_token');
+    const storedUser = sessionStorage.getItem('pydahsoft_user');
     if (storedUser) {
       try {
         return JSON.parse(storedUser);
@@ -459,11 +469,17 @@ function App() {
   });
 
   const handleLogout = () => {
-    localStorage.removeItem('pydahsoft_user');
-    localStorage.removeItem('pydahsoft_token');
+    sessionStorage.removeItem('pydahsoft_user');
+    sessionStorage.removeItem('pydahsoft_token');
     localStorage.removeItem('pydahsoft_active_tab');
     setUser(null);
   };
+
+  useEffect(() => {
+    const handleSessionExpired = () => setUser(null);
+    window.addEventListener('pydahsoft:session-expired', handleSessionExpired);
+    return () => window.removeEventListener('pydahsoft:session-expired', handleSessionExpired);
+  }, []);
 
   return (
     <Routes>

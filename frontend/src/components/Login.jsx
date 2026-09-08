@@ -29,8 +29,8 @@ export default function Login({ onBack, onLoginSuccess }) {
       if (response.ok && data.success) {
         setSuccessMsg(`Welcome back, ${data.data.name} (${data.data.role.toUpperCase()})!`);
         if (data.data.token) {
-          localStorage.setItem('pydahsoft_token', data.data.token);
-          localStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
+          sessionStorage.setItem('pydahsoft_token', data.data.token);
+          sessionStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
         }
         setTimeout(() => {
           if (onLoginSuccess) {
@@ -48,12 +48,8 @@ export default function Login({ onBack, onLoginSuccess }) {
             token: 'demo_token_superadmin_2026'
           };
           setSuccessMsg('Welcome back, Super Admin (SUPERADMIN)!');
-          localStorage.setItem('pydahsoft_user', JSON.stringify(mockUser));
-          setTimeout(() => {
-            if (onLoginSuccess) {
-              onLoginSuccess(mockUser);
-            }
-          }, 1000);
+          sessionStorage.setItem('pydahsoft_user', JSON.stringify(mockUser));
+          if (onLoginSuccess) onLoginSuccess(mockUser);
         } else {
           setError(data.message || 'Invalid username or password');
         }
@@ -69,12 +65,8 @@ export default function Login({ onBack, onLoginSuccess }) {
           token: 'demo_token_superadmin_2026'
         };
         setSuccessMsg('Logged in as Super Admin (Offline/Direct Mode)');
-        localStorage.setItem('pydahsoft_user', JSON.stringify(mockUser));
-        setTimeout(() => {
-          if (onLoginSuccess) {
-            onLoginSuccess(mockUser);
-          }
-        }, 1000);
+        sessionStorage.setItem('pydahsoft_user', JSON.stringify(mockUser));
+        if (onLoginSuccess) onLoginSuccess(mockUser);
       } else {
         setError('Unable to connect to backend server. Make sure server is running on http://localhost:5000');
       }

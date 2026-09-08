@@ -56,7 +56,7 @@ export default function DashboardOverview({
 
   if (loading && !data) {
     return (
-      <div className="p-8 text-center text-sm font-semibold text-gray-600">
+      <div className="min-h-[calc(100vh-8rem)] p-8 text-center text-sm font-semibold text-gray-600">
         Loading workspace dashboard...
       </div>
     );
