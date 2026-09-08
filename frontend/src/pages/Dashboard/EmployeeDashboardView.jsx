@@ -1035,6 +1035,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         </div>
       </div>
 
+
       {/* MODAL 1: Quick Log Time Modal */}
       {showLogTimeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">

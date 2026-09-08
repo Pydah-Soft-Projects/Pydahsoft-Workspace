@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
 import EmployeeDashboardView from './EmployeeDashboardView';
+import DashboardChatBox from '../../components/Chat/DashboardChatBox';
 import Icon from '../../components/Icon';
 import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
@@ -485,6 +486,10 @@ export default function DashboardOverview({
               ))}
             </div>
           )}
+        </div>
+
+        <div className="mt-6">
+          <DashboardChatBox currentUser={user} employeeList={employeeList} />
         </div>
       </div>
     );

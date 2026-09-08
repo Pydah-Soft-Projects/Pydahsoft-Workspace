@@ -63,6 +63,12 @@ const Icon = ({ name, className = "w-4 h-4" }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       );
+    case 'chat':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      );
     case 'settings':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,6 +83,7 @@ const Icon = ({ name, className = "w-4 h-4" }) => {
 
 const ALL_SIDEBAR_ITEMS = [
   { id: 'overview', label: 'Dashboard Overview', permKey: 'canViewOverview', icon: 'overview' },
+  { id: 'chat', label: 'Team Chat Box', permKey: 'canViewChat', icon: 'chat' },
   { id: 'employees', label: 'Employee Directory', permKey: 'canViewEmployees', icon: 'employees' },
   { id: 'projects', label: 'Projects & Modules', permKey: 'canViewProjects', icon: 'projects' },
   { id: 'teams', label: 'Teams & Tasks', permKey: 'canViewTeams', icon: 'teams' },
@@ -102,9 +109,9 @@ const getRoleMenuItems = (user) => {
     }
     if (user.role === 'superior') return true;
     if (user.role === 'teamlead') {
-      return ['overview', 'users', 'projects', 'teams', 'time-tracker', 'reviews', 'daily-plans', 'analytics'].includes(item.id);
+      return ['overview', 'chat', 'users', 'projects', 'teams', 'time-tracker', 'reviews', 'daily-plans', 'analytics'].includes(item.id);
     }
-    return ['overview', 'teams', 'time-tracker', 'daily-plans', 'analytics'].includes(item.id);
+    return ['overview', 'chat', 'teams', 'time-tracker', 'daily-plans', 'analytics'].includes(item.id);
   });
 
   return allowed.length > 0 ? allowed : ALL_SIDEBAR_ITEMS.slice(0, 1);

@@ -118,7 +118,7 @@ const getEmployees = async (req, res) => {
     // 1. Managers (superadmin, superior) -> View All
     // 2. Team Lead -> View self + members of teams led by this user
     // 3. Regular Employee -> View self only
-    if (userRole !== 'superadmin' && userRole !== 'superior') {
+    if (req.query.purpose !== 'chat' && userRole !== 'superadmin' && userRole !== 'superior') {
       const ledTeams = await Team.find({ teamLead: userId });
       if (ledTeams.length > 0) {
         const memberIds = new Set();
