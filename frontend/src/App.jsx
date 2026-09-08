@@ -8,6 +8,7 @@ import './App.css';
 
 // Lazy-loaded page components for ultra-fast loading and bundle optimization
 const DashboardOverview = lazy(() => import('./pages/Dashboard/DashboardOverview'));
+const TeamChatPage = lazy(() => import('./pages/Chat/TeamChatPage'));
 const UserManagement = lazy(() => import('./pages/UserManagement/UserManagement'));
 const EmployeeManagement = lazy(() => import('./pages/Employees/EmployeeManagement'));
 const ProjectsAndModules = lazy(() => import('./pages/Projects/ProjectsAndModules'));
@@ -221,6 +222,7 @@ function DashboardLayout({ user, onLogout }) {
 
     const tabDocumentTitles = {
       overview: 'PydahSoft | Dashboard Overview',
+      chat: 'PydahSoft | Team Chat Box',
       users: 'PydahSoft | User Accounts',
       employees: 'PydahSoft | Employee Directory',
       projects: 'PydahSoft | Projects & Modules',
@@ -238,6 +240,7 @@ function DashboardLayout({ user, onLogout }) {
   const getTabTitle = (tab) => {
     switch (tab) {
       case 'overview': return 'Dashboard Overview';
+      case 'chat': return 'Team Chat Box & Direct Messaging Hub';
       case 'users': return 'User Accounts & Credentials Management';
       case 'employees': return 'Employee Directory & Staff Profiles';
       case 'projects': return 'Projects & Modules Breakdown';
@@ -405,6 +408,11 @@ function DashboardLayout({ user, onLogout }) {
                   setViewAsEmployeeId={setViewAsEmployeeId}
                   employeeList={employeeList}
                 />
+              </div>
+            )}
+            {visitedTabs.has('chat') && (
+              <div style={{ display: activeTab === 'chat' ? 'block' : 'none' }}>
+                <TeamChatPage currentUser={user} />
               </div>
             )}
             {visitedTabs.has('users') && (
