@@ -17,9 +17,16 @@ const chatMessageSchema = new mongoose.Schema(
     },
     recipientType: {
       type: String,
-      enum: ['all', 'individual'],
+      enum: ['all', 'team', 'individual'],
       default: 'all',
       required: true
+    },
+    teamId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Team'
+    },
+    teamName: {
+      type: String
     },
     recipientId: {
       type: mongoose.Schema.Types.ObjectId,

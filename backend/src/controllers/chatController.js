@@ -1,9 +1,10 @@
 const ChatMessage = require('../models/ChatMessage');
 const User = require('../models/User');
+const Team = require('../models/Team');
 
 const sendMessage = async (req, res) => {
   try {
-    const { recipientType = 'all', recipientId, recipientName, message } = req.body;
+    const { recipientType = 'all', recipientId, recipientName, teamId, teamName, message } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({
@@ -20,13 +21,21 @@ const sendMessage = async (req, res) => {
       }
     }
 
+    let resolvedTeamName = teamName;
+    if (recipientType === 'team' && teamId && !resolvedTeamName) {
+      const teamObj = await Team.findById(teamId).select('name');
+      if (teamObj) resolvedTeamName = teamObj.name;
+    }
+
     const newMessage = await ChatMessage.create({
       sender: req.user._id,
       senderName: req.user.name || req.user.username || 'Staff Member',
       senderRole: req.user.role || 'employee',
-      recipientType: recipientType === 'individual' ? 'individual' : 'all',
+      recipientType: ['team', 'individual'].includes(recipientType) ? recipientType : 'all',
       recipientId: recipientType === 'individual' ? recipientId : undefined,
       recipientName: recipientType === 'individual' ? resolvedRecipientName : undefined,
+      teamId: recipientType === 'team' ? teamId : undefined,
+      teamName: recipientType === 'team' ? resolvedTeamName : undefined,
       message: message.trim()
     });
 
@@ -48,10 +57,17 @@ const getMessages = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Fetch broadcast messages ('all') + direct messages sent to or sent by the logged-in user
+    // Find teams this user belongs to (or leads)
+    const userTeams = await Team.find({
+      $or: [{ members: userId }, { teamLead: userId }]
+    }).select('_id');
+    const userTeamIds = userTeams.map((t) => t._id);
+
+    // Fetch broadcast messages ('all') + team messages ('team') + direct messages
     const filter = {
       $or: [
         { recipientType: 'all' },
+        { recipientType: 'team', teamId: { $in: userTeamIds } },
         { recipientId: userId },
         { sender: userId }
       ]
@@ -59,7 +75,7 @@ const getMessages = async (req, res) => {
 
     const messages = await ChatMessage.find(filter)
       .sort({ createdAt: 1 })
-      .limit(200);
+      .limit(300);
 
     return res.status(200).json({
       success: true,

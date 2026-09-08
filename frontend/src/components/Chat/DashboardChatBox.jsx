@@ -24,7 +24,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
     if (employeeList && employeeList.length > 0) {
       setStaffList(employeeList);
     } else {
-      fetchApi('/employees')
+      fetchApi('/employees?purpose=chat')
         .then((res) => setStaffList(res.data || []))
         .catch(() => {});
     }

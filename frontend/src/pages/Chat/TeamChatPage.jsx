@@ -3,8 +3,9 @@ import { fetchApi } from '../../config/api';
 
 export default function TeamChatPage({ currentUser }) {
   const [staffList, setStaffList] = useState([]);
+  const [teamsList, setTeamsList] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [selectedRecipient, setSelectedRecipient] = useState({ type: 'all', data: null }); // type: 'all' | 'individual'
+  const [selectedRecipient, setSelectedRecipient] = useState({ type: 'all', data: null }); // type: 'all' | 'team' | 'individual'
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessageText, setNewMessageText] = useState('');
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -12,11 +13,15 @@ export default function TeamChatPage({ currentUser }) {
 
   const messagesEndRef = useRef(null);
 
-  // Fetch all staff members
+  // Fetch all staff members & teams
   useEffect(() => {
-    fetchApi('/employees')
+    fetchApi('/employees?purpose=chat')
       .then((res) => setStaffList(res.data || []))
-      .catch((err) => console.error('Failed to load staff list:', err));
+      .catch((err) => console.error('Failed to load staff list for chat:', err));
+
+    fetchApi('/teams')
+      .then((res) => setTeamsList(res.data || []))
+      .catch((err) => console.error('Failed to load teams list:', err));
   }, []);
 
   // Fetch messages from server
@@ -52,12 +57,18 @@ export default function TeamChatPage({ currentUser }) {
   const filteredMessages = messages.filter((msg) => {
     if (selectedRecipient.type === 'all') {
       return msg.recipientType === 'all';
+    } else if (selectedRecipient.type === 'team' && selectedRecipient.data) {
+      return msg.recipientType === 'team' && String(msg.teamId) === String(selectedRecipient.data._id);
     } else if (selectedRecipient.type === 'individual' && selectedRecipient.data) {
-      const targetId = selectedRecipient.data._id;
+      const targetId = String(selectedRecipient.data._id);
+      const myId = String(currentUser?._id);
+      const msgSender = String(msg.sender);
+      const msgRecipient = String(msg.recipientId);
+
       return (
         msg.recipientType === 'individual' &&
-        ((msg.sender === currentUser?._id && msg.recipientId === targetId) ||
-         (msg.sender === targetId && msg.recipientId === currentUser?._id))
+        ((msgSender === myId && msgRecipient === targetId) ||
+         (msgSender === targetId && msgRecipient === myId))
       );
     }
     return false;
@@ -72,6 +83,8 @@ export default function TeamChatPage({ currentUser }) {
       const recipientType = selectedRecipient.type;
       const recipientId = recipientType === 'individual' ? selectedRecipient.data?._id : undefined;
       const recipientName = recipientType === 'individual' ? selectedRecipient.data?.name : undefined;
+      const teamId = recipientType === 'team' ? selectedRecipient.data?._id : undefined;
+      const teamName = recipientType === 'team' ? selectedRecipient.data?.name : undefined;
 
       const res = await fetchApi('/chat/send', {
         method: 'POST',
@@ -79,6 +92,8 @@ export default function TeamChatPage({ currentUser }) {
           recipientType,
           recipientId,
           recipientName,
+          teamId,
+          teamName,
           message: newMessageText.trim()
         })
       });
@@ -114,12 +129,12 @@ export default function TeamChatPage({ currentUser }) {
         <div className="p-4 border-b border-gray-200 bg-white">
           <h2 className="text-base font-black text-[#09233d] flex items-center gap-2">
             Team Messaging Hub
-            <span className="w-2 h-2 rounded-full bg-[#20b875] animate-pulse" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#20b875] animate-pulse" />
           </h2>
-          <p className="text-xs text-gray-500 font-medium">Select group or individual to chat</p>
+          <p className="text-xs text-gray-500 font-medium">Select group, team, or staff member to chat</p>
         </div>
 
-        {/* Group Broadcast Option */}
+        {/* Global Broadcast Option */}
         <div className="p-3 border-b border-gray-200">
           <button
             type="button"
@@ -135,9 +150,9 @@ export default function TeamChatPage({ currentUser }) {
                 📢
               </div>
               <div>
-                <span className="block font-black text-xs">Everyone (Group Broadcast)</span>
+                <span className="block font-black text-xs">Everyone (Company Broadcast)</span>
                 <span className={`block text-[10px] font-medium ${selectedRecipient.type === 'all' ? 'text-emerald-300' : 'text-gray-400'}`}>
-                  Public Team Announcements
+                  Public All-Staff Announcements
                 </span>
               </div>
             </div>
@@ -147,12 +162,49 @@ export default function TeamChatPage({ currentUser }) {
           </button>
         </div>
 
+        {/* Teams List (Team Broadcasts) */}
+        {teamsList.length > 0 && (
+          <div className="px-3 pt-3 pb-1 border-b border-gray-200">
+            <div className="px-1 mb-1 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+              Teams & Departments ({teamsList.length})
+            </div>
+            <div className="space-y-1 max-h-36 overflow-y-auto">
+              {teamsList.map((team) => {
+                const isSelected =
+                  selectedRecipient.type === 'team' &&
+                  selectedRecipient.data?._id === team._id;
+
+                return (
+                  <button
+                    key={team._id}
+                    type="button"
+                    onClick={() => setSelectedRecipient({ type: 'team', data: team })}
+                    className={`w-full p-2 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                      isSelected
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white hover:bg-blue-50 text-[#09233d] border border-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="text-xs">👥</span>
+                      <span className="truncate text-xs font-bold">{team.name}</span>
+                    </div>
+                    <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md ${isSelected ? 'bg-blue-800 text-white' : 'bg-blue-50 text-blue-600'}`}>
+                      Team
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Staff Search Box */}
         <div className="p-3 border-b border-gray-200 bg-white">
           <div className="relative">
             <input
               type="text"
-              placeholder="Search employee by name..."
+              placeholder="Search staff, leads, or superadmin..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-[#09233d] font-medium focus:bg-white focus:border-[#20b875] outline-none"
@@ -163,16 +215,17 @@ export default function TeamChatPage({ currentUser }) {
           </div>
         </div>
 
-        {/* Individual Staff List */}
+        {/* Individual Contact Directory List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           <div className="px-2 py-1 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
-            Individual Staff ({filteredStaff.length})
+            Direct 1-on-1 Contacts ({filteredStaff.length})
           </div>
 
           {filteredStaff.map((emp) => {
             const isSelected =
               selectedRecipient.type === 'individual' &&
               selectedRecipient.data?._id === emp._id;
+            const isMe = emp._id === currentUser?._id;
 
             return (
               <button
@@ -196,7 +249,9 @@ export default function TeamChatPage({ currentUser }) {
                     {emp.name ? emp.name.charAt(0).toUpperCase() : 'E'}
                   </div>
                   <div className="truncate">
-                    <span className="block text-xs font-bold truncate">{emp.name}</span>
+                    <span className="block text-xs font-bold truncate">
+                      {emp.name} {isMe && '(You)'}
+                    </span>
                     <span
                       className={`block text-[10px] font-medium truncate ${
                         isSelected ? 'text-purple-200' : 'text-gray-400'
@@ -211,7 +266,11 @@ export default function TeamChatPage({ currentUser }) {
                   className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase shrink-0 ${
                     isSelected
                       ? 'bg-purple-800 text-white'
-                      : 'bg-gray-100 text-gray-600'
+                      : emp.role === 'superadmin' || emp.role === 'admin'
+                      ? 'bg-rose-100 text-rose-700'
+                      : emp.role === 'superior' || emp.role === 'teamlead'
+                      ? 'bg-purple-100 text-purple-700'
+                      : 'bg-emerald-50 text-emerald-700'
                   }`}
                 >
                   {emp.role || 'Staff'}
@@ -229,21 +288,33 @@ export default function TeamChatPage({ currentUser }) {
           <div className="flex items-center gap-3">
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
-                selectedRecipient.type === 'all' ? 'bg-[#20b875]' : 'bg-purple-600'
+                selectedRecipient.type === 'all'
+                  ? 'bg-[#20b875]'
+                  : selectedRecipient.type === 'team'
+                  ? 'bg-blue-600'
+                  : 'bg-purple-600'
               }`}
             >
-              {selectedRecipient.type === 'all' ? '📢' : '👤'}
+              {selectedRecipient.type === 'all'
+                ? '📢'
+                : selectedRecipient.type === 'team'
+                ? '👥'
+                : '👤'}
             </div>
             <div>
               <h3 className="text-sm font-black text-white">
                 {selectedRecipient.type === 'all'
-                  ? 'Everyone (Group Broadcast Chat)'
-                  : `Direct Chat: ${selectedRecipient.data?.name}`}
+                  ? 'Everyone (Company Broadcast Channel)'
+                  : selectedRecipient.type === 'team'
+                  ? `Team Broadcast: ${selectedRecipient.data?.name}`
+                  : `Direct 1-on-1 Chat: ${selectedRecipient.data?.name}`}
               </h3>
               <p className="text-[11px] text-gray-300 font-medium">
                 {selectedRecipient.type === 'all'
-                  ? 'All staff members receive and see messages in this channel'
-                  : `Private 1-on-1 conversation with ${selectedRecipient.data?.name} (${selectedRecipient.data?.username || 'Staff'})`}
+                  ? 'All company staff receive and view messages in this channel'
+                  : selectedRecipient.type === 'team'
+                  ? `Broadcast to all members of ${selectedRecipient.data?.name}`
+                  : `Private conversation with ${selectedRecipient.data?.name} (${selectedRecipient.data?.role || 'Staff'})`}
               </p>
             </div>
           </div>
@@ -258,14 +329,14 @@ export default function TeamChatPage({ currentUser }) {
           ) : filteredMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-8 text-gray-400">
               <span className="text-4xl mb-2">💬</span>
-              <p className="text-sm font-bold text-gray-700">No messages in this chat yet</p>
+              <p className="text-sm font-bold text-gray-700">No messages in this conversation yet</p>
               <p className="text-xs text-gray-400 mt-1">
-                Type a message below to start the conversation!
+                Type a message below to start chatting!
               </p>
             </div>
           ) : (
             filteredMessages.map((msg) => {
-              const isMe = msg.sender === currentUser?._id;
+              const isMe = String(msg.sender) === String(currentUser?._id);
 
               return (
                 <div
@@ -278,7 +349,7 @@ export default function TeamChatPage({ currentUser }) {
                       className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-md ${
                         msg.senderRole === 'superadmin' || msg.senderRole === 'admin'
                           ? 'bg-rose-100 text-rose-700'
-                          : msg.senderRole === 'superior'
+                          : msg.senderRole === 'superior' || msg.senderRole === 'teamlead'
                           ? 'bg-purple-100 text-purple-700'
                           : 'bg-emerald-100 text-emerald-700'
                       }`}
@@ -296,6 +367,8 @@ export default function TeamChatPage({ currentUser }) {
                         ? 'bg-[#09233d] text-white rounded-tr-none'
                         : selectedRecipient.type === 'all'
                         ? 'bg-white text-gray-800 border border-emerald-200 rounded-tl-none'
+                        : selectedRecipient.type === 'team'
+                        ? 'bg-blue-50 text-blue-950 border border-blue-200 rounded-tl-none'
                         : 'bg-purple-50 text-purple-950 border border-purple-200 rounded-tl-none'
                     }`}
                   >
@@ -317,6 +390,8 @@ export default function TeamChatPage({ currentUser }) {
             placeholder={
               selectedRecipient.type === 'all'
                 ? 'Type a broadcast message to everyone...'
+                : selectedRecipient.type === 'team'
+                ? `Type a team message to ${selectedRecipient.data?.name}...`
                 : `Type a direct message to ${selectedRecipient.data?.name}...`
             }
             className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 focus:border-[#20b875] focus:bg-white rounded-xl text-xs text-[#09233d] font-medium outline-none transition-all"
