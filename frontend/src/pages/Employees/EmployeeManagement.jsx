@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
 import Icon from '../../components/Icon';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
 export default function EmployeeManagement({ currentUser }) {
   const [employees, setEmployees] = useState([]);
@@ -131,7 +132,7 @@ export default function EmployeeManagement({ currentUser }) {
       )}
 
       {loading ? (
-        <div className="p-8 text-center text-xs font-semibold text-gray-500">Loading directory...</div>
+        <LoadingSpinner message="Loading employee directory..." />
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">

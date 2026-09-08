@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
 import EmployeeDashboardView from './EmployeeDashboardView';
 import Icon from '../../components/Icon';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
 export default function DashboardOverview({
   user,
@@ -55,11 +56,7 @@ export default function DashboardOverview({
   };
 
   if (loading && !data) {
-    return (
-      <div className="min-h-[calc(100vh-8rem)] p-8 text-center text-sm font-semibold text-gray-600">
-        Loading workspace dashboard...
-      </div>
-    );
+    return <LoadingSpinner fullScreen message="Loading workspace dashboard..." />;
   }
 
   if (error) {
