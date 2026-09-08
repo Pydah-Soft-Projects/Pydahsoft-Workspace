@@ -113,32 +113,32 @@ const getEmployeeDashboard = async (employeeId) => {
     throw new Error('Employee not found');
   }
 
-  // Find all tasks assigned to this employee
-  const allTasks = await Task.find({ assignedTo: employeeId })
-    .populate('project', 'name projectId')
-    .populate('module', 'name')
-    .sort({ updatedAt: -1, createdAt: -1 });
-
-  // Calculate or fetch performance record
-  let performance = null;
-  try {
-    performance = await calculateEmployeePerformance(employeeId);
-  } catch (err) {
-    console.error('Error calculating performance:', err);
-  }
-
-  const activeTimer = await TimeEntry.findOne({ employee: employeeId, status: 'Running' })
-    .populate('task', 'title taskId status');
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const todayPlan = await DailyPlan.findOne({
-    employee: employeeId,
-    date: { $gte: today, $lt: tomorrow }
-  }).populate('tasks.task', 'title taskId priority status estimatedHours actualHours');
+  // Parallelize database queries for fast response
+  const [allTasks, performance, activeTimer, todayPlan, timeEntries] = await Promise.all([
+    Task.find({ assignedTo: employeeId })
+      .populate('project', 'name projectId')
+      .populate('module', 'name')
+      .sort({ updatedAt: -1, createdAt: -1 }),
+    calculateEmployeePerformance(employeeId).catch((err) => {
+      console.error('Error calculating performance:', err);
+      return null;
+    }),
+    TimeEntry.findOne({ employee: employeeId, status: 'Running' })
+      .populate('task', 'title taskId status'),
+    DailyPlan.findOne({
+      employee: employeeId,
+      date: { $gte: today, $lt: tomorrow }
+    }).populate('tasks.task', 'title taskId priority status estimatedHours actualHours'),
+    TimeEntry.find({
+      employee: employeeId,
+      startTime: { $gte: today, $lt: tomorrow }
+    })
+  ]);
 
   // Task Status counts
   const totalTasks = allTasks.length;
@@ -155,11 +155,7 @@ const getEmployeeDashboard = async (employeeId) => {
   );
 
   // Time logging for today
-  const timeEntries = await TimeEntry.find({
-    employee: employeeId,
-    startTime: { $gte: today, $lt: tomorrow }
-  });
-  let hoursLoggedToday = timeEntries.reduce(
+  let hoursLoggedToday = (timeEntries || []).reduce(
     (sum, e) => sum + (e.durationSeconds || 0) / 3600,
     0
   );

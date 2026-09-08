@@ -14,13 +14,13 @@ export default function TaskReviewQueue({ currentUser }) {
   }, []);
 
   const loadPendingReviews = async () => {
-    setLoading(true);
+    if (!pendingTasks || pendingTasks.length === 0) setLoading(true);
     setError('');
     try {
       const res = await fetchApi('/reviews/pending');
       setPendingTasks(res.data);
     } catch (err) {
-      setError(err.message || 'Failed to load pending task review queue');
+      if (!pendingTasks || pendingTasks.length === 0) setError(err.message || 'Failed to load pending task review queue');
     } finally {
       setLoading(false);
     }

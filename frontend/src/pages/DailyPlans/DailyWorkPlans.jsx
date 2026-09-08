@@ -27,7 +27,7 @@ export default function DailyWorkPlans({ currentUser }) {
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
+    if (!plans || plans.length === 0) setLoading(true);
     try {
       const [plansRes, empRes, tasksRes, modRes] = await Promise.all([
         fetchApi('/daily-plans'),

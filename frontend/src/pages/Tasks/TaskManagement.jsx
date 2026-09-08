@@ -33,7 +33,7 @@ export default function TaskManagement({ currentUser }) {
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
+    if (!tasks || tasks.length === 0) setLoading(true);
     setError('');
     try {
       const [taskRes, empRes, projRes, modRes] = await Promise.all([
@@ -47,7 +47,7 @@ export default function TaskManagement({ currentUser }) {
       setProjects(projRes.data);
       setModules(modRes.data);
     } catch (err) {
-      setError(err.message || 'Failed to load task data');
+      if (!tasks || tasks.length === 0) setError(err.message || 'Failed to load task data');
     } finally {
       setLoading(false);
     }

@@ -29,7 +29,7 @@ export default function ModuleManagement({ currentUser }) {
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
+    if (!modules || modules.length === 0) setLoading(true);
     setError('');
     try {
       const [modRes, projRes, teamRes] = await Promise.all([
@@ -41,7 +41,7 @@ export default function ModuleManagement({ currentUser }) {
       setProjects(projRes.data);
       setTeams(teamRes.data);
     } catch (err) {
-      setError(err.message || 'Failed to load modules');
+      if (!modules || modules.length === 0) setError(err.message || 'Failed to load modules');
     } finally {
       setLoading(false);
     }

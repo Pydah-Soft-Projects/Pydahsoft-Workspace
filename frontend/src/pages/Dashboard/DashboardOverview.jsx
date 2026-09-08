@@ -33,7 +33,7 @@ export default function DashboardOverview({
   }, [user, viewAsEmployeeId]);
 
   const loadDashboard = async () => {
-    setLoading(true);
+    if (!data) setLoading(true);
     setError('');
     try {
       let endpoint = '/dashboard/employee';
@@ -48,13 +48,13 @@ export default function DashboardOverview({
       const res = await fetchApi(endpoint);
       setData(res.data);
     } catch (err) {
-      setError(err.message || 'Failed to load dashboard data');
+      if (!data) setError(err.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="p-8 text-center text-sm font-semibold text-gray-600">
         Loading workspace dashboard...

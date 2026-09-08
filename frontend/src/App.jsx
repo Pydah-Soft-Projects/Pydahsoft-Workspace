@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom';
 import Landing from './pages/Landing/Landing';
 import Login from './pages/Login/Login';
@@ -6,25 +6,17 @@ import Sidebar from './components/Sidebar/Sidebar';
 import { fetchApi } from './config/api';
 import './App.css';
 
-// Lazy-loaded page components for ultra-fast loading and bundle optimization
-const DashboardOverview = lazy(() => import('./pages/Dashboard/DashboardOverview'));
-const UserManagement = lazy(() => import('./pages/UserManagement/UserManagement'));
-const EmployeeManagement = lazy(() => import('./pages/Employees/EmployeeManagement'));
-const ProjectsAndModules = lazy(() => import('./pages/Projects/ProjectsAndModules'));
-const TeamsAndTasks = lazy(() => import('./pages/Teams/TeamsAndTasks'));
-const TimeTracker = lazy(() => import('./pages/TimeTracking/TimeTracker'));
-const TaskReviewQueue = lazy(() => import('./pages/Reviews/TaskReviewQueue'));
-const DailyWorkPlans = lazy(() => import('./pages/DailyPlans/DailyWorkPlans'));
-const PerformanceAndReports = lazy(() => import('./pages/Analytics/PerformanceAndReports'));
-const AuditLogsView = lazy(() => import('./pages/AuditLogs/AuditLogsView'));
-const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
-
-// Fast loading spinner fallback
-const PageLoader = () => (
-  <div className="p-8 text-center text-xs font-semibold text-gray-400 animate-pulse">
-    Loading page view...
-  </div>
-);
+import DashboardOverview from './pages/Dashboard/DashboardOverview';
+import UserManagement from './pages/UserManagement/UserManagement';
+import EmployeeManagement from './pages/Employees/EmployeeManagement';
+import ProjectsAndModules from './pages/Projects/ProjectsAndModules';
+import TeamsAndTasks from './pages/Teams/TeamsAndTasks';
+import TimeTracker from './pages/TimeTracking/TimeTracker';
+import TaskReviewQueue from './pages/Reviews/TaskReviewQueue';
+import DailyWorkPlans from './pages/DailyPlans/DailyWorkPlans';
+import PerformanceAndReports from './pages/Analytics/PerformanceAndReports';
+import AuditLogsView from './pages/AuditLogs/AuditLogsView';
+import SettingsPage from './pages/Settings/SettingsPage';
 
 function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmployeeId }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -189,6 +181,18 @@ function DashboardLayout({ user, onLogout }) {
   const [subTab, setSubTab] = useState('default');
   const [viewAsEmployeeId, setViewAsEmployeeId] = useState(null);
   const [employeeList, setEmployeeList] = useState([]);
+  const [visitedTabs, setVisitedTabs] = useState(() => new Set([getInitialTab()]));
+
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (!prev.has(activeTab)) {
+        const next = new Set(prev);
+        next.add(activeTab);
+        return next;
+      }
+      return prev;
+    });
+  }, [activeTab]);
 
   useEffect(() => {
     if (user?.role === 'superadmin' || user?.role === 'superior') {
@@ -374,8 +378,8 @@ function DashboardLayout({ user, onLogout }) {
         </header>
 
         <div className="p-6">
-          <Suspense fallback={<PageLoader />}>
-            {activeTab === 'overview' && (
+          {visitedTabs.has('overview') && (
+            <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
               <DashboardOverview
                 user={user}
                 setActiveTab={setActiveTab}
@@ -383,18 +387,58 @@ function DashboardLayout({ user, onLogout }) {
                 setViewAsEmployeeId={setViewAsEmployeeId}
                 employeeList={employeeList}
               />
-            )}
-            {activeTab === 'users' && <UserManagement currentUser={user} />}
-            {activeTab === 'employees' && <EmployeeManagement currentUser={user} />}
-            {activeTab === 'projects' && <ProjectsAndModules currentUser={user} activeSubTab={subTab} />}
-            {activeTab === 'teams' && <TeamsAndTasks currentUser={user} activeSubTab={subTab} />}
-            {activeTab === 'time-tracker' && <TimeTracker currentUser={user} />}
-            {activeTab === 'reviews' && <TaskReviewQueue currentUser={user} />}
-            {activeTab === 'daily-plans' && <DailyWorkPlans currentUser={user} />}
-            {activeTab === 'analytics' && <PerformanceAndReports currentUser={user} activeSubTab={subTab} />}
-            {activeTab === 'audit-logs' && <AuditLogsView currentUser={user} />}
-            {activeTab === 'settings' && <SettingsPage currentUser={user} />}
-          </Suspense>
+            </div>
+          )}
+          {visitedTabs.has('users') && (
+            <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
+              <UserManagement currentUser={user} />
+            </div>
+          )}
+          {visitedTabs.has('employees') && (
+            <div style={{ display: activeTab === 'employees' ? 'block' : 'none' }}>
+              <EmployeeManagement currentUser={user} />
+            </div>
+          )}
+          {visitedTabs.has('projects') && (
+            <div style={{ display: activeTab === 'projects' ? 'block' : 'none' }}>
+              <ProjectsAndModules currentUser={user} activeSubTab={subTab} />
+            </div>
+          )}
+          {visitedTabs.has('teams') && (
+            <div style={{ display: activeTab === 'teams' ? 'block' : 'none' }}>
+              <TeamsAndTasks currentUser={user} activeSubTab={subTab} />
+            </div>
+          )}
+          {visitedTabs.has('time-tracker') && (
+            <div style={{ display: activeTab === 'time-tracker' ? 'block' : 'none' }}>
+              <TimeTracker currentUser={user} />
+            </div>
+          )}
+          {visitedTabs.has('reviews') && (
+            <div style={{ display: activeTab === 'reviews' ? 'block' : 'none' }}>
+              <TaskReviewQueue currentUser={user} />
+            </div>
+          )}
+          {visitedTabs.has('daily-plans') && (
+            <div style={{ display: activeTab === 'daily-plans' ? 'block' : 'none' }}>
+              <DailyWorkPlans currentUser={user} />
+            </div>
+          )}
+          {visitedTabs.has('analytics') && (
+            <div style={{ display: activeTab === 'analytics' ? 'block' : 'none' }}>
+              <PerformanceAndReports currentUser={user} activeSubTab={subTab} />
+            </div>
+          )}
+          {visitedTabs.has('audit-logs') && (
+            <div style={{ display: activeTab === 'audit-logs' ? 'block' : 'none' }}>
+              <AuditLogsView currentUser={user} />
+            </div>
+          )}
+          {visitedTabs.has('settings') && (
+            <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}>
+              <SettingsPage currentUser={user} />
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -30,7 +30,7 @@ export default function EmployeeManagement({ currentUser }) {
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
+    if (!employees || employees.length === 0) setLoading(true);
     setError('');
     try {
       const [empRes, rolesRes] = await Promise.all([
@@ -43,7 +43,7 @@ export default function EmployeeManagement({ currentUser }) {
         setFormData(prev => ({ ...prev, role: rolesRes.data[0].name }));
       }
     } catch (err) {
-      setError(err.message || 'Failed to fetch employees');
+      if (!employees || employees.length === 0) setError(err.message || 'Failed to fetch employees');
     } finally {
       setLoading(false);
     }

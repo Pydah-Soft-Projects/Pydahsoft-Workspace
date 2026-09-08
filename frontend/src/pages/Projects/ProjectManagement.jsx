@@ -22,7 +22,7 @@ export default function ProjectManagement({ currentUser }) {
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
+    if (!projects || projects.length === 0) setLoading(true);
     setError('');
     try {
       const [projRes, teamRes] = await Promise.all([
@@ -32,7 +32,7 @@ export default function ProjectManagement({ currentUser }) {
       setProjects(projRes.data);
       setTeams(teamRes.data);
     } catch (err) {
-      setError(err.message || 'Failed to load projects');
+      if (!projects || projects.length === 0) setError(err.message || 'Failed to load projects');
     } finally {
       setLoading(false);
     }

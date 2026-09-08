@@ -141,7 +141,7 @@ export default function UserManagement({ currentUser }) {
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
+    if (!users || users.length === 0) setLoading(true);
     setError('');
     try {
       const [usersRes, rolesRes] = await Promise.all([
@@ -154,7 +154,7 @@ export default function UserManagement({ currentUser }) {
         setCreateForm(prev => ({ ...prev, role: rolesRes.data[0].name }));
       }
     } catch (err) {
-      setError(err.message || 'Failed to fetch user accounts and dynamic roles');
+      if (!users || users.length === 0) setError(err.message || 'Failed to fetch user accounts and dynamic roles');
     } finally {
       setLoading(false);
     }
