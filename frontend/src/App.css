@@ -21,6 +21,45 @@ html {
   scroll-behavior: smooth;
 }
 
+.dashboard-main {
+  min-width: 0;
+}
+
+.dashboard-header__title {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.dashboard-header__title > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-header__title h1,
+.dashboard-header__title p {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.dashboard-header__heading {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.dashboard-header__controls {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-filter-button > div:first-child {
+  min-width: 0;
+}
+
 @media (max-width: 767px) {
   .dashboard-shell {
     min-width: 0;
@@ -28,9 +67,12 @@ html {
 
   .dashboard-header__controls {
     width: 100%;
-    min-width: 0;
     overflow-x: auto;
     padding-bottom: 1px;
+  }
+
+  .dashboard-header__title {
+    flex: 1 1 180px;
   }
 
   .dashboard-header__controls .relative {
@@ -40,6 +82,10 @@ html {
 
   .dashboard-header__controls .relative > button {
     width: min(100%, 240px);
+  }
+
+  .dashboard-filter-menu {
+    width: min(288px, calc(100vw - 24px));
   }
 
   .dashboard-header__controls > div {

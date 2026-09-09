@@ -53,7 +53,7 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
       <button
         type="button"
         onClick={() => setDropdownOpen(!dropdownOpen)}
-        className="flex items-center gap-2.5 px-3.5 py-1.5 bg-white border border-emerald-300 hover:border-[#20b875] rounded-xl text-xs font-bold text-[#09233d] shadow-2xs hover:shadow-xs focus:outline-none focus:ring-2 focus:ring-[#20b875]/30 cursor-pointer transition-all min-w-[240px] justify-between group"
+        className="dashboard-filter-button flex items-center gap-2.5 px-3.5 py-1.5 bg-white border border-emerald-300 hover:border-[#20b875] rounded-xl text-xs font-bold text-[#09233d] shadow-2xs hover:shadow-xs focus:outline-none focus:ring-2 focus:ring-[#20b875]/30 cursor-pointer transition-all min-w-[240px] justify-between group"
       >
         <div className="flex items-center gap-2 truncate">
           {selectedEmp ? (
@@ -84,7 +84,7 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
       </button>
 
       {dropdownOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-emerald-200 shadow-2xl z-50 overflow-hidden py-2 animate-in fade-in zoom-in-95 duration-150">
+        <div className="dashboard-filter-menu absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-emerald-200 shadow-2xl z-50 overflow-hidden py-2 animate-in fade-in zoom-in-95 duration-150">
           <div className="px-3.5 pb-2 border-b border-gray-100 flex items-center justify-between">
             <span className="text-[11px] font-black text-[#09233d] uppercase tracking-wider">
               Select Staff Member
@@ -280,7 +280,7 @@ function DashboardLayout({ user, onLogout }) {
 
       <main className="flex-1 h-screen overflow-y-auto w-full">
         <header className="dashboard-header bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3.5 flex flex-wrap gap-3 justify-between items-center sticky top-0 z-30 shadow-xs">
-          <div className="flex items-center gap-3">
+          <div className="dashboard-header__title flex items-center gap-3">
             {/* Mobile Sidebar Hamburger Toggle */}
             <button
               type="button"
@@ -295,7 +295,7 @@ function DashboardLayout({ user, onLogout }) {
 
             {activeTab === 'overview' ? (
               <div>
-                <h1 className="text-base md:text-xl font-black text-[#09233d] tracking-tight truncate">
+                <h1 className="dashboard-header__heading text-base md:text-xl font-black text-[#09233d] tracking-tight whitespace-normal">
                   Welcome back, <span className="text-[#10b981]">{user.name}!</span>
                 </h1>
                 <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 truncate hidden sm:block">
@@ -306,7 +306,7 @@ function DashboardLayout({ user, onLogout }) {
               </div>
             ) : (
               <div>
-                <h1 className="text-sm md:text-lg font-black text-[#09233d] truncate">
+                <h1 className="dashboard-header__heading text-sm md:text-lg font-black text-[#09233d] whitespace-normal">
                   {getTabTitle(activeTab)}
                 </h1>
                 {activeTab === 'audit-logs' && (
@@ -319,7 +319,7 @@ function DashboardLayout({ user, onLogout }) {
           </div>
 
           {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
-          <div className="dashboard-header__controls flex items-center gap-3 text-xs">
+          <div className="dashboard-header__controls flex items-center gap-3 text-xs" aria-label="Dashboard filters and view controls">
             {activeTab === 'overview' && (user?.role === 'superadmin' || user?.role === 'superior') && employeeList.length > 0 && (
               <HeaderEmployeeSelector
                 employeeList={employeeList}
