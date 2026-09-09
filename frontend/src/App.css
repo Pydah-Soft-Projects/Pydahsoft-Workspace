@@ -669,55 +669,26 @@ html {
   .login-background__spark { animation: none; }
 }
 
-@media (max-width: 640px) {
-  .login-header {
-    padding: 14px 12px;
-    gap: 8px;
+@media (max-width: 768px) {
+  .login-prop {
+    display: none !important;
   }
-
-  .login-header > a:last-child {
-    max-width: 145px;
-    padding: 8px 10px;
-    text-align: center;
-  }
-
   .login-stage {
-    padding: 12px;
+    perspective: none;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
-
   .login-scene {
-    width: min(100%, 320px);
-  }
-
-  .login-card {
     width: 100%;
-    box-sizing: border-box;
   }
-
-  .login-card form {
-    margin-top: 18px;
-    gap: 12px;
+  .login-card {
+    transform: none !important;
+    animation: none !important;
+    padding: 1.5rem !important;
   }
-
-  .login-card input {
-    padding: 10px 12px;
+  .login-card:hover {
+    transform: none !important;
   }
-
-  .login-card form button {
-    padding-top: 12px;
-    padding-bottom: 12px;
-  }
-
-  .login-card > div:last-child {
-    margin-top: 18px;
-    padding-top: 12px;
-  }
-
-  .login-prop--lock { right: -5%; top: 10%; transform: scale(0.5); }
-  .login-prop--user { left: -4%; top: 13%; transform: scale(0.55); }
-  .login-prop--form { left: -4%; bottom: 3%; transform: scale(0.52); }
-  .login-card { transform: none; }
-  .login-card:hover { transform: translateY(-3px); }
 }
 
 @media (max-width: 360px) {
