@@ -296,15 +296,15 @@ export default function SettingsPage({ currentUser }) {
                 ) : (
                   <div className="space-y-3">
                     {/* Master Bulk Control Bar */}
-                    <div className="flex items-center justify-between bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-xs">
-                      <span className="font-bold text-gray-700 text-[11px]">Master Toggles:</span>
-                      <div className="flex gap-1.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-xs">
+                      <span className="font-bold text-gray-700 text-[11px] shrink-0">Master Toggles:</span>
+                      <div className="flex items-center gap-1.5 w-full sm:w-auto">
                         <button
                           type="button"
                           onClick={() => setBulkRolePermissions(role._id, 'read')}
-                          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200 flex items-center gap-1"
+                          className="flex-1 sm:flex-none justify-center px-2 sm:px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200 flex items-center gap-1 whitespace-nowrap transition-all"
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
@@ -313,9 +313,9 @@ export default function SettingsPage({ currentUser }) {
                         <button
                           type="button"
                           onClick={() => setBulkRolePermissions(role._id, 'write')}
-                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200 flex items-center gap-1"
+                          className="flex-1 sm:flex-none justify-center px-2 sm:px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200 flex items-center gap-1 whitespace-nowrap transition-all"
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                           </svg>
                           All Write
@@ -323,9 +323,9 @@ export default function SettingsPage({ currentUser }) {
                         <button
                           type="button"
                           onClick={() => setBulkRolePermissions(role._id, 'none')}
-                          className="px-2.5 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[10px] font-bold flex items-center gap-1"
+                          className="flex-1 sm:flex-none justify-center px-2 sm:px-2.5 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[10px] font-bold flex items-center gap-1 whitespace-nowrap transition-all"
                         >
-                          <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3 h-3 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                           </svg>
                           Clear

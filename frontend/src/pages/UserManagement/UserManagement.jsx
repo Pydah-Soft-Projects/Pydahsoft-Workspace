@@ -442,29 +442,29 @@ export default function UserManagement({ currentUser }) {
             ) : (
               <div className="space-y-3">
                 {/* Master Bulk Control Bar */}
-                <div className="flex items-center justify-between bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-xs">
-                  <span className="font-bold text-gray-700 text-[11px]">Master Toggles:</span>
-                  <div className="flex gap-1.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-xs">
+                  <span className="font-bold text-gray-700 text-[11px] shrink-0">Master Toggles:</span>
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => setBulkUserPermissions('read')}
-                      className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200 inline-flex items-center gap-1"
+                      className="flex-1 sm:flex-none justify-center px-2 sm:px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200 inline-flex items-center gap-1 whitespace-nowrap transition-all"
                     >
-                      <span className="inline-flex items-center gap-1"><Icon name="eye" className="w-3.5 h-3.5" /> Select All Read</span>
+                      <span className="inline-flex items-center gap-1"><Icon name="eye" className="w-3 h-3 shrink-0" /> Select All Read</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setBulkUserPermissions('write')}
-                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200 inline-flex items-center gap-1"
+                      className="flex-1 sm:flex-none justify-center px-2 sm:px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200 inline-flex items-center gap-1 whitespace-nowrap transition-all"
                     >
-                      <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3.5 h-3.5" /> Select All Write</span>
+                      <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3 h-3 shrink-0" /> Select All Write</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setBulkUserPermissions('none')}
-                      className="px-2.5 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[10px] font-bold inline-flex items-center gap-1"
+                      className="flex-1 sm:flex-none justify-center px-2 sm:px-2.5 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
                     >
-                      <span className="inline-flex items-center gap-1"><Icon name="close" className="w-3.5 h-3.5" /> Clear All</span>
+                      <span className="inline-flex items-center gap-1"><Icon name="close" className="w-3 h-3 shrink-0" /> Clear All</span>
                     </button>
                   </div>
                 </div>

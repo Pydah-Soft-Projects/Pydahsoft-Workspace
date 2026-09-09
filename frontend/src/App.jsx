@@ -238,6 +238,24 @@ function DashboardLayout({ user, onLogout }) {
     document.title = tabDocumentTitles[activeTab] || 'PydahSoft | Dashboard';
   }, [activeTab]);
 
+  const getMobileTabTitle = (tab) => {
+    switch (tab) {
+      case 'overview': return 'Overview';
+      case 'chat': return 'Team Chat';
+      case 'users': return 'Users';
+      case 'employees': return 'Employees';
+      case 'projects': return 'Projects';
+      case 'teams': return 'Teams';
+      case 'time-tracker': return 'Time Tracker';
+      case 'reviews': return 'Reviews';
+      case 'daily-plans': return 'Daily Plans';
+      case 'analytics': return 'Analytics';
+      case 'audit-logs': return 'Audit Logs';
+      case 'settings': return 'Settings';
+      default: return 'Dashboard';
+    }
+  };
+
   const getTabTitle = (tab) => {
     switch (tab) {
       case 'overview': return 'Dashboard Overview';
@@ -279,160 +297,258 @@ function DashboardLayout({ user, onLogout }) {
       />
 
       <main className="flex-1 h-screen overflow-y-auto overflow-x-hidden w-full min-w-0">
-        <header className="bg-white border-b border-gray-200 px-3.5 md:px-6 py-3 flex justify-between items-center sticky top-0 z-30 shadow-xs min-w-0">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
-            {/* Mobile Sidebar Hamburger Toggle */}
-            <button
-              type="button"
-              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-              className="md:hidden w-9 h-9 text-gray-700 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-xs border border-gray-200/80 shrink-0 transition-all"
-              title="Toggle sidebar menu"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+        <header className="bg-white border-b border-gray-200 px-3.5 md:px-6 py-2.5 sm:py-3 sticky top-0 z-30 shadow-xs min-w-0">
+          <div className="flex justify-between items-center min-w-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
+              {/* Mobile Sidebar Hamburger Toggle */}
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+                className="md:hidden w-8 h-8 sm:w-9 sm:h-9 text-gray-700 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-xs border border-gray-200/80 shrink-0 transition-all"
+                title="Toggle sidebar menu"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
 
-            {activeTab === 'overview' ? (
-              <div className="min-w-0 flex-1">
-                <span className="text-xs text-gray-400 font-medium block md:hidden leading-none mb-1">Welcome back</span>
-                <h1 className="text-base md:text-xl font-black text-[#09233d] tracking-tight truncate leading-tight">
-                  <span className="hidden md:inline">Welcome back, </span>
-                  {user?.name ? (
-                    user.name.split(' ').length > 2 ? (
-                      <>
-                        {user.name.split(' ').slice(0, -1).join(' ')}{' '}
-                        <span className="text-[#10b981]">{user.name.split(' ').slice(-1)[0]}</span>
-                      </>
+              {activeTab === 'overview' ? (
+                <div className="min-w-0 flex-1">
+                  <span className="text-xs text-gray-400 font-medium block md:hidden leading-none mb-1">Welcome back</span>
+                  <h1 className="text-sm md:text-xl font-black text-[#09233d] tracking-tight truncate leading-tight">
+                    <span className="hidden md:inline">Welcome back, </span>
+                    {user?.name ? (
+                      user.name.split(' ').length > 2 ? (
+                        <>
+                          {user.name.split(' ').slice(0, -1).join(' ')}{' '}
+                          <span className="text-[#10b981]">{user.name.split(' ').slice(-1)[0]}</span>
+                        </>
+                      ) : (
+                        <span className="text-[#10b981]">{user.name}</span>
+                      )
                     ) : (
-                      <span className="text-[#10b981]">{user.name}</span>
-                    )
-                  ) : (
-                    <span className="text-[#10b981]">User</span>
-                  )}
-                </h1>
-                <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 truncate hidden sm:block">
-                  {viewAsEmployeeId
-                    ? `Currently inspecting employee dashboard for: ${employeeList.find((e) => e._id === viewAsEmployeeId)?.name || 'Selected Staff'}`
-                    : "Here's what's happening with your work today."}
-                </p>
-              </div>
-            ) : (
-              <div className="min-w-0 flex-1">
-                <h1 className="text-xs sm:text-base md:text-lg font-black text-[#09233d] truncate leading-tight">
-                  {getTabTitle(activeTab)}
-                </h1>
-                {activeTab === 'audit-logs' && (
-                  <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
-                    Track every change made across the platform.
+                      <span className="text-[#10b981]">User</span>
+                    )}
+                  </h1>
+                  <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 truncate hidden sm:block">
+                    {viewAsEmployeeId
+                      ? `Currently inspecting employee dashboard for: ${employeeList.find((e) => e._id === viewAsEmployeeId)?.name || 'Selected Staff'}`
+                      : "Here's what's happening with your work today."}
                   </p>
-                )}
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-xs sm:text-base md:text-lg font-black text-[#09233d] truncate leading-tight">
+                    {getTabTitle(activeTab)}
+                  </h1>
+                  {activeTab === 'audit-logs' && (
+                    <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
+                      Track every change made across the platform.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right (Desktop Only) */}
+            <div className="hidden sm:flex items-center gap-3 text-xs">
+              {activeTab === 'overview' && (user?.role === 'superadmin' || user?.role === 'superior') && employeeList.length > 0 && (
+                <HeaderEmployeeSelector
+                  employeeList={employeeList}
+                  viewAsEmployeeId={viewAsEmployeeId}
+                  setViewAsEmployeeId={setViewAsEmployeeId}
+                />
+              )}
+              {activeTab === 'projects' && (
+                <div className="bg-slate-100/90 p-1 rounded-xl sm:rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
+                  <button
+                    onClick={() => setSubTab('projects')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      subTab === 'projects'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                    Projects Lifecycle
+                  </button>
+                  <button
+                    onClick={() => setSubTab('modules')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      subTab === 'modules'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    Modules Breakdown
+                  </button>
+                </div>
+              )}
+
+              {activeTab === 'teams' && (
+                <div className="bg-slate-100/90 p-1 rounded-xl sm:rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
+                  <button
+                    onClick={() => setSubTab('teams')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      subTab === 'teams'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    Teams & Roster
+                  </button>
+                  <button
+                    onClick={() => setSubTab('tasks')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      subTab === 'tasks'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    Tasks Management
+                  </button>
+                </div>
+              )}
+
+              {activeTab === 'analytics' && (
+                <div className="bg-slate-100/90 p-1 rounded-xl sm:rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
+                  <button
+                    onClick={() => setSubTab('analytics')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      subTab === 'analytics'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    Performance Analytics
+                  </button>
+                  <button
+                    onClick={() => setSubTab('reports')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      subTab === 'reports'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Executive Reports
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
-          <div className="flex items-center gap-3 text-xs">
-            {activeTab === 'overview' && (user?.role === 'superadmin' || user?.role === 'superior') && employeeList.length > 0 && (
-              <HeaderEmployeeSelector
-                employeeList={employeeList}
-                viewAsEmployeeId={viewAsEmployeeId}
-                setViewAsEmployeeId={setViewAsEmployeeId}
-              />
-            )}
-            {activeTab === 'projects' && (
-              <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
-                <button
-                  onClick={() => setSubTab('projects')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    subTab === 'projects'
-                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                  </svg>
-                  Projects Lifecycle
-                </button>
-                <button
-                  onClick={() => setSubTab('modules')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    subTab === 'modules'
-                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                  Modules Breakdown
-                </button>
-              </div>
-            )}
-
-            {activeTab === 'teams' && (
-              <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
-                <button
-                  onClick={() => setSubTab('teams')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    subTab === 'teams'
-                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                  Teams & Roster
-                </button>
-                <button
-                  onClick={() => setSubTab('tasks')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    subTab === 'tasks'
-                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                  </svg>
-                  Tasks Management
-                </button>
-              </div>
-            )}
-
-            {activeTab === 'analytics' && (
-              <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
-                <button
-                  onClick={() => setSubTab('analytics')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    subTab === 'analytics'
-                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                  Performance Analytics
-                </button>
-                <button
-                  onClick={() => setSubTab('reports')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    subTab === 'reports'
-                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Executive Reports
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Mobile Sub-pages Bar (Rendered BELOW header title on Mobile view only) */}
+          {['projects', 'teams', 'analytics'].includes(activeTab) && (
+            <div className="sm:hidden pt-2 mt-2 border-t border-gray-100 flex items-center justify-center">
+              {activeTab === 'projects' && (
+                <div className="bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 flex items-center gap-1 shadow-2xs w-full">
+                  <button
+                    onClick={() => setSubTab('projects')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      subTab === 'projects'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                    Projects Lifecycle
+                  </button>
+                  <button
+                    onClick={() => setSubTab('modules')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      subTab === 'modules'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    Modules Breakdown
+                  </button>
+                </div>
+              )}
+              {activeTab === 'teams' && (
+                <div className="bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 flex items-center gap-1 shadow-2xs w-full">
+                  <button
+                    onClick={() => setSubTab('teams')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      subTab === 'teams'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    Teams & Roster
+                  </button>
+                  <button
+                    onClick={() => setSubTab('tasks')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      subTab === 'tasks'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    Tasks Management
+                  </button>
+                </div>
+              )}
+              {activeTab === 'analytics' && (
+                <div className="bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 flex items-center gap-1 shadow-2xs w-full">
+                  <button
+                    onClick={() => setSubTab('analytics')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      subTab === 'analytics'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    Analytics
+                  </button>
+                  <button
+                    onClick={() => setSubTab('reports')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      subTab === 'reports'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Executive Reports
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </header>
 
         <div className="p-6">
