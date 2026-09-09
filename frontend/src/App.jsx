@@ -278,25 +278,38 @@ function DashboardLayout({ user, onLogout }) {
         }}
       />
 
-      <main className="flex-1 h-screen overflow-y-auto w-full">
-        <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3.5 flex justify-between items-center sticky top-0 z-30 shadow-xs">
-          <div className="flex items-center gap-3">
+      <main className="flex-1 h-screen overflow-y-auto overflow-x-hidden w-full min-w-0">
+        <header className="bg-white border-b border-gray-200 px-3.5 md:px-6 py-3 flex justify-between items-center sticky top-0 z-30 shadow-xs min-w-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
             {/* Mobile Sidebar Hamburger Toggle */}
             <button
               type="button"
               onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-              className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all border border-gray-200 shrink-0"
+              className="md:hidden w-9 h-9 text-gray-700 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-xs border border-gray-200/80 shrink-0 transition-all"
               title="Toggle sidebar menu"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
 
             {activeTab === 'overview' ? (
-              <div>
-                <h1 className="text-base md:text-xl font-black text-[#09233d] tracking-tight truncate">
-                  Welcome back, <span className="text-[#10b981]">{user.name}!</span>
+              <div className="min-w-0 flex-1">
+                <span className="text-xs text-gray-400 font-medium block md:hidden leading-none mb-1">Welcome back</span>
+                <h1 className="text-base md:text-xl font-black text-[#09233d] tracking-tight truncate leading-tight">
+                  <span className="hidden md:inline">Welcome back, </span>
+                  {user?.name ? (
+                    user.name.split(' ').length > 2 ? (
+                      <>
+                        {user.name.split(' ').slice(0, -1).join(' ')}{' '}
+                        <span className="text-[#10b981]">{user.name.split(' ').slice(-1)[0]}</span>
+                      </>
+                    ) : (
+                      <span className="text-[#10b981]">{user.name}</span>
+                    )
+                  ) : (
+                    <span className="text-[#10b981]">User</span>
+                  )}
                 </h1>
                 <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 truncate hidden sm:block">
                   {viewAsEmployeeId
@@ -305,8 +318,8 @@ function DashboardLayout({ user, onLogout }) {
                 </p>
               </div>
             ) : (
-              <div>
-                <h1 className="text-sm md:text-lg font-black text-[#09233d] truncate">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xs sm:text-base md:text-lg font-black text-[#09233d] truncate leading-tight">
                   {getTabTitle(activeTab)}
                 </h1>
                 {activeTab === 'audit-logs' && (
