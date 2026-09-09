@@ -175,22 +175,29 @@ export default function TeamManagement({ currentUser }) {
                 </div>
               </div>
 
-              <div className="text-xs space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Team Lead:</span>
-                  <strong className="text-[#09233d] font-bold">
-                    {team.teamLead?.name || 'Unassigned'} {team.teamLead?.role ? `(${team.teamLead.role})` : ''}
-                  </strong>
+              <div className="text-xs space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 font-medium">Team Lead:</span>
+                  <div className="text-right">
+                    <span className={`px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold border ${getKeyBadgeColor(team.teamLead?.name || 'Unassigned', 0)}`}>
+                      {team.teamLead?.name || 'Unassigned'}
+                    </span>
+                    {team.teamLead?.role ? <span className="text-gray-400 font-medium text-[11px] ml-1.5">({team.teamLead.role})</span> : ''}
+                  </div>
                 </div>
 
-                <div className="pt-2">
-                  <span className="text-gray-500 font-medium block mb-1">Members ({team.members?.length || 0}):</span>
+                <div className="pt-2 border-t border-gray-100">
+                  <span className="text-gray-500 font-medium block mb-1.5">Members ({team.members?.length || 0}):</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {team.members?.map((m) => (
-                      <span key={m._id || m} className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-md text-[11px] font-medium">
-                        {m.name || m}
-                      </span>
-                    ))}
+                    {team.members?.map((m, mIdx) => {
+                      const memberName = typeof m === 'object' ? m.name : m;
+                      const memberBadgeStyle = getKeyBadgeColor(memberName, mIdx + 1);
+                      return (
+                        <span key={typeof m === 'object' ? m._id : m} className={`px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold border ${memberBadgeStyle}`}>
+                          {memberName}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

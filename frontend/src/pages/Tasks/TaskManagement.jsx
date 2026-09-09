@@ -222,16 +222,20 @@ export default function TaskManagement({ currentUser }) {
                   </div>
 
                   {/* Employee & Team Details Card Box */}
-                  <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 text-xs space-y-1">
+                  <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 text-xs space-y-1.5">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500 font-medium">Assigned Person:</span>
-                      <strong className="text-[#09233d] font-bold">{task.assignedTo?.name || 'Unassigned'}</strong>
+                      <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${getKeyBadgeColor(task.assignedTo?.name || 'Unassigned', 1)}`}>
+                        {task.assignedTo?.name || 'Unassigned'}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-[11px]">
                       <span className="text-gray-400 font-medium">Team:</span>
-                      <span className="font-semibold text-purple-700">{task.team?.name || 'Team Assigned'}</span>
+                      <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${getKeyBadgeColor(task.team?.name || 'Team', 2)}`}>
+                        {task.team?.name || 'Team Assigned'}
+                      </span>
                     </div>
-                    <div className="flex justify-between items-center text-[11px] pt-1 border-t border-gray-100">
+                    <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-gray-100">
                       <span className="text-gray-400 font-medium">Logged Hours:</span>
                       <span className="font-bold text-gray-700">{task.estimatedHours || 0}h Est / <strong className="text-[#20b875]">{task.actualHours || 0}h Act</strong></span>
                     </div>
@@ -323,9 +327,13 @@ export default function TaskManagement({ currentUser }) {
                           <strong className="text-[#09233d] block">{task.module?.name || 'General Module'}</strong>
                           <small className="text-[10px] text-gray-400">Project: {task.project?.name || 'N/A'}</small>
                         </td>
-                        <td className="p-4">
-                          <strong className="text-gray-800 block">{task.assignedTo?.name || 'Unassigned'}</strong>
-                          <small className="text-[10px] text-purple-700 font-semibold">{task.team?.name || 'Team Assigned'}</small>
+                        <td className="p-4 space-y-1">
+                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border block w-fit ${getKeyBadgeColor(task.assignedTo?.name || 'Unassigned', 1)}`}>
+                            {task.assignedTo?.name || 'Unassigned'}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border block w-fit ${getKeyBadgeColor(task.team?.name || 'Team', 2)}`}>
+                            {task.team?.name || 'Team Assigned'}
+                          </span>
                         </td>
                         <td className="p-4">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
