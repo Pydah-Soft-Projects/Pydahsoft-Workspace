@@ -18,6 +18,24 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
   const [mobileView, setMobileView] = useState('list');
 
   const messagesEndRef = useRef(null);
+  const chatStreamRef = useRef(null);
+  const [viewportHeight, setViewportHeight] = useState(null);
+
+  // Dynamic visualViewport listener for mobile keyboard resizing
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const updateHeight = () => {
+      setViewportHeight(window.visualViewport.height);
+      window.scrollTo(0, 0);
+    };
+    window.visualViewport.addEventListener('resize', updateHeight);
+    window.visualViewport.addEventListener('scroll', updateHeight);
+    updateHeight();
+    return () => {
+      window.visualViewport.removeEventListener('resize', updateHeight);
+      window.visualViewport.removeEventListener('scroll', updateHeight);
+    };
+  }, []);
 
   // Fetch staff contacts with ?purpose=chat so all roles are included for every user
   useEffect(() => {
@@ -65,9 +83,11 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to bottom of chat stream
+  // Auto-scroll inside chat stream only (prevents full page jump on mobile)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatStreamRef.current) {
+      chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
+    }
   }, [messages, selectedRecipient]);
 
   // Filter messages for current active recipient view
@@ -362,7 +382,10 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
       </div>
 
       {/* RIGHT PANEL: Chat Stream & Message Input */}
-      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-white h-full overflow-hidden`}>
+      <div
+        style={viewportHeight && mobileView === 'chat' && typeof window !== 'undefined' && window.innerWidth < 768 ? { height: `${viewportHeight}px`, top: `${window.visualViewport?.offsetTop || 0}px` } : {}}
+        className={`${mobileView === 'list' ? 'hidden md:flex md:flex-1' : 'fixed inset-0 z-50 bg-white flex flex-col h-full w-full md:static md:z-auto md:flex-1'} flex-col bg-white h-full overflow-hidden w-full`}
+      >
         {/* Active Conversation Header */}
         <div className="p-3 md:p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
           <div className="flex items-center gap-2.5 md:gap-3 truncate">
@@ -414,7 +437,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
         </div>
 
         {/* Message Stream */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
+        <div ref={chatStreamRef} className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
           {loading && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
               Loading chat stream...
@@ -480,6 +503,14 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
             type="text"
             value={newMessageText}
             onChange={(e) => setNewMessageText(e.target.value)}
+            onFocus={() => {
+              setTimeout(() => {
+                window.scrollTo(0, 0);
+                if (chatStreamRef.current) {
+                  chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
+                }
+              }, 100);
+            }}
             placeholder={
               selectedRecipient.type === 'all'
                 ? 'Type a broadcast message to everyone...'

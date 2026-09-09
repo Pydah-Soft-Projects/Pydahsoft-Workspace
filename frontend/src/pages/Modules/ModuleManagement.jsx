@@ -3,6 +3,27 @@ import { fetchApi } from '../../config/api';
 import Icon from '../../components/Icon';
 import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
+const KEY_BADGE_COLORS = [
+  'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'bg-blue-50 text-blue-700 border-blue-200',
+  'bg-purple-50 text-purple-700 border-purple-200',
+  'bg-amber-50 text-amber-800 border-amber-200',
+  'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'bg-rose-50 text-rose-700 border-rose-200',
+  'bg-teal-50 text-teal-700 border-teal-200',
+  'bg-cyan-50 text-cyan-700 border-cyan-200',
+];
+
+const getKeyBadgeColor = (keyStr, index = 0) => {
+  if (!keyStr) return KEY_BADGE_COLORS[index % KEY_BADGE_COLORS.length];
+  let hash = 0;
+  for (let i = 0; i < keyStr.length; i++) {
+    hash = keyStr.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colorIndex = Math.abs(hash) % KEY_BADGE_COLORS.length;
+  return KEY_BADGE_COLORS[colorIndex];
+};
+
 export default function ModuleManagement({ currentUser }) {
   const [modules, setModules] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -117,11 +138,11 @@ export default function ModuleManagement({ currentUser }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center gap-2">
+      <div className="bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-gray-100 shadow-xs flex justify-between items-center gap-2 min-w-0">
         <select
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 bg-white focus:border-[#20b875] focus:outline-none"
+          className="border border-gray-200/90 rounded-lg sm:rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-gray-700 bg-gray-50/80 hover:bg-gray-50 focus:border-[#20b875] focus:outline-none min-w-0 flex-1 sm:flex-none max-w-[160px] sm:max-w-none truncate transition-all cursor-pointer"
         >
           <option value="ALL">All Projects ({projects.length})</option>
           {projects.map((p) => (
@@ -135,7 +156,7 @@ export default function ModuleManagement({ currentUser }) {
               setFormData(prev => ({ ...prev, project: projects[0]?._id || '' }));
               setShowModal(true);
             }}
-            className="px-4 py-2 bg-[#20b875] text-white rounded-xl text-xs font-bold shadow-sm hover:bg-[#169e63] whitespace-nowrap"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#20b875] text-white rounded-lg sm:rounded-xl text-xs font-bold shadow-xs hover:bg-[#169e63] transition-all whitespace-nowrap shrink-0"
           >
             + Create Module
           </button>
@@ -155,16 +176,17 @@ export default function ModuleManagement({ currentUser }) {
               No projects or modules created yet.
             </div>
           ) : (
-            filteredProjects.map((proj) => {
+            filteredProjects.map((proj, pIdx) => {
               const projMods = getModulesForProject(proj._id);
+              const projBadgeStyle = getKeyBadgeColor(proj.projectId, pIdx);
 
               return (
                 <div key={proj._id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden space-y-4 p-5">
                   {/* Project Header Banner */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/80 p-4 rounded-xl border border-gray-100 gap-3">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-transparent sm:bg-gray-50/80 p-0 sm:p-4 rounded-none sm:rounded-xl border-0 border-b sm:border border-gray-100 pb-3 sm:pb-4 gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-[#20b875] bg-emerald-100/80 px-2 py-0.5 rounded uppercase">
+                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg border uppercase ${projBadgeStyle}`}>
                           {proj.projectId || 'PRJ'}
                         </span>
                         <h3 className="text-sm font-black text-[#09233d]">{proj.name}</h3>
@@ -199,15 +221,17 @@ export default function ModuleManagement({ currentUser }) {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {projMods.map((mod) => (
-                        <div key={mod._id} className="p-4 bg-white rounded-xl border border-gray-200/70 shadow-sm hover:border-[#20b875]/40 transition-all space-y-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <span className="text-[9px] font-bold text-[#20b875] bg-emerald-50 px-1.5 py-0.5 rounded">
-                                {mod.moduleId || 'MOD'}
-                              </span>
-                              <h4 className="text-xs font-bold text-[#09233d] mt-1">{mod.name}</h4>
-                            </div>
+                      {projMods.map((mod, mIdx) => {
+                        const modBadgeStyle = getKeyBadgeColor(mod.moduleId, mIdx);
+                        return (
+                          <div key={mod._id} className="p-4 bg-white rounded-xl border border-gray-200/70 shadow-sm hover:border-[#20b875]/40 transition-all space-y-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-lg border ${modBadgeStyle}`}>
+                                  {mod.moduleId || 'MOD'}
+                                </span>
+                                <h4 className="text-xs font-bold text-[#09233d] mt-1">{mod.name}</h4>
+                              </div>
                             <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
                               mod.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' :
                               mod.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
@@ -269,7 +293,8 @@ export default function ModuleManagement({ currentUser }) {
                             )}
                           </div>
                         </div>
-                      ))}
+                      );
+                    })}
                     </div>
                   )}
                 </div>

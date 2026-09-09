@@ -2,6 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
 import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
+const KEY_BADGE_COLORS = [
+  'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'bg-blue-50 text-blue-700 border-blue-200',
+  'bg-purple-50 text-purple-700 border-purple-200',
+  'bg-amber-50 text-amber-800 border-amber-200',
+  'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'bg-rose-50 text-rose-700 border-rose-200',
+  'bg-teal-50 text-teal-700 border-teal-200',
+  'bg-cyan-50 text-cyan-700 border-cyan-200',
+];
+
+const getKeyBadgeColor = (keyStr, index = 0) => {
+  if (!keyStr) return KEY_BADGE_COLORS[index % KEY_BADGE_COLORS.length];
+  let hash = 0;
+  for (let i = 0; i < keyStr.length; i++) {
+    hash = keyStr.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colorIndex = Math.abs(hash) % KEY_BADGE_COLORS.length;
+  return KEY_BADGE_COLORS[colorIndex];
+};
+
 export default function ProjectManagement({ currentUser }) {
   const [projects, setProjects] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -82,16 +103,18 @@ export default function ProjectManagement({ currentUser }) {
         <LoadingSpinner message="Loading projects..." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {projects.map((proj) => (
-            <div key={proj._id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-3">
-              <div className="flex justify-between items-start border-b pb-3 border-gray-100">
-                <div>
-                  <span className="text-[10px] font-bold text-[#20b875] bg-emerald-50 px-2 py-0.5 rounded">
-                    {proj.projectId || 'PRJ'}
-                  </span>
-                  <h3 className="text-sm font-bold text-[#09233d] mt-1">{proj.name}</h3>
-                  <p className="text-xs text-gray-500 line-clamp-1">{proj.description}</p>
-                </div>
+          {projects.map((proj, idx) => {
+            const keyBadgeStyle = getKeyBadgeColor(proj.projectId, idx);
+            return (
+              <div key={proj._id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-3">
+                <div className="flex justify-between items-start border-b pb-3 border-gray-100">
+                  <div>
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg border ${keyBadgeStyle}`}>
+                      {proj.projectId || 'PRJ'}
+                    </span>
+                    <h3 className="text-sm font-bold text-[#09233d] mt-1">{proj.name}</h3>
+                    <p className="text-xs text-gray-500 line-clamp-1">{proj.description}</p>
+                  </div>
                 <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
                   proj.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' :
                   proj.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
@@ -118,7 +141,8 @@ export default function ProjectManagement({ currentUser }) {
                 <span>Priority: <strong className="text-gray-700">{proj.priority}</strong></span>
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       )}
 
