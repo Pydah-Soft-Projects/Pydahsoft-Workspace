@@ -257,7 +257,7 @@ function DashboardLayout({ user, onLogout }) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-900 font-sans relative">
+    <div className="dashboard-shell flex h-screen overflow-hidden bg-gray-50 text-gray-900 font-sans relative">
       {/* Mobile Drawer Dark Backdrop Overlay */}
       {mobileSidebarOpen && (
         <div
@@ -279,7 +279,7 @@ function DashboardLayout({ user, onLogout }) {
       />
 
       <main className="flex-1 h-screen overflow-y-auto w-full">
-        <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3.5 flex justify-between items-center sticky top-0 z-30 shadow-xs">
+        <header className="dashboard-header bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3.5 flex flex-wrap gap-3 justify-between items-center sticky top-0 z-30 shadow-xs">
           <div className="flex items-center gap-3">
             {/* Mobile Sidebar Hamburger Toggle */}
             <button
@@ -319,7 +319,7 @@ function DashboardLayout({ user, onLogout }) {
           </div>
 
           {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
-          <div className="flex items-center gap-3 text-xs">
+          <div className="dashboard-header__controls flex items-center gap-3 text-xs">
             {activeTab === 'overview' && (user?.role === 'superadmin' || user?.role === 'superior') && employeeList.length > 0 && (
               <HeaderEmployeeSelector
                 employeeList={employeeList}
@@ -422,7 +422,7 @@ function DashboardLayout({ user, onLogout }) {
           </div>
         </header>
 
-        <div className="p-6">
+        <div className="dashboard-content p-3 sm:p-6">
           <Suspense fallback={<PageLoader />}>
             {visitedTabs.has('overview') && (
               <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
