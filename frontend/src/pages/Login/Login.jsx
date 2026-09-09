@@ -105,19 +105,26 @@ export default function Login({ onLoginSuccess }) {
           <div className="login-card relative rounded-3xl border border-white/80 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,48,34,0.08)] backdrop-blur-md">
             <Link
               to="/"
-              className="absolute top-5 left-5 inline-flex items-center gap-1.5 rounded-full border border-[#d1e8dc] bg-white px-3.5 py-1.5 text-xs font-bold text-[#09233d] shadow-xs transition-all hover:bg-[#edf9f2]"
+              className="absolute top-5 left-5 flex h-9 w-9 items-center justify-center rounded-full border border-[#d1e8dc] bg-white text-[#09233d] shadow-xs transition-all hover:bg-[#edf9f2] hover:scale-105"
+              aria-label="Back to landing page"
             >
-              <Icon name="arrowLeft" className="w-3.5 h-3.5" />
-              <span>Back</span>
+              <Icon name="arrowLeft" className="w-4 h-4" />
             </Link>
 
             <div className="text-center pt-2">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f7ef] text-[#169a61]">
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                {/* Desktop Lock Icon */}
+                <svg className="hidden sm:block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
+                {/* Mobile User Profile Symbol */}
+                <svg className="sm:hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
               </div>
-              <h1 className="text-2xl font-black tracking-tight text-[#09233d]">System Login</h1>
+              <h1 className="text-2xl font-black tracking-tight text-[#09233d]">
+                <span className="hidden sm:inline">System </span>Login
+              </h1>
             <p className="mt-1 text-xs font-medium text-[#5e7787]">
               Enter your credentials to access your PydahSoft workspace.
             </p>
@@ -172,10 +179,10 @@ export default function Login({ onLoginSuccess }) {
             </button>
           </form>
 
-            <div className="mt-6 border-t border-[#eaf3ee] pt-4 text-center">
-            <p className="text-[11px] text-[#78909e]">
-              Supported Roles: <span className="font-semibold text-[#09233d]">SuperAdmin</span>, <span className="font-semibold text-[#09233d]">Superior</span>, <span className="font-semibold text-[#09233d]">Team Lead</span>, <span className="font-semibold text-[#09233d]">Employee</span>
-            </p>
+            <div className="hidden sm:block mt-6 border-t border-[#eaf3ee] pt-4 text-center">
+              <p className="text-[11px] text-[#78909e]">
+                Supported Roles: <span className="font-semibold text-[#09233d]">SuperAdmin</span>, <span className="font-semibold text-[#09233d]">Superior</span>, <span className="font-semibold text-[#09233d]">Team Lead</span>, <span className="font-semibold text-[#09233d]">Employee</span>
+              </p>
             </div>
           </div>
         </div>
