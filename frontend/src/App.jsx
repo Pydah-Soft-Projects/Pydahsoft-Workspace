@@ -331,20 +331,10 @@ function DashboardLayout({ user, onLogout }) {
                   <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
                     Track every change made across the platform.
                   </p>
-                </div>
-              ) : (
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-xs sm:text-base md:text-lg font-black text-[#09233d] truncate leading-tight">
-                    {getTabTitle(activeTab)}
-                  </h1>
-                  {activeTab === 'audit-logs' && (
-                    <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
-                      Track every change made across the platform.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
           <div className="dashboard-header__controls flex items-center gap-3 text-xs" aria-label="Dashboard filters and view controls">
@@ -448,7 +438,6 @@ function DashboardLayout({ user, onLogout }) {
                 </div>
               )}
             </div>
-          </div>
 
           {/* Mobile Sub-pages Bar (Rendered BELOW header title on Mobile view only) */}
           {['projects', 'teams', 'analytics'].includes(activeTab) && (
