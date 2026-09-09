@@ -256,8 +256,8 @@ export default function SettingsPage({ currentUser }) {
             const perms = role.defaultPermissions || {};
 
             return (
-              <div key={role._id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                <div className="flex justify-between items-center border-b pb-3 border-gray-100">
+              <div key={role._id} className="settings-role-card bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                <div className="settings-role-header flex justify-between items-center border-b pb-3 border-gray-100">
                   <div>
                     <span className="text-sm font-bold text-[#09233d]">{role.label || role.name}</span>
                     <small className="text-gray-400 block font-mono text-[10px]">key: {role.name}</small>
@@ -296,7 +296,7 @@ export default function SettingsPage({ currentUser }) {
                 ) : (
                   <div className="space-y-3">
                     {/* Master Bulk Control Bar */}
-                    <div className="flex items-center justify-between bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-xs">
+                    <div className="settings-master-controls flex items-center justify-between bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-xs">
                       <span className="font-bold text-gray-700 text-[11px]">Master Toggles:</span>
                       <div className="flex gap-1.5">
                         <button
@@ -339,7 +339,7 @@ export default function SettingsPage({ currentUser }) {
                         const currentLevel = rawVal === 'write' || rawVal === true ? 'write' : (rawVal === 'read' ? 'read' : 'none');
 
                         return (
-                          <div key={page.key} className="flex items-center justify-between p-2.5 bg-gray-50/70 rounded-xl hover:bg-gray-100/60 border border-gray-100">
+                          <div key={page.key} className="settings-permission-row flex items-center justify-between p-2.5 bg-gray-50/70 rounded-xl hover:bg-gray-100/60 border border-gray-100">
                             <div className="flex items-center gap-2.5">
                               <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
                                 <PrivilegeIcon icon={page.icon} />

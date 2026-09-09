@@ -24,7 +24,7 @@ const Icon = ({ name, className = "w-4 h-4" }) => {
     case 'teams':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
       );
     case 'time-tracker':
@@ -126,14 +126,12 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, mobil
   };
 
   return (
-    <aside
-      className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#072b1e] text-[#ffffff] flex flex-col justify-between h-screen p-4 border-r border-[#0e4733] shrink-0 shadow-xl transition-transform duration-300 ${
-        mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-      } md:sticky md:top-0`}
-    >
+    <aside className={`dashboard-sidebar fixed inset-y-0 left-0 z-50 w-64 bg-[#072b1e] text-[#ffffff] flex flex-col justify-between h-screen p-4 border-r border-[#0e4733] shrink-0 shadow-xl transition-transform duration-300 ${
+      mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+    } md:sticky md:top-0`}>
       {/* Scrollable Top Header & Navigation Container */}
-      <div className="flex-1 overflow-y-auto min-h-0 pr-1">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#0e4733]">
+      <div className="dashboard-sidebar__navigation flex-1 overflow-y-auto min-h-0 pr-1">
+        <div className="dashboard-sidebar__brand flex items-center justify-between mb-6 pb-4 border-b border-[#0e4733]">
           <div className="flex items-center gap-2.5">
             <span className="bg-[#20b875] text-[#ffffff] font-extrabold px-2.5 py-1 rounded-lg text-xs shadow-md shadow-[#20b875]/20">&lt;&gt;</span>
             <div>
@@ -155,7 +153,7 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, mobil
           </button>
         </div>
 
-        <nav className="flex flex-col gap-1.5">
+        <nav className="dashboard-sidebar__nav flex flex-col gap-1.5">
           {menuItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -177,7 +175,7 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, mobil
       </div>
 
       {/* Constantly Fixed / Pinned Bottom User Profile Card */}
-      <div className="pt-3 mt-2 border-t border-[#0e4733] shrink-0">
+      <div className="dashboard-sidebar__profile pt-3 mt-2 border-t border-[#0e4733] shrink-0">
         <div className="flex items-center justify-between p-2.5 bg-[#0b3828] rounded-xl border border-[#13523c] shadow-sm">
           <div className="flex items-center gap-2.5 overflow-hidden">
             {/* Avatar Circle */}

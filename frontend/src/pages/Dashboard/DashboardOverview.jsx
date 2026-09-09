@@ -31,6 +31,8 @@ export default function DashboardOverview({
   }, [user, propEmployeeList]);
 
   useEffect(() => {
+    setData(null);
+    setLoading(true);
     loadDashboard();
   }, [user, viewAsEmployeeId]);
 
@@ -40,7 +42,7 @@ export default function DashboardOverview({
     try {
       let endpoint = '/dashboard/employee';
       if (viewAsEmployeeId) {
-        endpoint = `/dashboard/employee?employeeId=${viewAsEmployeeId}`;
+        endpoint = `/dashboard/employee?employeeId=${encodeURIComponent(String(viewAsEmployeeId))}`;
       } else if (user.role === 'superior' || user.role === 'superadmin') {
         endpoint = '/dashboard/superior';
       } else if (user.role === 'teamlead') {
@@ -50,7 +52,7 @@ export default function DashboardOverview({
       const res = await fetchApi(endpoint);
       setData(res.data);
     } catch (err) {
-      if (!data) setError(err.message || 'Failed to load dashboard data');
+      setError(err.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -74,8 +76,8 @@ export default function DashboardOverview({
     );
   }
 
-  // If an employee is logged in directly
-  if (user.role === 'employee') {
+  // The overview selector lets managers inspect the same employee dashboard.
+  if (user.role === 'employee' || viewAsEmployeeId) {
     return (
       <div className="space-y-4">
         {viewAsEmployeeId && (
@@ -95,7 +97,7 @@ export default function DashboardOverview({
           </div>
         )}
         <EmployeeDashboardView
-          user={user}
+          user={viewAsEmployeeId ? data?.employeeProfile || user : user}
           data={data}
           setActiveTab={setActiveTab}
           reloadDashboard={loadDashboard}
