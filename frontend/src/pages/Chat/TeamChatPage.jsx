@@ -346,7 +346,7 @@ export default function TeamChatPage({ currentUser }) {
       </div>
 
       {/* RIGHT PANEL: Chat Stream & Message Input */}
-      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-white h-full overflow-hidden`}>
+      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'fixed inset-0 z-50 bg-white flex flex-col h-full w-full md:static md:z-auto md:flex-1'} flex-col bg-white h-full overflow-hidden`}>
         {/* Active Conversation Header */}
         <div className="p-3 md:p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
           <div className="flex items-center gap-2.5 md:gap-3 truncate">
@@ -464,6 +464,7 @@ export default function TeamChatPage({ currentUser }) {
             type="text"
             value={newMessageText}
             onChange={(e) => setNewMessageText(e.target.value)}
+            onFocus={() => setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 200)}
             placeholder={
               selectedRecipient.type === 'all'
                 ? 'Type a broadcast message to everyone...'
