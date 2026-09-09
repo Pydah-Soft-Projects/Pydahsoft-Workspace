@@ -15,6 +15,23 @@ export default function TeamChatPage({ currentUser }) {
 
   const messagesEndRef = useRef(null);
   const chatStreamRef = useRef(null);
+  const [viewportHeight, setViewportHeight] = useState(null);
+
+  // Dynamic visualViewport listener for mobile keyboard resizing
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const updateHeight = () => {
+      setViewportHeight(window.visualViewport.height);
+      window.scrollTo(0, 0);
+    };
+    window.visualViewport.addEventListener('resize', updateHeight);
+    window.visualViewport.addEventListener('scroll', updateHeight);
+    updateHeight();
+    return () => {
+      window.visualViewport.removeEventListener('resize', updateHeight);
+      window.visualViewport.removeEventListener('scroll', updateHeight);
+    };
+  }, []);
 
   // Fetch all staff members & teams
   useEffect(() => {
@@ -349,7 +366,10 @@ export default function TeamChatPage({ currentUser }) {
       </div>
 
       {/* RIGHT PANEL: Chat Stream & Message Input */}
-      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'fixed inset-0 z-50 bg-white flex flex-col h-full w-full md:static md:z-auto md:flex-1'} flex-col bg-white h-full overflow-hidden`}>
+      <div
+        style={viewportHeight && mobileView === 'chat' && typeof window !== 'undefined' && window.innerWidth < 768 ? { height: `${viewportHeight}px`, top: `${window.visualViewport?.offsetTop || 0}px` } : {}}
+        className={`${mobileView === 'list' ? 'hidden md:flex' : 'fixed inset-0 z-50 bg-white flex flex-col h-full w-full md:static md:z-auto md:flex-1'} flex-col bg-white h-full overflow-hidden`}
+      >
         {/* Active Conversation Header */}
         <div className="p-3 md:p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
           <div className="flex items-center gap-2.5 md:gap-3 truncate">
