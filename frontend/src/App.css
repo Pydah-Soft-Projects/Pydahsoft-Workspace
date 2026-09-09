@@ -67,7 +67,7 @@ html {
 
   .dashboard-header__controls {
     width: 100%;
-    overflow-x: auto;
+    overflow: visible;
     padding-bottom: 1px;
   }
 
@@ -76,16 +76,20 @@ html {
   }
 
   .dashboard-header__controls .relative {
+    width: 100%;
     min-width: 0;
     max-width: 100%;
   }
 
   .dashboard-header__controls .relative > button {
-    width: min(100%, 240px);
+    width: 100%;
   }
 
   .dashboard-filter-menu {
+    left: 0;
+    right: auto;
     width: min(288px, calc(100vw - 24px));
+    max-width: 100%;
   }
 
   .dashboard-header__controls > div {
