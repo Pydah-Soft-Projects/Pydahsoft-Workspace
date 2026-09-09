@@ -117,21 +117,42 @@ const getRoleMenuItems = (user) => {
   return allowed.length > 0 ? allowed : ALL_SIDEBAR_ITEMS.slice(0, 1);
 };
 
-export default function Sidebar({ activeTab, setActiveTab, user, onLogout }) {
+export default function Sidebar({ activeTab, setActiveTab, user, onLogout, mobileOpen, setMobileOpen }) {
   const menuItems = getRoleMenuItems(user);
 
+  const handleTabClick = (tabId) => {
+    setActiveTab(tabId);
+    if (setMobileOpen) setMobileOpen(false);
+  };
+
   return (
-    <aside className="w-64 bg-[#072b1e] text-[#ffffff] flex flex-col justify-between h-screen sticky top-0 p-4 border-r border-[#0e4733] shrink-0 shadow-xl z-50">
+    <aside
+      className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#072b1e] text-[#ffffff] flex flex-col justify-between h-screen p-4 border-r border-[#0e4733] shrink-0 shadow-xl transition-transform duration-300 ${
+        mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      } md:sticky md:top-0`}
+    >
       {/* Scrollable Top Header & Navigation Container */}
       <div className="flex-1 overflow-y-auto min-h-0 pr-1">
-        <div className="flex items-center gap-2.5 mb-6 pb-4 border-b border-[#0e4733]">
-          <span className="bg-[#20b875] text-[#ffffff] font-extrabold px-2.5 py-1 rounded-lg text-xs shadow-md shadow-[#20b875]/20">&lt;&gt;</span>
-          <div>
-            <span className="font-extrabold text-base block leading-tight tracking-wide text-white">PydahSoft</span>
-            <span className="text-[10px] text-[#4ade80] font-bold tracking-widest uppercase">
-              Management Platform
-            </span>
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#0e4733]">
+          <div className="flex items-center gap-2.5">
+            <span className="bg-[#20b875] text-[#ffffff] font-extrabold px-2.5 py-1 rounded-lg text-xs shadow-md shadow-[#20b875]/20">&lt;&gt;</span>
+            <div>
+              <span className="font-extrabold text-base block leading-tight tracking-wide text-white">PydahSoft</span>
+              <span className="text-[10px] text-[#4ade80] font-bold tracking-widest uppercase">
+                Management Platform
+              </span>
+            </div>
           </div>
+          {/* Mobile Close Button */}
+          <button
+            type="button"
+            onClick={() => setMobileOpen && setMobileOpen(false)}
+            className="md:hidden text-gray-400 hover:text-white p-1 rounded-lg"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         <nav className="flex flex-col gap-1.5">
@@ -140,7 +161,7 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout }) {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => handleTabClick(item.id)}
                 className={`w-full text-left px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all flex items-center gap-3 ${
                   isActive
                     ? 'bg-[#20b875] text-[#ffffff] font-bold shadow-md shadow-[#20b875]/30'

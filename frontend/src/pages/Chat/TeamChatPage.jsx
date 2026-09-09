@@ -10,6 +10,8 @@ export default function TeamChatPage({ currentUser }) {
   const [newMessageText, setNewMessageText] = useState('');
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  const [mobileView, setMobileView] = useState('list'); // 'list' | 'chat'
+  const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
 
   const messagesEndRef = useRef(null);
 
@@ -109,8 +111,6 @@ export default function TeamChatPage({ currentUser }) {
     }
   };
 
-  const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
-
   const filteredStaff = staffList.filter((emp) => {
     const matchesSearch =
       emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -137,7 +137,7 @@ export default function TeamChatPage({ currentUser }) {
   return (
     <div className="h-[calc(100vh-6rem)] bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row">
       {/* LEFT PANEL: Persons & Group Conversations List */}
-      <div className="w-full md:w-80 bg-slate-50 border-r border-gray-200 flex flex-col shrink-0">
+      <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto md:overflow-hidden`}>
         {/* Header */}
         <div className="p-4 border-b border-gray-200 bg-white">
           <h2 className="text-base font-black text-[#09233d] flex items-center gap-2">
@@ -151,7 +151,10 @@ export default function TeamChatPage({ currentUser }) {
         <div className="p-3 border-b border-gray-200">
           <button
             type="button"
-            onClick={() => setSelectedRecipient({ type: 'all', data: null })}
+            onClick={() => {
+              setSelectedRecipient({ type: 'all', data: null });
+              setMobileView('chat');
+            }}
             className={`w-full p-3 rounded-xl font-bold text-xs text-left transition-all flex items-center justify-between cursor-pointer ${
               selectedRecipient.type === 'all'
                 ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
@@ -193,7 +196,10 @@ export default function TeamChatPage({ currentUser }) {
                   <button
                     key={team._id}
                     type="button"
-                    onClick={() => setSelectedRecipient({ type: 'team', data: team })}
+                    onClick={() => {
+                      setSelectedRecipient({ type: 'team', data: team });
+                      setMobileView('chat');
+                    }}
                     className={`w-full p-2 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                       isSelected
                         ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
@@ -217,11 +223,11 @@ export default function TeamChatPage({ currentUser }) {
         )}
 
         {/* Role Filter Pills */}
-        <div className="px-3 pt-2 pb-1 flex items-center gap-1 overflow-x-auto bg-slate-50 border-b border-gray-200">
+        <div className="px-3 py-2.5 flex items-center gap-1.5 overflow-x-auto bg-slate-50 border-b border-gray-200 shrink-0">
           <button
             type="button"
             onClick={() => setRoleFilter('all')}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               roleFilter === 'all'
                 ? 'bg-[#20b875] text-white shadow-2xs'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
@@ -232,7 +238,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => setRoleFilter('admin')}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               roleFilter === 'admin'
                 ? 'bg-rose-600 text-white shadow-2xs'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
@@ -243,7 +249,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => setRoleFilter('lead')}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               roleFilter === 'lead'
                 ? 'bg-purple-600 text-white shadow-2xs'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
@@ -254,7 +260,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => setRoleFilter('employee')}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               roleFilter === 'employee'
                 ? 'bg-[#20b875] text-white shadow-2xs'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
@@ -265,23 +271,23 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Staff Search Box */}
-        <div className="p-3 border-b border-gray-200 bg-white">
+        <div className="p-3 border-b border-gray-200 bg-white shrink-0">
           <div className="relative">
             <input
               type="text"
               placeholder="Search staff, leads, or superadmin..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-[#09233d] font-medium focus:bg-white focus:border-[#20b875] outline-none"
+              className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-[#09233d] font-medium focus:bg-white focus:border-[#20b875] outline-none"
             />
-            <svg className="w-4 h-4 text-gray-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
         </div>
 
         {/* Individual Contact Directory List */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 min-h-[160px]">
           <div className="px-2 py-1 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
             Direct 1-on-1 Contacts ({filteredStaff.length})
           </div>
@@ -296,7 +302,10 @@ export default function TeamChatPage({ currentUser }) {
               <button
                 key={emp._id}
                 type="button"
-                onClick={() => setSelectedRecipient({ type: 'individual', data: emp })}
+                onClick={() => {
+                  setSelectedRecipient({ type: 'individual', data: emp });
+                  setMobileView('chat');
+                }}
                 className={`w-full p-2.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                   isSelected
                     ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
@@ -337,11 +346,24 @@ export default function TeamChatPage({ currentUser }) {
       </div>
 
       {/* RIGHT PANEL: Chat Stream & Message Input */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-white h-full overflow-hidden`}>
         {/* Active Conversation Header */}
-        <div className="p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-bold text-lg shrink-0 shadow-2xs">
+        <div className="p-3 md:p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
+          <div className="flex items-center gap-2.5 md:gap-3 truncate">
+            {/* Mobile Back Button */}
+            <button
+              type="button"
+              onClick={() => setMobileView('list')}
+              className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1 font-bold text-xs border border-gray-200"
+              title="Back to contacts list"
+            >
+              <svg className="w-4 h-4 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>Back</span>
+            </button>
+
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-bold text-base md:text-lg shrink-0 shadow-2xs">
               {selectedRecipient.type === 'all' ? (
                 <svg className="w-5 h-5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
@@ -356,15 +378,15 @@ export default function TeamChatPage({ currentUser }) {
                 </svg>
               )}
             </div>
-            <div>
-              <h3 className="text-sm font-black text-[#09233d]">
+            <div className="truncate">
+              <h3 className="text-xs md:text-sm font-black text-[#09233d] truncate">
                 {selectedRecipient.type === 'all'
                   ? 'Everyone (Company Broadcast Channel)'
                   : selectedRecipient.type === 'team'
                   ? `Team Broadcast: ${selectedRecipient.data?.name}`
                   : `Direct 1-on-1 Chat: ${selectedRecipient.data?.name}`}
               </h3>
-              <p className="text-[11px] text-gray-500 font-medium">
+              <p className="text-[10px] md:text-[11px] text-gray-500 font-medium truncate">
                 {selectedRecipient.type === 'all'
                   ? 'All company staff receive and view messages in this channel'
                   : selectedRecipient.type === 'team'
@@ -454,17 +476,15 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="submit"
             disabled={sending || !newMessageText.trim()}
-            className="px-5 py-2.5 bg-[#20b875] hover:bg-[#18995e] disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer shrink-0"
+            className="w-10 h-10 rounded-full bg-[#20b875] hover:bg-[#18995e] active:scale-95 disabled:opacity-40 text-white flex items-center justify-center shrink-0 shadow-md transition-all cursor-pointer"
+            title="Send Message"
           >
             {sending ? (
-              <span>Sending...</span>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
-              <>
-                <span>Send Message</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </>
+              <svg className="w-5 h-5 text-white pl-0.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+              </svg>
             )}
           </button>
         </form>
