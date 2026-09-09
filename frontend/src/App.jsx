@@ -187,6 +187,7 @@ function DashboardLayout({ user, onLogout }) {
   const [viewAsEmployeeId, setViewAsEmployeeId] = useState(null);
   const [employeeList, setEmployeeList] = useState([]);
   const [visitedTabs, setVisitedTabs] = useState(() => new Set([getInitialTab()]));
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     setVisitedTabs((prev) => {
@@ -256,42 +257,66 @@ function DashboardLayout({ user, onLogout }) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-900 font-sans">
+    <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-900 font-sans relative">
+      {/* Mobile Drawer Dark Backdrop Overlay */}
+      {mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         user={user}
+        mobileOpen={mobileSidebarOpen}
+        setMobileOpen={setMobileSidebarOpen}
         onLogout={() => {
           onLogout();
           navigate('/');
         }}
       />
 
-      <main className="flex-1 h-screen overflow-y-auto">
-        <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-xs">
-          {activeTab === 'overview' ? (
-            <div>
-              <h1 className="text-xl font-black text-[#09233d] tracking-tight">
-                Welcome back, <span className="text-[#10b981]">{user.name}!</span>
-              </h1>
-              <p className="text-xs text-gray-500 font-medium mt-0.5">
-                {viewAsEmployeeId
-                  ? `Currently inspecting employee dashboard for: ${employeeList.find((e) => e._id === viewAsEmployeeId)?.name || 'Selected Staff'}`
-                  : "Here's what's happening with your work today."}
-              </p>
-            </div>
-          ) : (
-            <div>
-              <h1 className="text-lg font-black text-[#09233d]">
-                {getTabTitle(activeTab)}
-              </h1>
-              {activeTab === 'audit-logs' && (
-                <p className="text-xs text-gray-500 font-medium mt-0.5">
-                  Track every change made across the platform.
+      <main className="flex-1 h-screen overflow-y-auto w-full">
+        <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3.5 flex justify-between items-center sticky top-0 z-30 shadow-xs">
+          <div className="flex items-center gap-3">
+            {/* Mobile Sidebar Hamburger Toggle */}
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+              className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all border border-gray-200 shrink-0"
+              title="Toggle sidebar menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            {activeTab === 'overview' ? (
+              <div>
+                <h1 className="text-base md:text-xl font-black text-[#09233d] tracking-tight truncate">
+                  Welcome back, <span className="text-[#10b981]">{user.name}!</span>
+                </h1>
+                <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 truncate hidden sm:block">
+                  {viewAsEmployeeId
+                    ? `Currently inspecting employee dashboard for: ${employeeList.find((e) => e._id === viewAsEmployeeId)?.name || 'Selected Staff'}`
+                    : "Here's what's happening with your work today."}
                 </p>
-              )}
-            </div>
-          )}
+              </div>
+            ) : (
+              <div>
+                <h1 className="text-sm md:text-lg font-black text-[#09233d] truncate">
+                  {getTabTitle(activeTab)}
+                </h1>
+                {activeTab === 'audit-logs' && (
+                  <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
+                    Track every change made across the platform.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
           <div className="flex items-center gap-3 text-xs">
