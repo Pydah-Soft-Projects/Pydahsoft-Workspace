@@ -83,13 +83,6 @@ export default function Login({ onLoginSuccess }) {
             </small>
           </span>
         </Link>
-
-        <Link
-          to="/"
-          className="rounded-full border border-[#d1e8dc] bg-white px-4 py-2 text-xs font-bold text-[#09233d] transition-all hover:bg-[#edf9f2]"
-        >
-          <span className="inline-flex items-center gap-1.5"><Icon name="arrowLeft" className="w-3.5 h-3.5" /> Back to Landing Page</span>
-        </Link>
       </header>
 
       <main className="login-stage relative z-10 mx-auto my-auto flex w-full max-w-5xl items-center justify-center px-6 py-8 lg:px-12">
@@ -109,14 +102,22 @@ export default function Login({ onLoginSuccess }) {
             <span className="login-prop__lock-body"><i /></span>
           </div>
 
-          <div className="login-card rounded-3xl border border-white/80 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,48,34,0.08)] backdrop-blur-md">
-          <div className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f7ef] text-[#169a61]">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-[#09233d]">System Login</h1>
+          <div className="login-card relative rounded-3xl border border-white/80 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,48,34,0.08)] backdrop-blur-md">
+            <Link
+              to="/"
+              className="absolute top-5 left-5 inline-flex items-center gap-1.5 rounded-full border border-[#d1e8dc] bg-white px-3.5 py-1.5 text-xs font-bold text-[#09233d] shadow-xs transition-all hover:bg-[#edf9f2]"
+            >
+              <Icon name="arrowLeft" className="w-3.5 h-3.5" />
+              <span>Back</span>
+            </Link>
+
+            <div className="text-center pt-2">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f7ef] text-[#169a61]">
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-black tracking-tight text-[#09233d]">System Login</h1>
             <p className="mt-1 text-xs font-medium text-[#5e7787]">
               Enter your credentials to access your PydahSoft workspace.
             </p>
