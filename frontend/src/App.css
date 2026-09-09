@@ -689,6 +689,30 @@ html {
     width: min(100%, 320px);
   }
 
+  .login-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .login-card form {
+    margin-top: 18px;
+    gap: 12px;
+  }
+
+  .login-card input {
+    padding: 10px 12px;
+  }
+
+  .login-card form button {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .login-card > div:last-child {
+    margin-top: 18px;
+    padding-top: 12px;
+  }
+
   .login-prop--lock { right: -5%; top: 10%; transform: scale(0.5); }
   .login-prop--user { left: -4%; top: 13%; transform: scale(0.55); }
   .login-prop--form { left: -4%; bottom: 3%; transform: scale(0.52); }
@@ -711,7 +735,51 @@ html {
   }
 
   .login-card {
-    padding: 16px;
+    padding: 12px;
+  }
+
+  .login-stage {
+    padding: 8px;
+  }
+
+  .login-scene {
+    width: min(100%, 292px);
+  }
+
+  .login-card form {
+    margin-top: 14px;
+    gap: 10px;
+  }
+
+  .login-card input {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .login-card form button {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 13px;
+  }
+
+  .login-card > div:last-child {
+    margin-top: 14px;
+    padding-top: 10px;
+  }
+
+  .login-card .text-center > div:first-child {
+    margin-bottom: 10px;
+    height: 42px;
+    width: 42px;
+  }
+
+  .login-card .text-center > div:first-child svg {
+    height: 20px;
+    width: 20px;
+  }
+
+  .login-card .text-center h1 {
+    font-size: 20px;
   }
 
   .login-card h1 {

@@ -40,7 +40,7 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selectedEmp = employeeList.find((e) => e._id === viewAsEmployeeId);
+  const selectedEmp = employeeList.find((e) => String(e._id) === String(viewAsEmployeeId));
   const filteredEmployees = employeeList.filter(
     (emp) =>
       emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -131,7 +131,7 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
             </button>
 
             {filteredEmployees.map((emp) => {
-              const isSelected = viewAsEmployeeId === emp._id;
+              const isSelected = String(viewAsEmployeeId) === String(emp._id);
               return (
                 <button
                   key={emp._id}
