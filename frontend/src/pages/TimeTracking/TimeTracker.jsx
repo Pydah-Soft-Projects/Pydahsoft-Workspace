@@ -3,6 +3,27 @@ import { fetchApi } from '../../config/api';
 import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 import Icon from '../../components/Icon';
 
+const KEY_BADGE_COLORS = [
+  'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'bg-blue-50 text-blue-700 border-blue-200',
+  'bg-purple-50 text-purple-700 border-purple-200',
+  'bg-amber-50 text-amber-800 border-amber-200',
+  'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'bg-rose-50 text-rose-700 border-rose-200',
+  'bg-teal-50 text-teal-700 border-teal-200',
+  'bg-cyan-50 text-cyan-700 border-cyan-200',
+];
+
+const getKeyBadgeColor = (keyStr, index = 0) => {
+  if (!keyStr) return KEY_BADGE_COLORS[index % KEY_BADGE_COLORS.length];
+  let hash = 0;
+  for (let i = 0; i < keyStr.length; i++) {
+    hash = keyStr.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colorIndex = Math.abs(hash) % KEY_BADGE_COLORS.length;
+  return KEY_BADGE_COLORS[colorIndex];
+};
+
 export const formatTrackedTime = (hours) => {
   const h = Number(hours) || 0;
   const totalMins = Math.round(h * 60);
@@ -96,7 +117,7 @@ export default function TimeTracker({ currentUser }) {
         <LoadingSpinner message="Loading time tracking tasks..." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {assignedTasks.map((task) => {
+          {assignedTasks.map((task, idx) => {
             const est = task.estimatedHours || 0;
             const act = task.actualHours || 0;
             const efficiency = act > 0 ? Number(((est / act) * 100).toFixed(2)) : (est > 0 ? 100 : 0);
@@ -104,12 +125,13 @@ export default function TimeTracker({ currentUser }) {
             const isRunning = activeTimer && activeTimer.task?._id === task._id;
             const isApproved = task.status === 'Approved';
             const isSubmitted = task.status === 'Submitted for Review';
+            const taskBadgeStyle = getKeyBadgeColor(task.taskId, idx);
 
             return (
               <div key={task._id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
                 <div className="flex justify-between items-start border-b pb-3 border-gray-100">
                   <div>
-                    <span className="text-[10px] font-bold text-[#20b875] bg-emerald-50 px-2 py-0.5 rounded">
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg border ${taskBadgeStyle}`}>
                       {task.taskId || 'TSK'}
                     </span>
                     <h3 className="text-sm font-bold text-[#09233d] mt-1">{task.title}</h3>

@@ -3,6 +3,27 @@ import { fetchApi } from '../../config/api';
 import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 import Icon from '../../components/Icon';
 
+const KEY_BADGE_COLORS = [
+  'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'bg-blue-50 text-blue-700 border-blue-200',
+  'bg-purple-50 text-purple-700 border-purple-200',
+  'bg-amber-50 text-amber-800 border-amber-200',
+  'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'bg-rose-50 text-rose-700 border-rose-200',
+  'bg-teal-50 text-teal-700 border-teal-200',
+  'bg-cyan-50 text-cyan-700 border-cyan-200',
+];
+
+const getKeyBadgeColor = (keyStr, index = 0) => {
+  if (!keyStr) return KEY_BADGE_COLORS[index % KEY_BADGE_COLORS.length];
+  let hash = 0;
+  for (let i = 0; i < keyStr.length; i++) {
+    hash = keyStr.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colorIndex = Math.abs(hash) % KEY_BADGE_COLORS.length;
+  return KEY_BADGE_COLORS[colorIndex];
+};
+
 export default function TeamManagement({ currentUser }) {
   const [teams, setTeams] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
@@ -120,15 +141,17 @@ export default function TeamManagement({ currentUser }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {displayedTeams.map((team) => (
-            <div key={team._id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-3">
-              <div className="flex justify-between items-start border-b pb-3 border-gray-100">
-                <div>
-                  <span className="text-[10px] font-bold text-[#20b875] bg-emerald-50 px-2 py-0.5 rounded">
-                    {team.teamId || 'TEAM'}
-                  </span>
-                  <h3 className="text-sm font-bold text-[#09233d] mt-1">{team.name}</h3>
-                </div>
+          {displayedTeams.map((team, idx) => {
+            const teamBadgeStyle = getKeyBadgeColor(team.teamId, idx);
+            return (
+              <div key={team._id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-3">
+                <div className="flex justify-between items-start border-b pb-3 border-gray-100">
+                  <div>
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg border ${teamBadgeStyle}`}>
+                      {team.teamId || 'TEAM'}
+                    </span>
+                    <h3 className="text-sm font-bold text-[#09233d] mt-1">{team.name}</h3>
+                  </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full uppercase">
                     {team.status || 'Active'}
@@ -172,7 +195,8 @@ export default function TeamManagement({ currentUser }) {
                 </div>
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       )}
 

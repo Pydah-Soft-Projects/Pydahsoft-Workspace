@@ -90,6 +90,27 @@ const PAGE_PRIVILEGES_LIST = [
   { key: 'canViewSettings', label: 'System Settings & Role Privileges Page', icon: 'settings', path: '/dashboard/settings' }
 ];
 
+const EMP_ID_COLOR_VARIANTS = [
+  'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'bg-blue-50 text-blue-700 border-blue-200',
+  'bg-purple-50 text-purple-700 border-purple-200',
+  'bg-amber-50 text-amber-800 border-amber-200',
+  'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'bg-rose-50 text-rose-700 border-rose-200',
+  'bg-teal-50 text-teal-700 border-teal-200',
+  'bg-cyan-50 text-cyan-700 border-cyan-200',
+];
+
+const getEmpIdBadgeColor = (empId, index = 0) => {
+  if (!empId) return EMP_ID_COLOR_VARIANTS[index % EMP_ID_COLOR_VARIANTS.length];
+  let hash = 0;
+  for (let i = 0; i < empId.length; i++) {
+    hash = empId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colorIndex = Math.abs(hash) % EMP_ID_COLOR_VARIANTS.length;
+  return EMP_ID_COLOR_VARIANTS[colorIndex];
+};
+
 export default function UserManagement({ currentUser }) {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -319,107 +340,219 @@ export default function UserManagement({ currentUser }) {
       {loading ? (
         <LoadingSpinner message="Loading user accounts..." />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100 text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                  <th className="p-4">Emp ID</th>
-                  <th className="p-4">Full Name & Username</th>
-                  <th className="p-4">Department & Role</th>
-                  <th className="p-4">Allowed Sidebar Pages</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-xs">
-                {users.map((u) => {
-                  const isSuperAdmin = u.role === 'superadmin';
-                  const perms = getEffectivePermissions(u, roles);
-                  const activePermCount = isSuperAdmin ? 11 : PAGE_PRIVILEGES_LIST.filter(p => perms[p.key] !== 'none' && perms[p.key] !== false).length;
-                  const isInactive = u.status === 'Inactive';
+        <>
+          {/* MOBILE CARDS VIEW (< md) */}
+          <div className="grid grid-cols-1 gap-3 md:hidden">
+            {users.map((u, idx) => {
+              const isSuperAdmin = u.role === 'superadmin';
+              const perms = getEffectivePermissions(u, roles);
+              const activePermCount = isSuperAdmin ? 11 : PAGE_PRIVILEGES_LIST.filter(p => perms[p.key] !== 'none' && perms[p.key] !== false).length;
+              const isInactive = u.status === 'Inactive';
+              const idBadgeStyle = getEmpIdBadgeColor(u.employeeId, idx);
 
-                  return (
-                    <tr key={u._id} className="hover:bg-gray-50/60">
-                      <td className="p-4 font-bold text-[#20b875]">{u.employeeId || 'EMP-000'}</td>
-                      <td className="p-4">
-                        <strong className="block text-[#09233d] font-bold">{u.name}</strong>
-                        <span className="text-[11px] text-gray-400">@{u.username}</span>
-                      </td>
-                      <td className="p-4">
-                        <span className="font-semibold text-gray-700 block">{u.department || 'Engineering'}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase mt-0.5 inline-block ${
+              return (
+                <div key={u._id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-3">
+                  {/* Header: Emp ID + Status */}
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                    <span className={`font-extrabold text-xs px-2.5 py-1 rounded-lg border ${idBadgeStyle}`}>
+                      {u.employeeId || 'EMP-000'}
+                    </span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                      !isInactive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'
+                    }`}>
+                      {u.status || 'Active'}
+                    </span>
+                  </div>
+
+                  {/* Body: Profile Info & Department/Role */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-base border border-indigo-200 shrink-0 shadow-2xs">
+                      {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <h4 className="text-xs font-black text-[#09233d] truncate">{u.name}</h4>
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase shrink-0 ${
                           u.role === 'superior' ? 'bg-purple-100 text-purple-800' :
                           u.role === 'teamlead' ? 'bg-blue-100 text-blue-800' :
                           isSuperAdmin ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
                         }`}>
                           {u.role}
                         </span>
-                      </td>
-                      <td className="p-4">
-                        <span className="px-2.5 py-1 bg-gray-100 text-gray-700 font-bold rounded-lg text-[10px]">
-                          <span className="inline-flex items-center gap-1"><Icon name="shield" className="w-3.5 h-3.5" /> {activePermCount} / 11 Pages {isSuperAdmin ? '(Full Access)' : 'Allowed'}</span>
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          !isInactive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
-                        }`}>
-                          {u.status || 'Active'}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
+                      </div>
+                      <p className="text-[11px] text-gray-400 font-medium truncate mt-0.5">@{u.username}</p>
+
+                      <div className="mt-2 text-xs font-semibold text-gray-700 flex flex-col gap-1 bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span className="font-bold text-gray-500">Department:</span>
+                          <span className="font-bold text-[#09233d]">{u.department || 'Engineering'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px] pt-1 border-t border-gray-100">
+                          <span className="font-bold text-gray-500">Allowed Pages:</span>
+                          <span className="font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                            {activePermCount} / 11 {isSuperAdmin ? 'Full Access' : 'Pages'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Footer */}
+                  <div className="pt-2 border-t border-gray-100 flex items-center justify-between gap-1.5 overflow-x-auto">
+                    <button
+                      onClick={() => setViewingUser(u)}
+                      className="flex-1 py-1.5 px-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-[11px] font-bold border border-gray-200 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+                    >
+                      <Icon name="eye" className="w-3.5 h-3.5 text-gray-500" /> View
+                    </button>
+                    {isManager && (
+                      <button
+                        onClick={() => setEditingUser({ ...u })}
+                        className="flex-1 py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-[11px] font-bold border border-blue-100 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+                      >
+                        <Icon name="edit" className="w-3.5 h-3.5 text-blue-600" /> Edit
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setSelectedUserPrivileges({
+                        ...u,
+                        permissions: getEffectivePermissions(u, roles)
+                      })}
+                      className="flex-1 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[11px] font-bold border border-indigo-200 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 whitespace-nowrap"
+                    >
+                      <Icon name="settings" className="w-3.5 h-3.5 text-indigo-600" /> Privileges
+                    </button>
+                    {isManager && !isSuperAdmin && (
+                      isInactive ? (
                         <button
-                          onClick={() => setViewingUser(u)}
-                          className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
+                          onClick={() => handleToggleStatus(u)}
+                          className="py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-[11px] font-bold border border-emerald-200 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0"
                         >
-                          <span className="inline-flex items-center gap-1"><Icon name="eye" className="w-3.5 h-3.5" /> View</span>
+                          <Icon name="check" className="w-3.5 h-3.5 text-emerald-600" /> Activate
                         </button>
-
-                        {isManager && (
-                          <button
-                            onClick={() => setEditingUser({ ...u })}
-                            className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
-                          >
-                            <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3.5 h-3.5" /> Edit</span>
-                          </button>
-                        )}
-
+                      ) : (
                         <button
-                          onClick={() => setSelectedUserPrivileges({
-                            ...u,
-                            permissions: getEffectivePermissions(u, roles)
-                          })}
-                          className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[11px] font-bold border border-indigo-200 inline-flex items-center gap-1"
+                          onClick={() => handleToggleStatus(u)}
+                          className="py-1.5 px-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-[11px] font-bold border border-red-200 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0"
                         >
-                          <span className="inline-flex items-center gap-1"><Icon name="settings" className="w-3.5 h-3.5" /> Page Privileges</span>
+                          Deactivate
                         </button>
-
-                        {isManager && !isSuperAdmin && (
-                          isInactive ? (
-                            <button
-                              onClick={() => handleToggleStatus(u)}
-                              className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-[11px] font-bold border border-emerald-200"
-                            >
-                              <span className="inline-flex items-center gap-1"><Icon name="check" className="w-3.5 h-3.5" /> Activate</span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleToggleStatus(u)}
-                              className="px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-[11px] font-bold"
-                            >
-                              Deactivate
-                            </button>
-                          )
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      )
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+
+          {/* DESKTOP TABLE VIEW (>= md) */}
+          <div className="hidden md:block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                    <th className="p-4">Emp ID</th>
+                    <th className="p-4">Full Name & Username</th>
+                    <th className="p-4">Department & Role</th>
+                    <th className="p-4">Allowed Sidebar Pages</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {users.map((u, idx) => {
+                    const isSuperAdmin = u.role === 'superadmin';
+                    const perms = getEffectivePermissions(u, roles);
+                    const activePermCount = isSuperAdmin ? 11 : PAGE_PRIVILEGES_LIST.filter(p => perms[p.key] !== 'none' && perms[p.key] !== false).length;
+                    const isInactive = u.status === 'Inactive';
+                    const idBadgeStyle = getEmpIdBadgeColor(u.employeeId, idx);
+
+                    return (
+                      <tr key={u._id} className="hover:bg-gray-50/60">
+                        <td className="p-4 font-bold">
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border ${idBadgeStyle}`}>
+                            {u.employeeId || 'EMP-000'}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <strong className="block text-[#09233d] font-bold">{u.name}</strong>
+                          <span className="text-[11px] text-gray-400">@{u.username}</span>
+                        </td>
+                        <td className="p-4">
+                          <span className="font-semibold text-gray-700 block">{u.department || 'Engineering'}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase mt-0.5 inline-block ${
+                            u.role === 'superior' ? 'bg-purple-100 text-purple-800' :
+                            u.role === 'teamlead' ? 'bg-blue-100 text-blue-800' :
+                            isSuperAdmin ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className="px-2.5 py-1 bg-gray-100 text-gray-700 font-bold rounded-lg text-[10px]">
+                            <span className="inline-flex items-center gap-1"><Icon name="shield" className="w-3.5 h-3.5" /> {activePermCount} / 11 Pages {isSuperAdmin ? '(Full Access)' : 'Allowed'}</span>
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            !isInactive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
+                          }`}>
+                            {u.status || 'Active'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
+                          <button
+                            onClick={() => setViewingUser(u)}
+                            className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
+                          >
+                            <span className="inline-flex items-center gap-1"><Icon name="eye" className="w-3.5 h-3.5" /> View</span>
+                          </button>
+
+                          {isManager && (
+                            <button
+                              onClick={() => setEditingUser({ ...u })}
+                              className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
+                            >
+                              <span className="inline-flex items-center gap-1"><Icon name="edit" className="w-3.5 h-3.5" /> Edit</span>
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => setSelectedUserPrivileges({
+                              ...u,
+                              permissions: getEffectivePermissions(u, roles)
+                            })}
+                            className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[11px] font-bold border border-indigo-200 inline-flex items-center gap-1"
+                          >
+                            <span className="inline-flex items-center gap-1"><Icon name="settings" className="w-3.5 h-3.5" /> Page Privileges</span>
+                          </button>
+
+                          {isManager && !isSuperAdmin && (
+                            isInactive ? (
+                              <button
+                                onClick={() => handleToggleStatus(u)}
+                                className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-[11px] font-bold border border-emerald-200"
+                              >
+                                <span className="inline-flex items-center gap-1"><Icon name="check" className="w-3.5 h-3.5" /> Activate</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleToggleStatus(u)}
+                                className="px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-[11px] font-bold"
+                              >
+                                Deactivate
+                              </button>
+                            )
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
 
       {/* SIDEBAR PAGE ACCESS CONTROL MODAL */}

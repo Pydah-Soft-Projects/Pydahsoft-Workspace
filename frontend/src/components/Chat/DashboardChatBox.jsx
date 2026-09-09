@@ -384,7 +384,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
       {/* RIGHT PANEL: Chat Stream & Message Input */}
       <div
         style={viewportHeight && mobileView === 'chat' && typeof window !== 'undefined' && window.innerWidth < 768 ? { height: `${viewportHeight}px`, top: `${window.visualViewport?.offsetTop || 0}px` } : {}}
-        className={`${mobileView === 'list' ? 'hidden md:flex' : 'fixed inset-0 z-50 bg-white flex flex-col h-full w-full md:static md:z-auto md:flex-1'} flex-col bg-white h-full overflow-hidden`}
+        className={`${mobileView === 'list' ? 'hidden md:flex md:flex-1' : 'fixed inset-0 z-50 bg-white flex flex-col h-full w-full md:static md:z-auto md:flex-1'} flex-col bg-white h-full overflow-hidden w-full`}
       >
         {/* Active Conversation Header */}
         <div className="p-3 md:p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">

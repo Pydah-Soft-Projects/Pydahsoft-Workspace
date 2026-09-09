@@ -3,6 +3,27 @@ import { fetchApi } from '../../config/api';
 import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 import Icon from '../../components/Icon';
 
+const KEY_BADGE_COLORS = [
+  'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'bg-blue-50 text-blue-700 border-blue-200',
+  'bg-purple-50 text-purple-700 border-purple-200',
+  'bg-amber-50 text-amber-800 border-amber-200',
+  'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'bg-rose-50 text-rose-700 border-rose-200',
+  'bg-teal-50 text-teal-700 border-teal-200',
+  'bg-cyan-50 text-cyan-700 border-cyan-200',
+];
+
+const getKeyBadgeColor = (keyStr, index = 0) => {
+  if (!keyStr) return KEY_BADGE_COLORS[index % KEY_BADGE_COLORS.length];
+  let hash = 0;
+  for (let i = 0; i < keyStr.length; i++) {
+    hash = keyStr.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colorIndex = Math.abs(hash) % KEY_BADGE_COLORS.length;
+  return KEY_BADGE_COLORS[colorIndex];
+};
+
 export default function TaskManagement({ currentUser }) {
   const [tasks, setTasks] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -160,115 +181,232 @@ export default function TaskManagement({ currentUser }) {
           No assigned tasks found for your employee profile.
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100 text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                  <th className="p-4">Task ID & Title</th>
-                  <th className="p-4">Parent Module / Project</th>
-                  <th className="p-4">Team & Assigned Person</th>
-                  <th className="p-4">Priority</th>
-                  <th className="p-4">Est / Act Hours</th>
-                  <th className="p-4">Lifecycle Status</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-xs">
-                {displayedTasks.map((task) => (
-                  <tr key={task._id} className="hover:bg-gray-50/60">
-                    <td className="p-4">
-                      <span className="text-[10px] font-bold text-[#20b875] bg-emerald-50 px-2 py-0.5 rounded mr-1">
+        <>
+          {/* MOBILE CARDS VIEW (< md) */}
+          <div className="grid grid-cols-1 gap-3 md:hidden">
+            {displayedTasks.map((task, idx) => {
+              const taskBadgeStyle = getKeyBadgeColor(task.taskId, idx);
+              return (
+                <div key={task._id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-3">
+                  {/* Header: Task ID + Priority + Status */}
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-2.5 gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg border ${taskBadgeStyle}`}>
                         {task.taskId || 'TSK'}
                       </span>
-                      <strong className="text-[#09233d] font-bold">{task.title}</strong>
-                    </td>
-                    <td className="p-4 font-medium text-gray-700">
-                      <strong className="text-[#09233d] block">{task.module?.name || 'General Module'}</strong>
-                      <small className="text-[10px] text-gray-400">Project: {task.project?.name || 'N/A'}</small>
-                    </td>
-                    <td className="p-4">
-                      <strong className="text-gray-800 block">{task.assignedTo?.name || 'Unassigned'}</strong>
-                      <small className="text-[10px] text-purple-700 font-semibold">{task.team?.name || 'Team Assigned'}</small>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${
                         task.priority === 'Critical' ? 'bg-red-100 text-red-700' :
                         task.priority === 'High' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
                       }`}>
                         {task.priority}
                       </span>
-                    </td>
-                    <td className="p-4 font-semibold text-gray-700">
-                      {task.estimatedHours || 0}h / <span className="text-[#20b875]">{task.actualHours || 0}h</span>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
-                        task.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
-                        task.status === 'Submitted for Review' ? 'bg-amber-100 text-amber-800' :
-                        task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                        task.status === 'Rejected' ? 'bg-rose-100 text-rose-800' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {task.status}
-                      </span>
-                    </td>
+                    </div>
 
-                    <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
-                      {canCreateTasks && (
-                        <button
-                          onClick={() => {
-                            setReassigningTask(task);
-                            setSelectedAssigneeId(task.assignedTo?._id || '');
-                          }}
-                          className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[11px] font-bold border border-indigo-200"
-                        >
-                          <span className="inline-flex items-center gap-1"><Icon name="activity" className="w-3.5 h-3.5" /> Re-assign</span>
-                        </button>
-                      )}
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase shrink-0 ${
+                      task.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
+                      task.status === 'Submitted for Review' ? 'bg-amber-100 text-amber-800' :
+                      task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                      task.status === 'Rejected' ? 'bg-rose-100 text-rose-800' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {task.status}
+                    </span>
+                  </div>
 
-                      {!isManager && (
-                        <>
-                          {task.status === 'Not Started' && (
+                  {/* Task Title & Parent Module */}
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-black text-[#09233d]">{task.title}</h4>
+                    <p className="text-[11px] text-gray-500 font-medium">
+                      Module: <strong className="text-gray-700">{task.module?.name || 'General'}</strong>
+                      {task.project?.name && <span className="text-gray-400"> • {task.project.name}</span>}
+                    </p>
+                  </div>
+
+                  {/* Employee & Team Details Card Box */}
+                  <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 text-xs space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 font-medium">Assigned Person:</span>
+                      <strong className="text-[#09233d] font-bold">{task.assignedTo?.name || 'Unassigned'}</strong>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-gray-400 font-medium">Team:</span>
+                      <span className="font-semibold text-purple-700">{task.team?.name || 'Team Assigned'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px] pt-1 border-t border-gray-100">
+                      <span className="text-gray-400 font-medium">Logged Hours:</span>
+                      <span className="font-bold text-gray-700">{task.estimatedHours || 0}h Est / <strong className="text-[#20b875]">{task.actualHours || 0}h Act</strong></span>
+                    </div>
+                  </div>
+
+                  {/* Actions Footer */}
+                  <div className="pt-2 border-t border-gray-100 flex items-center justify-end gap-1.5">
+                    {canCreateTasks && (
+                      <button
+                        onClick={() => {
+                          setReassigningTask(task);
+                          setSelectedAssigneeId(task.assignedTo?._id || '');
+                        }}
+                        className="py-1.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[11px] font-bold border border-indigo-200 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+                      >
+                        <Icon name="activity" className="w-3.5 h-3.5 text-indigo-600" /> Re-assign Task
+                      </button>
+                    )}
+
+                    {!isManager && (
+                      <>
+                        {task.status === 'Not Started' && (
+                          <button
+                            onClick={() => updateStatus(task._id, 'In Progress')}
+                            className="py-1.5 px-3 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-[11px] font-bold border border-blue-200 active:scale-95"
+                          >
+                            Start Task
+                          </button>
+                        )}
+                        {task.status === 'In Progress' && (
+                          <>
                             <button
-                              onClick={() => updateStatus(task._id, 'In Progress')}
-                              className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[11px] font-bold hover:bg-blue-100"
+                              onClick={() => updateStatus(task._id, 'Paused')}
+                              className="py-1.5 px-2.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-xl text-[11px] font-bold border border-amber-200 active:scale-95"
                             >
-                              Start
+                              Pause
+                            </button>
+                            <button
+                              onClick={() => updateStatus(task._id, 'Submitted for Review')}
+                              className="py-1.5 px-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl text-[11px] font-bold border border-emerald-200 active:scale-95"
+                            >
+                              Submit
+                            </button>
+                          </>
+                        )}
+                        {task.status === 'Paused' && (
+                          <button
+                            onClick={() => updateStatus(task._id, 'In Progress')}
+                            className="py-1.5 px-3 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-[11px] font-bold border border-blue-200 active:scale-95"
+                          >
+                            Resume
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* DESKTOP TABLE VIEW (>= md) */}
+          <div className="hidden md:block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                    <th className="p-4">Task ID & Title</th>
+                    <th className="p-4">Parent Module / Project</th>
+                    <th className="p-4">Team & Assigned Person</th>
+                    <th className="p-4">Priority</th>
+                    <th className="p-4">Est / Act Hours</th>
+                    <th className="p-4">Lifecycle Status</th>
+                    <th className="p-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {displayedTasks.map((task, idx) => {
+                    const taskBadgeStyle = getKeyBadgeColor(task.taskId, idx);
+                    return (
+                      <tr key={task._id} className="hover:bg-gray-50/60">
+                        <td className="p-4">
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg border mr-1 ${taskBadgeStyle}`}>
+                            {task.taskId || 'TSK'}
+                          </span>
+                          <strong className="text-[#09233d] font-bold">{task.title}</strong>
+                        </td>
+                        <td className="p-4 font-medium text-gray-700">
+                          <strong className="text-[#09233d] block">{task.module?.name || 'General Module'}</strong>
+                          <small className="text-[10px] text-gray-400">Project: {task.project?.name || 'N/A'}</small>
+                        </td>
+                        <td className="p-4">
+                          <strong className="text-gray-800 block">{task.assignedTo?.name || 'Unassigned'}</strong>
+                          <small className="text-[10px] text-purple-700 font-semibold">{task.team?.name || 'Team Assigned'}</small>
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            task.priority === 'Critical' ? 'bg-red-100 text-red-700' :
+                            task.priority === 'High' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {task.priority}
+                          </span>
+                        </td>
+                        <td className="p-4 font-semibold text-gray-700">
+                          {task.estimatedHours || 0}h / <span className="text-[#20b875]">{task.actualHours || 0}h</span>
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+                            task.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
+                            task.status === 'Submitted for Review' ? 'bg-amber-100 text-amber-800' :
+                            task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                            task.status === 'Rejected' ? 'bg-rose-100 text-rose-800' : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {task.status}
+                          </span>
+                        </td>
+
+                        <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
+                          {canCreateTasks && (
+                            <button
+                              onClick={() => {
+                                setReassigningTask(task);
+                                setSelectedAssigneeId(task.assignedTo?._id || '');
+                              }}
+                              className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[11px] font-bold border border-indigo-200"
+                            >
+                              <span className="inline-flex items-center gap-1"><Icon name="activity" className="w-3.5 h-3.5" /> Re-assign</span>
                             </button>
                           )}
-                          {task.status === 'In Progress' && (
+
+                          {!isManager && (
                             <>
-                              <button
-                                onClick={() => updateStatus(task._id, 'Paused')}
-                                className="px-2 py-1 bg-amber-50 text-amber-600 rounded text-[11px] font-bold hover:bg-amber-100"
-                              >
-                                Pause
-                              </button>
-                              <button
-                                onClick={() => updateStatus(task._id, 'Submitted for Review')}
-                                className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[11px] font-bold hover:bg-emerald-100"
-                              >
-                                Submit
-                              </button>
+                              {task.status === 'Not Started' && (
+                                <button
+                                  onClick={() => updateStatus(task._id, 'In Progress')}
+                                  className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[11px] font-bold hover:bg-blue-100"
+                                >
+                                  Start
+                                </button>
+                              )}
+                              {task.status === 'In Progress' && (
+                                <>
+                                  <button
+                                    onClick={() => updateStatus(task._id, 'Paused')}
+                                    className="px-2 py-1 bg-amber-50 text-amber-600 rounded text-[11px] font-bold hover:bg-amber-100"
+                                  >
+                                    Pause
+                                  </button>
+                                  <button
+                                    onClick={() => updateStatus(task._id, 'Submitted for Review')}
+                                    className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[11px] font-bold hover:bg-emerald-100"
+                                  >
+                                    Submit
+                                  </button>
+                                </>
+                              )}
+                              {task.status === 'Paused' && (
+                                <button
+                                  onClick={() => updateStatus(task._id, 'In Progress')}
+                                  className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[11px] font-bold hover:bg-blue-100"
+                                >
+                                  Resume
+                                </button>
+                              )}
                             </>
                           )}
-                          {task.status === 'Paused' && (
-                            <button
-                              onClick={() => updateStatus(task._id, 'In Progress')}
-                              className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[11px] font-bold hover:bg-blue-100"
-                            >
-                              Resume
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Re-assign Task Modal */}
