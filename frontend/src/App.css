@@ -23,51 +23,38 @@ html {
 
 @media (max-width: 767px) {
   .dashboard-shell {
-    padding-bottom: 68px;
-  }
-
-  .dashboard-sidebar {
-    position: fixed;
-    inset: auto 0 0;
-    width: 100%;
-    height: 68px;
-    padding: 8px;
-    flex-direction: row;
-    border-right: 0;
-    border-top: 1px solid #0e4733;
-    box-shadow: 0 -8px 24px rgba(7, 43, 30, 0.18);
-  }
-
-  .dashboard-sidebar__navigation {
     min-width: 0;
+  }
+
+  .dashboard-header__controls {
     width: 100%;
-    padding-right: 0;
+    min-width: 0;
     overflow-x: auto;
-    overflow-y: hidden;
+    padding-bottom: 1px;
   }
 
-  .dashboard-sidebar__brand,
-  .dashboard-sidebar__profile {
-    display: none;
-  }
-
-  .dashboard-sidebar__nav {
-    height: 100%;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-    width: max-content;
-  }
-
-  .dashboard-sidebar__nav button {
-    width: auto;
-    min-width: max-content;
-    padding: 10px 12px;
-  }
-
-  .dashboard-main {
-    width: 100%;
+  .dashboard-header__controls .relative {
     min-width: 0;
+    max-width: 100%;
+  }
+
+  .dashboard-header__controls .relative > button {
+    width: min(100%, 240px);
+  }
+
+  .dashboard-header__controls > div {
+    flex-shrink: 0;
+  }
+
+  .dashboard-header__controls button {
+    padding-left: 7px;
+    padding-right: 7px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .dashboard-content {
+    padding: 12px;
   }
 
   .dashboard-header > div:first-child {
@@ -75,14 +62,35 @@ html {
     flex: 1 1 180px;
   }
 
-  .dashboard-header > div:last-child {
+  .dashboard-header__controls .relative > button {
     max-width: 100%;
-    overflow-x: auto;
-    padding-bottom: 1px;
+    min-width: 0;
   }
 
   .dashboard-content {
+    width: 100%;
     min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .settings-role-header,
+  .settings-master-controls,
+  .settings-permission-row {
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .settings-role-header > div:last-child,
+  .settings-master-controls > div:last-child,
+  .settings-permission-row > div:last-child {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .settings-permission-row > div:first-child {
+    min-width: 0;
+    flex: 1 1 150px;
   }
 }
 
@@ -616,11 +624,53 @@ html {
 }
 
 @media (max-width: 640px) {
-  .login-prop--lock { right: -12%; top: 12%; transform: scale(0.68); }
-  .login-prop--user { left: -8%; top: 15%; transform: scale(0.72); }
-  .login-prop--form { left: -10%; bottom: 5%; transform: scale(0.7); }
+  .login-header {
+    padding: 14px 12px;
+    gap: 8px;
+  }
+
+  .login-header > a:last-child {
+    max-width: 145px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .login-stage {
+    padding: 12px;
+  }
+
+  .login-scene {
+    width: min(100%, 320px);
+  }
+
+  .login-prop--lock { right: -5%; top: 10%; transform: scale(0.5); }
+  .login-prop--user { left: -4%; top: 13%; transform: scale(0.55); }
+  .login-prop--form { left: -4%; bottom: 3%; transform: scale(0.52); }
   .login-card { transform: none; }
   .login-card:hover { transform: translateY(-3px); }
+}
+
+@media (max-width: 360px) {
+  .dashboard-header {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .dashboard-content {
+    padding: 8px;
+  }
+
+  .dashboard-header__controls {
+    gap: 4px;
+  }
+
+  .login-card {
+    padding: 16px;
+  }
+
+  .login-card h1 {
+    font-size: 21px;
+  }
 }
 
 .hero {

@@ -71,7 +71,7 @@ export default function Login({ onLoginSuccess }) {
       <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[#dff7e9] opacity-70 blur-2xl" />
       <div className="pointer-events-none absolute -left-28 bottom-10 h-96 w-96 rounded-full bg-[#e5f2ee] opacity-80 blur-2xl" />
 
-      <header className="relative z-10 flex w-full items-center justify-between px-6 py-6 lg:px-12">
+      <header className="login-header relative z-10 flex w-full items-center justify-between px-6 py-6 lg:px-12">
         <Link to="/" className="flex items-center gap-2.5 text-left focus:outline-none group">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#27b878] text-xl font-black text-white shadow-[0_8px_20px_rgba(39,184,120,0.25)] transition-transform group-hover:scale-105">
             &lt;&gt;
@@ -109,7 +109,7 @@ export default function Login({ onLoginSuccess }) {
             <span className="login-prop__lock-body"><i /></span>
           </div>
 
-          <div className="login-card rounded-3xl border border-white/80 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,48,34,0.08)] backdrop-blur-md">
+          <div className="login-card rounded-3xl border border-white/80 bg-white/90 p-5 sm:p-8 shadow-[0_20px_60px_rgba(15,48,34,0.08)] backdrop-blur-md">
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f7ef] text-[#169a61]">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
