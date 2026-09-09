@@ -232,7 +232,7 @@ export default function Landing({ user }) {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center gap-2 rounded-full bg-[#20b875] px-6 py-2.5 text-xs font-extrabold text-white shadow-[0_6px_16px_rgba(32,184,117,0.3)] transition-all hover:-translate-y-0.5 hover:bg-[#169a61] hover:shadow-[0_10px_22px_rgba(32,184,117,0.4)]"
+                className="hidden sm:flex items-center gap-2 rounded-full bg-[#20b875] px-6 py-2.5 text-xs font-extrabold text-white shadow-[0_6px_16px_rgba(32,184,117,0.3)] transition-all hover:-translate-y-0.5 hover:bg-[#169a61] hover:shadow-[0_10px_22px_rgba(32,184,117,0.4)]"
               >
                 <span>Sign In</span>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -243,10 +243,10 @@ export default function Landing({ user }) {
           </div>
         </header>
 
-        <section id="top" className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-14 lg:grid-cols-[0.92fr_1.08fr] lg:px-10 lg:pb-28 lg:pt-20">
+        <section id="top" className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-4 sm:pt-14 lg:grid-cols-[0.92fr_1.08fr] lg:px-10 lg:pb-28 lg:pt-20">
           <div className="animate-[fade-up_700ms_ease-out_both]">
-            <p className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.22em] text-[#119b62]">
-              <span className="h-px w-8 bg-[#27b878]" /> Project operations, connected
+            <p className="mb-2 sm:mb-6 flex items-center gap-2.5 sm:gap-3 text-[10px] sm:text-xs font-bold uppercase tracking-[0.16em] sm:tracking-[0.22em] text-[#119b62]">
+              <span className="h-px w-6 sm:w-8 bg-[#27b878]" /> Project operations, connected
             </p>
             <h1 className="max-w-2xl text-5xl font-black leading-[0.98] tracking-[-0.065em] text-[#09233d] sm:text-6xl lg:text-[5.5rem]">
               Make every project <span className="text-[#169a61]">count.</span>
@@ -264,6 +264,17 @@ export default function Landing({ user }) {
               <a href="#about" className="px-3 py-3 text-sm font-bold text-[#09233d] transition-colors hover:text-[#159e63]">
                 <span className="inline-flex items-center gap-1.5">How it works <Icon name="arrowDown" className="w-3.5 h-3.5" /></span>
               </a>
+              {!user && (
+                <Link
+                  to="/login"
+                  className="sm:hidden flex items-center gap-2 rounded-full bg-[#20b875] px-5 py-2.5 text-xs font-extrabold text-white shadow-[0_6px_16px_rgba(32,184,117,0.3)] transition-all hover:bg-[#169a61]"
+                >
+                  <span>Sign In</span>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
+                </Link>
+              )}
             </div>
 
             {/* Compact Stats & Metrics Bar placed directly below the buttons */}
