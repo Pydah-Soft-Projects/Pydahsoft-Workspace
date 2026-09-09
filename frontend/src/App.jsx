@@ -40,7 +40,7 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selectedEmp = employeeList.find((e) => e._id === viewAsEmployeeId);
+  const selectedEmp = employeeList.find((e) => String(e._id) === String(viewAsEmployeeId));
   const filteredEmployees = employeeList.filter(
     (emp) =>
       emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -53,7 +53,7 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
       <button
         type="button"
         onClick={() => setDropdownOpen(!dropdownOpen)}
-        className="flex items-center gap-2.5 px-3.5 py-1.5 bg-white border border-emerald-300 hover:border-[#20b875] rounded-xl text-xs font-bold text-[#09233d] shadow-2xs hover:shadow-xs focus:outline-none focus:ring-2 focus:ring-[#20b875]/30 cursor-pointer transition-all min-w-[240px] justify-between group"
+        className="dashboard-filter-button flex items-center gap-2.5 px-3.5 py-1.5 bg-white border border-emerald-300 hover:border-[#20b875] rounded-xl text-xs font-bold text-[#09233d] shadow-2xs hover:shadow-xs focus:outline-none focus:ring-2 focus:ring-[#20b875]/30 cursor-pointer transition-all min-w-[240px] justify-between group"
       >
         <div className="flex items-center gap-2 truncate">
           {selectedEmp ? (
@@ -84,7 +84,7 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
       </button>
 
       {dropdownOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-emerald-200 shadow-2xl z-50 overflow-hidden py-2 animate-in fade-in zoom-in-95 duration-150">
+        <div className="dashboard-filter-menu absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-emerald-200 shadow-2xl z-50 overflow-hidden py-2 animate-in fade-in zoom-in-95 duration-150">
           <div className="px-3.5 pb-2 border-b border-gray-100 flex items-center justify-between">
             <span className="text-[11px] font-black text-[#09233d] uppercase tracking-wider">
               Select Staff Member
@@ -131,7 +131,7 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
             </button>
 
             {filteredEmployees.map((emp) => {
-              const isSelected = viewAsEmployeeId === emp._id;
+              const isSelected = String(viewAsEmployeeId) === String(emp._id);
               return (
                 <button
                   key={emp._id}
@@ -275,7 +275,7 @@ function DashboardLayout({ user, onLogout }) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-900 font-sans relative">
+    <div className="dashboard-shell flex h-screen overflow-hidden bg-gray-50 text-gray-900 font-sans relative">
       {/* Mobile Drawer Dark Backdrop Overlay */}
       {mobileSidebarOpen && (
         <div
@@ -296,44 +296,40 @@ function DashboardLayout({ user, onLogout }) {
         }}
       />
 
-      <main className="flex-1 h-screen overflow-y-auto overflow-x-hidden w-full min-w-0">
-        <header className="bg-white border-b border-gray-200 px-3.5 md:px-6 py-2.5 sm:py-3 sticky top-0 z-30 shadow-xs min-w-0">
-          <div className="flex justify-between items-center min-w-0">
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
-              {/* Mobile Sidebar Hamburger Toggle */}
-              <button
-                type="button"
-                onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-                className="md:hidden w-8 h-8 sm:w-9 sm:h-9 text-gray-700 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-xs border border-gray-200/80 shrink-0 transition-all"
-                title="Toggle sidebar menu"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
+      <main className="flex-1 h-screen overflow-y-auto w-full">
+        <header className="dashboard-header bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3.5 flex flex-wrap gap-3 justify-between items-center sticky top-0 z-30 shadow-xs">
+          <div className="dashboard-header__title flex items-center gap-3">
+            {/* Mobile Sidebar Hamburger Toggle */}
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+              className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all border border-gray-200 shrink-0"
+              title="Toggle sidebar menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
 
-              {activeTab === 'overview' ? (
-                <div className="min-w-0 flex-1">
-                  <span className="text-xs text-gray-400 font-medium block md:hidden leading-none mb-1">Welcome back</span>
-                  <h1 className="text-sm md:text-xl font-black text-[#09233d] tracking-tight truncate leading-tight">
-                    <span className="hidden md:inline">Welcome back, </span>
-                    {user?.name ? (
-                      user.name.split(' ').length > 2 ? (
-                        <>
-                          {user.name.split(' ').slice(0, -1).join(' ')}{' '}
-                          <span className="text-[#10b981]">{user.name.split(' ').slice(-1)[0]}</span>
-                        </>
-                      ) : (
-                        <span className="text-[#10b981]">{user.name}</span>
-                      )
-                    ) : (
-                      <span className="text-[#10b981]">User</span>
-                    )}
-                  </h1>
-                  <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 truncate hidden sm:block">
-                    {viewAsEmployeeId
-                      ? `Currently inspecting employee dashboard for: ${employeeList.find((e) => e._id === viewAsEmployeeId)?.name || 'Selected Staff'}`
-                      : "Here's what's happening with your work today."}
+            {activeTab === 'overview' ? (
+              <div>
+                <h1 className="dashboard-header__heading text-base md:text-xl font-black text-[#09233d] tracking-tight whitespace-normal">
+                  Welcome back, <span className="text-[#10b981]">{user.name}!</span>
+                </h1>
+                <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 truncate hidden sm:block">
+                  {viewAsEmployeeId
+                    ? `Currently inspecting employee dashboard for: ${employeeList.find((e) => e._id === viewAsEmployeeId)?.name || 'Selected Staff'}`
+                    : "Here's what's happening with your work today."}
+                </p>
+              </div>
+            ) : (
+              <div>
+                <h1 className="dashboard-header__heading text-sm md:text-lg font-black text-[#09233d] whitespace-normal">
+                  {getTabTitle(activeTab)}
+                </h1>
+                {activeTab === 'audit-logs' && (
+                  <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
+                    Track every change made across the platform.
                   </p>
                 </div>
               ) : (
@@ -350,45 +346,45 @@ function DashboardLayout({ user, onLogout }) {
               )}
             </div>
 
-            {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right (Desktop Only) */}
-            <div className="hidden sm:flex items-center gap-3 text-xs">
-              {activeTab === 'overview' && (user?.role === 'superadmin' || user?.role === 'superior') && employeeList.length > 0 && (
-                <HeaderEmployeeSelector
-                  employeeList={employeeList}
-                  viewAsEmployeeId={viewAsEmployeeId}
-                  setViewAsEmployeeId={setViewAsEmployeeId}
-                />
-              )}
-              {activeTab === 'projects' && (
-                <div className="bg-slate-100/90 p-1 rounded-xl sm:rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
-                  <button
-                    onClick={() => setSubTab('projects')}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      subTab === 'projects'
-                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                    }`}
-                  >
-                    <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                    </svg>
-                    Projects Lifecycle
-                  </button>
-                  <button
-                    onClick={() => setSubTab('modules')}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      subTab === 'modules'
-                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                    }`}
-                  >
-                    <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                    </svg>
-                    Modules Breakdown
-                  </button>
-                </div>
-              )}
+          {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
+          <div className="dashboard-header__controls flex items-center gap-3 text-xs" aria-label="Dashboard filters and view controls">
+            {activeTab === 'overview' && (user?.role === 'superadmin' || user?.role === 'superior') && employeeList.length > 0 && (
+              <HeaderEmployeeSelector
+                employeeList={employeeList}
+                viewAsEmployeeId={viewAsEmployeeId}
+                setViewAsEmployeeId={setViewAsEmployeeId}
+              />
+            )}
+            {activeTab === 'projects' && (
+              <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
+                <button
+                  onClick={() => setSubTab('projects')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    subTab === 'projects'
+                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  Projects Lifecycle
+                </button>
+                <button
+                  onClick={() => setSubTab('modules')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    subTab === 'modules'
+                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  Modules Breakdown
+                </button>
+              </div>
+            )}
 
               {activeTab === 'teams' && (
                 <div className="bg-slate-100/90 p-1 rounded-xl sm:rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
@@ -551,7 +547,7 @@ function DashboardLayout({ user, onLogout }) {
           )}
         </header>
 
-        <div className="p-6">
+        <div className="dashboard-content p-3 sm:p-6">
           <Suspense fallback={<PageLoader />}>
             {visitedTabs.has('overview') && (
               <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>

@@ -21,6 +21,129 @@ html {
   scroll-behavior: smooth;
 }
 
+.dashboard-main {
+  min-width: 0;
+}
+
+.dashboard-header__title {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.dashboard-header__title > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-header__title h1,
+.dashboard-header__title p {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.dashboard-header__heading {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.dashboard-header__controls {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-filter-button > div:first-child {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .dashboard-shell {
+    min-width: 0;
+  }
+
+  .dashboard-header__controls {
+    width: 100%;
+    overflow: visible;
+    padding-bottom: 1px;
+  }
+
+  .dashboard-header__title {
+    flex: 1 1 180px;
+  }
+
+  .dashboard-header__controls .relative {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .dashboard-header__controls .relative > button {
+    width: 100%;
+  }
+
+  .dashboard-filter-menu {
+    left: 0;
+    right: auto;
+    width: min(288px, calc(100vw - 24px));
+    max-width: 100%;
+  }
+
+  .dashboard-header__controls > div {
+    flex-shrink: 0;
+  }
+
+  .dashboard-header__controls button {
+    padding-left: 7px;
+    padding-right: 7px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .dashboard-content {
+    padding: 12px;
+  }
+
+  .dashboard-header > div:first-child {
+    min-width: 0;
+    flex: 1 1 180px;
+  }
+
+  .dashboard-header__controls .relative > button {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .dashboard-content {
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .settings-role-header,
+  .settings-master-controls,
+  .settings-permission-row {
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .settings-role-header > div:last-child,
+  .settings-master-controls > div:last-child,
+  .settings-permission-row > div:last-child {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .settings-permission-row > div:first-child {
+    min-width: 0;
+    flex: 1 1 150px;
+  }
+}
+
 .loader-screen {
   position: fixed;
   inset: 0;
@@ -569,6 +692,73 @@ html {
   }
   .login-card:hover {
     transform: none !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .dashboard-header {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .dashboard-content {
+    padding: 8px;
+  }
+
+  .dashboard-header__controls {
+    gap: 4px;
+  }
+
+  .login-card {
+    padding: 12px;
+  }
+
+  .login-stage {
+    padding: 8px;
+  }
+
+  .login-scene {
+    width: min(100%, 292px);
+  }
+
+  .login-card form {
+    margin-top: 14px;
+    gap: 10px;
+  }
+
+  .login-card input {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .login-card form button {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 13px;
+  }
+
+  .login-card > div:last-child {
+    margin-top: 14px;
+    padding-top: 10px;
+  }
+
+  .login-card .text-center > div:first-child {
+    margin-bottom: 10px;
+    height: 42px;
+    width: 42px;
+  }
+
+  .login-card .text-center > div:first-child svg {
+    height: 20px;
+    width: 20px;
+  }
+
+  .login-card .text-center h1 {
+    font-size: 20px;
+  }
+
+  .login-card h1 {
+    font-size: 21px;
   }
 }
 

@@ -71,7 +71,7 @@ export default function Login({ onLoginSuccess }) {
       <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[#dff7e9] opacity-70 blur-2xl" />
       <div className="pointer-events-none absolute -left-28 bottom-10 h-96 w-96 rounded-full bg-[#e5f2ee] opacity-80 blur-2xl" />
 
-      <header className="relative z-10 flex w-full items-center justify-between px-6 py-6 lg:px-12">
+      <header className="login-header relative z-10 flex w-full items-center justify-between px-6 py-6 lg:px-12">
         <Link to="/" className="flex items-center gap-2.5 text-left focus:outline-none group">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#27b878] text-xl font-black text-white shadow-[0_8px_20px_rgba(39,184,120,0.25)] transition-transform group-hover:scale-105">
             &lt;&gt;
