@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../../components/Icon';
+import Footer from '../../components/Footer/Footer';
 
 const presenterImg = '/project_leadership_presenter.png';
 const aboutImg = '/about_collaboration.jpg';
@@ -256,7 +257,7 @@ export default function Landing({ user }) {
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <button
                 onClick={() => navigate(user ? '/dashboard' : '/login')}
-                className="rounded-full bg-[#20b875] px-7 py-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(32,184,117,0.2)] transition-all hover:-translate-y-1 hover:bg-[#159e63]"
+                className="hidden sm:inline-flex rounded-full bg-[#20b875] px-7 py-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(32,184,117,0.2)] transition-all hover:-translate-y-1 hover:bg-[#159e63]"
               >
                 <span className="inline-flex items-center gap-1.5">Explore the system <Icon name="arrowRight" className="w-3.5 h-3.5" /></span>
               </button>
@@ -264,10 +265,30 @@ export default function Landing({ user }) {
                 <span className="inline-flex items-center gap-1.5">How it works <Icon name="arrowDown" className="w-3.5 h-3.5" /></span>
               </a>
             </div>
+
+            {/* Compact Stats & Metrics Bar placed directly below the buttons */}
+            <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 border-t border-[#dfeee6] pt-6">
+              <div className="border-r border-[#dfeee6] pr-2">
+                <span className="block text-lg font-black text-[#09233d]">12</span>
+                <span className="text-[11px] font-semibold text-[#708794] leading-tight">Connected modules</span>
+              </div>
+              <div className="border-r border-[#dfeee6] px-2">
+                <span className="block text-lg font-black text-[#09233d]">360°</span>
+                <span className="text-[11px] font-semibold text-[#708794] leading-tight">Project visibility</span>
+              </div>
+              <div className="border-r border-[#dfeee6] px-2">
+                <span className="block text-lg font-black text-[#09233d]">1</span>
+                <span className="text-[11px] font-semibold text-[#708794] leading-tight">Source of truth</span>
+              </div>
+              <div className="pl-2">
+                <span className="block text-lg font-black text-[#09233d]">Live</span>
+                <span className="text-[11px] font-semibold text-[#708794] leading-tight">Performance signals</span>
+              </div>
+            </div>
           </div>
 
           {/* Seamless Transparent Executive Presenter & Holographic Flowchart */}
-          <div className="relative min-h-[500px] animate-[fade-up_900ms_150ms_ease-out_both] sm:min-h-[560px] flex items-center justify-center">
+          <div className="relative min-h-0 sm:min-h-[560px] animate-[fade-up_900ms_150ms_ease-out_both] flex items-center justify-center my-2 sm:my-0">
             {/* Completely Transparent Container (No card background, No borders) */}
             <div className="relative w-full bg-transparent p-0">
               {/* Seamless Transparent Presenter & Flowchart Image */}
@@ -275,31 +296,12 @@ export default function Landing({ user }) {
                 <img
                   src={processedImg || presenterImg}
                   alt="Executive Presenter & Holographic Architecture Flowchart"
-                  className="w-full h-auto max-h-[520px] object-contain drop-shadow-[0_20px_40px_rgba(20,154,97,0.2)]"
+                  className="w-full h-auto max-h-[340px] sm:max-h-[520px] max-w-[340px] sm:max-w-none object-contain drop-shadow-[0_20px_40px_rgba(20,154,97,0.2)]"
                 />
               </div>
             </div>
           </div>
         </section>
-
-        <div className="mx-auto grid max-w-7xl grid-cols-2 border-t border-[#dfeee6] px-6 py-8 sm:grid-cols-4 lg:px-10">
-          <div className="border-r border-[#dfeee6] pr-4">
-            <p className="text-2xl font-black text-[#09233d]">12</p>
-            <p className="mt-1 text-xs font-semibold text-[#708794]">Connected modules</p>
-          </div>
-          <div className="border-r border-[#dfeee6] px-4 sm:px-6">
-            <p className="text-2xl font-black text-[#09233d]">360°</p>
-            <p className="mt-1 text-xs font-semibold text-[#708794]">Project visibility</p>
-          </div>
-          <div className="border-r border-[#dfeee6] px-4 sm:px-6">
-            <p className="text-2xl font-black text-[#09233d]">1</p>
-            <p className="mt-1 text-xs font-semibold text-[#708794]">Source of truth</p>
-          </div>
-          <div className="pl-4 sm:pl-6">
-            <p className="text-2xl font-black text-[#09233d]">Live</p>
-            <p className="mt-1 text-xs font-semibold text-[#708794]">Performance signals</p>
-          </div>
-        </div>
       </div>
 
       {/* Expanded About Section with Seamless Transparent Illustration */}
@@ -416,10 +418,7 @@ export default function Landing({ user }) {
         </div>
       </section>
 
-      <div className="landing-wave-footer" aria-hidden="true">
-        <span className="landing-wave landing-wave-light" />
-        <span className="landing-wave landing-wave-dark" />
-      </div>
+      <Footer />
     </main>
   );
 }
