@@ -550,12 +550,26 @@ html {
   .login-background__spark { animation: none; }
 }
 
-@media (max-width: 640px) {
-  .login-prop--lock { right: -12%; top: 12%; transform: scale(0.68); }
-  .login-prop--user { left: -8%; top: 15%; transform: scale(0.72); }
-  .login-prop--form { left: -10%; bottom: 5%; transform: scale(0.7); }
-  .login-card { transform: none; }
-  .login-card:hover { transform: translateY(-3px); }
+@media (max-width: 768px) {
+  .login-prop {
+    display: none !important;
+  }
+  .login-stage {
+    perspective: none;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .login-scene {
+    width: 100%;
+  }
+  .login-card {
+    transform: none !important;
+    animation: none !important;
+    padding: 1.5rem !important;
+  }
+  .login-card:hover {
+    transform: none !important;
+  }
 }
 
 .hero {
