@@ -18,6 +18,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
   const [mobileView, setMobileView] = useState('list');
 
   const messagesEndRef = useRef(null);
+  const chatStreamRef = useRef(null);
 
   // Fetch staff contacts with ?purpose=chat so all roles are included for every user
   useEffect(() => {
@@ -65,9 +66,11 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to bottom of chat stream
+  // Auto-scroll inside chat stream only (prevents full page jump on mobile)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatStreamRef.current) {
+      chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
+    }
   }, [messages, selectedRecipient]);
 
   // Filter messages for current active recipient view
@@ -414,7 +417,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
         </div>
 
         {/* Message Stream */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
+        <div ref={chatStreamRef} className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
           {loading && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
               Loading chat stream...
@@ -480,7 +483,14 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
             type="text"
             value={newMessageText}
             onChange={(e) => setNewMessageText(e.target.value)}
-            onFocus={() => setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 200)}
+            onFocus={() => {
+              setTimeout(() => {
+                window.scrollTo(0, 0);
+                if (chatStreamRef.current) {
+                  chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
+                }
+              }, 100);
+            }}
             placeholder={
               selectedRecipient.type === 'all'
                 ? 'Type a broadcast message to everyone...'
