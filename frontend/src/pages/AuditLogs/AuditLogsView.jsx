@@ -110,19 +110,19 @@ export default function AuditLogsView() {
             </div>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-2.5 pt-4">
-            <label className="relative flex-1">
+          <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 pt-3">
+            <label className="relative col-span-2 lg:col-span-1 lg:flex-1">
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search by user, action, or entity id"
-                className="w-full h-9 px-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-900 placeholder-emerald-500/70 focus:border-[#20b875] focus:bg-white focus:outline-none transition-all shadow-2xs"
+                className="w-full h-9 px-3 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 placeholder-gray-400 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs"
               />
             </label>
             <select
               value={userFilter}
               onChange={(event) => setUserFilter(event.target.value)}
-              className="h-9 lg:w-40 bg-blue-50/60 border border-blue-200 rounded-xl px-2.5 text-xs font-semibold text-blue-900 focus:border-blue-500 focus:bg-white focus:outline-none transition-all shadow-2xs"
+              className="h-9 col-span-1 lg:w-36 bg-white border border-gray-200 rounded-xl px-2.5 text-xs font-semibold text-gray-800 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs"
             >
               <option value="">All users</option>
               {users.map((user) => (
@@ -134,7 +134,7 @@ export default function AuditLogsView() {
             <select
               value={actionFilter}
               onChange={(event) => setActionFilter(event.target.value)}
-              className="h-9 lg:w-40 bg-purple-50/60 border border-purple-200 rounded-xl px-2.5 text-xs font-semibold text-purple-900 focus:border-purple-500 focus:bg-white focus:outline-none transition-all shadow-2xs"
+              className="h-9 col-span-1 lg:w-36 bg-white border border-gray-200 rounded-xl px-2.5 text-xs font-semibold text-gray-800 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs"
             >
               <option value="">All actions</option>
               {actions.map((action) => (
@@ -146,7 +146,7 @@ export default function AuditLogsView() {
             <select
               value={entityFilter}
               onChange={(event) => setEntityFilter(event.target.value)}
-              className="h-9 lg:w-40 bg-amber-50/60 border border-amber-200 rounded-xl px-2.5 text-xs font-semibold text-amber-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-2xs"
+              className="h-9 col-span-1 lg:w-36 bg-white border border-gray-200 rounded-xl px-2.5 text-xs font-semibold text-gray-800 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs"
             >
               <option value="">All entities</option>
               {entities.map((entity) => (
@@ -155,22 +155,19 @@ export default function AuditLogsView() {
                 </option>
               ))}
             </select>
-            <label className="flex items-center gap-2 text-xs font-bold text-indigo-900 whitespace-nowrap bg-indigo-50/60 border border-indigo-200 px-2.5 rounded-xl h-9">
-              <span className="text-[11px] text-indigo-700 font-bold">Date:</span>
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(event) => setDateFilter(event.target.value)}
-                className="bg-transparent text-xs font-semibold text-indigo-900 focus:outline-none"
-              />
-            </label>
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(event) => setDateFilter(event.target.value)}
+              className="h-9 col-span-1 lg:w-44 bg-white border border-gray-200 rounded-xl px-3 text-xs font-semibold text-gray-800 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs cursor-pointer"
+            />
             {(search || userFilter || actionFilter || entityFilter || dateFilter) && (
               <button
                 type="button"
                 onClick={resetFilters}
-                className="h-9 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-xs font-extrabold text-rose-700 rounded-xl transition-all shadow-2xs"
+                className="h-9 col-span-2 lg:col-span-1 px-3 bg-gray-900 hover:bg-black text-white text-xs font-extrabold rounded-xl transition-all shadow-2xs"
               >
-                Reset
+                Reset Filters
               </button>
             )}
           </div>

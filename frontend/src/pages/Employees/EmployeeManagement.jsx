@@ -49,6 +49,10 @@ export default function EmployeeManagement({ currentUser }) {
 
   useEffect(() => {
     loadData();
+
+    const handleOpenModal = () => setShowModal(true);
+    window.addEventListener('open-add-employee-modal', handleOpenModal);
+    return () => window.removeEventListener('open-add-employee-modal', handleOpenModal);
   }, []);
 
   const loadData = async () => {
@@ -138,10 +142,10 @@ export default function EmployeeManagement({ currentUser }) {
   return (
     <div className="space-y-4">
       {(currentUser?.role === 'superior' || currentUser?.role === 'superadmin') && (
-        <div className="flex justify-end">
+        <div className="hidden md:flex justify-end">
           <button
             onClick={() => setShowModal(true)}
-            className="px-4 py-2 bg-[#20b875] text-white rounded-xl text-xs font-bold shadow-sm hover:bg-[#169e63] transition-all"
+            className="px-4 py-2 bg-[#20b875] text-white rounded-xl text-xs font-bold shadow-sm hover:bg-[#169e63] transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
           >
             + Add New Employee
           </button>

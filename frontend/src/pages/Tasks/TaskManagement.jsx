@@ -52,7 +52,16 @@ export default function TaskManagement({ currentUser }) {
 
   useEffect(() => {
     loadData();
-  }, []);
+
+    const handleOpenModal = () => {
+      if (modules.length > 0 && !formData.module) {
+        handleModuleSelect(modules[0]._id);
+      }
+      setShowModal(true);
+    };
+    window.addEventListener('open-create-task-modal', handleOpenModal);
+    return () => window.removeEventListener('open-create-task-modal', handleOpenModal);
+  }, [modules, formData.module]);
 
   const loadData = async () => {
     if (!tasks || tasks.length === 0) setLoading(true);
@@ -155,7 +164,7 @@ export default function TaskManagement({ currentUser }) {
   return (
     <div className="space-y-4">
       {canCreateTasks && (
-        <div className="flex justify-end">
+        <div className="hidden md:flex justify-end">
           <button
             onClick={() => {
               if (modules.length > 0 && !formData.module) {

@@ -41,6 +41,10 @@ export default function TeamManagement({ currentUser }) {
 
   useEffect(() => {
     loadData();
+
+    const handleOpenModal = () => setShowCreateModal(true);
+    window.addEventListener('open-create-team-modal', handleOpenModal);
+    return () => window.removeEventListener('open-create-team-modal', handleOpenModal);
   }, []);
 
   const loadData = async () => {
@@ -119,7 +123,7 @@ export default function TeamManagement({ currentUser }) {
   return (
     <div className="space-y-4">
       {isManager && (
-        <div className="flex justify-end">
+        <div className="hidden md:flex justify-end">
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 bg-[#20b875] text-white rounded-xl text-xs font-bold shadow-sm hover:bg-[#169e63]"

@@ -41,6 +41,10 @@ export default function ProjectManagement({ currentUser }) {
 
   useEffect(() => {
     loadData();
+
+    const handleOpenModal = () => setShowModal(true);
+    window.addEventListener('open-create-project-modal', handleOpenModal);
+    return () => window.removeEventListener('open-create-project-modal', handleOpenModal);
   }, []);
 
   const loadData = async () => {
@@ -85,7 +89,7 @@ export default function ProjectManagement({ currentUser }) {
   return (
     <div className="space-y-4">
       {(currentUser?.role === 'superior' || currentUser?.role === 'superadmin') && (
-        <div className="flex justify-end">
+        <div className="hidden md:flex justify-end">
           <button
             onClick={() => setShowModal(true)}
             className="px-4 py-2 bg-[#20b875] text-white rounded-xl text-xs font-bold shadow-sm hover:bg-[#169e63]"

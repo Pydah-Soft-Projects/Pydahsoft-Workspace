@@ -25,7 +25,16 @@ export default function DailyWorkPlans({ currentUser }) {
 
   useEffect(() => {
     loadData();
-  }, []);
+
+    const handleOpenModal = () => {
+      if (modules.length > 0 && !formData.parentModuleId) {
+        setFormData(prev => ({ ...prev, parentModuleId: modules[0]._id }));
+      }
+      setShowModal(true);
+    };
+    window.addEventListener('open-create-daily-plan-modal', handleOpenModal);
+    return () => window.removeEventListener('open-create-daily-plan-modal', handleOpenModal);
+  }, [modules, formData.parentModuleId]);
 
   const loadData = async () => {
     if (!plans || plans.length === 0) setLoading(true);
@@ -123,7 +132,7 @@ export default function DailyWorkPlans({ currentUser }) {
   return (
     <div className="space-y-4">
       {isManager && (
-        <div className="flex justify-end">
+        <div className="hidden md:flex justify-end">
           <button
             onClick={() => {
               if (modules.length > 0 && !formData.parentModuleId) {
