@@ -324,61 +324,9 @@ function DashboardLayout({ user, onLogout }) {
               </div>
             ) : (
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="dashboard-header__heading text-sm md:text-lg font-black text-[#09233d] whitespace-normal">
-                    {getTabTitle(activeTab)}
-                  </h1>
-                  {activeTab === 'employees' && (user?.role === 'superior' || user?.role === 'superadmin') && (
-                    <button
-                      type="button"
-                      onClick={() => window.dispatchEvent(new CustomEvent('open-add-employee-modal'))}
-                      className="md:hidden w-6 h-6 bg-[#20b875] hover:bg-[#169e63] text-white rounded-md font-extrabold text-xs flex items-center justify-center shadow-2xs active:scale-95 shrink-0"
-                      title="Add New Employee"
-                    >
-                      +
-                    </button>
-                  )}
-                  {activeTab === 'projects' && subTab === 'projects' && (user?.role === 'superior' || user?.role === 'superadmin') && (
-                    <button
-                      type="button"
-                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-project-modal'))}
-                      className="md:hidden w-6 h-6 bg-[#20b875] hover:bg-[#169e63] text-white rounded-md font-extrabold text-xs flex items-center justify-center shadow-2xs active:scale-95 shrink-0"
-                      title="Create New Project"
-                    >
-                      +
-                    </button>
-                  )}
-                  {activeTab === 'teams' && subTab === 'teams' && (user?.role === 'superior' || user?.role === 'superadmin') && (
-                    <button
-                      type="button"
-                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-team-modal'))}
-                      className="md:hidden w-6 h-6 bg-[#20b875] hover:bg-[#169e63] text-white rounded-md font-extrabold text-xs flex items-center justify-center shadow-2xs active:scale-95 shrink-0"
-                      title="Create New Team"
-                    >
-                      +
-                    </button>
-                  )}
-                  {activeTab === 'teams' && subTab === 'tasks' && (user?.role === 'superior' || user?.role === 'superadmin') && (
-                    <button
-                      type="button"
-                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-task-modal'))}
-                      className="md:hidden w-6 h-6 bg-[#20b875] hover:bg-[#169e63] text-white rounded-md font-extrabold text-xs flex items-center justify-center shadow-2xs active:scale-95 shrink-0"
-                      title="Create & Assign Task"
-                    >
-                      +
-                    </button>
-                  )}
-                  {activeTab === 'daily-plans' && (user?.role === 'teamlead' || user?.role === 'superior' || user?.role === 'superadmin') && (
-                    <button
-                      type="button"
-                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-daily-plan-modal'))}
-                      className="md:hidden w-6 h-6 bg-[#20b875] hover:bg-[#169e63] text-white rounded-md font-extrabold text-xs flex items-center justify-center shadow-2xs active:scale-95 shrink-0"
-                      title="Create Daily Work Plan"
-                    >
-                      +
-                    </button>
-                  )}
-                </div>
+                <h1 className="dashboard-header__heading text-sm md:text-lg font-black text-[#09233d] whitespace-normal">
+                  {getTabTitle(activeTab)}
+                </h1>
                 {activeTab === 'audit-logs' && (
                   <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
                     Track every change made across the platform.
@@ -390,6 +338,67 @@ function DashboardLayout({ user, onLogout }) {
 
           {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
           <div className="dashboard-header__controls flex items-center gap-3 text-xs" aria-label="Dashboard filters and view controls">
+            {/* Top Right Mobile (+) Action Button for Pages with Create/Add Actions */}
+            {activeTab === 'employees' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-add-employee-modal'))}
+                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
+                title="Add New Employee"
+              >
+                +
+              </button>
+            )}
+            {activeTab === 'projects' && subTab === 'projects' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-create-project-modal'))}
+                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
+                title="Create New Project"
+              >
+                +
+              </button>
+            )}
+            {activeTab === 'teams' && subTab === 'teams' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-create-team-modal'))}
+                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
+                title="Create New Team"
+              >
+                +
+              </button>
+            )}
+            {activeTab === 'teams' && subTab === 'tasks' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-create-task-modal'))}
+                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
+                title="Create & Assign Task"
+              >
+                +
+              </button>
+            )}
+            {activeTab === 'daily-plans' && (user?.role === 'teamlead' || user?.role === 'superior' || user?.role === 'superadmin') && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-create-daily-plan-modal'))}
+                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
+                title="Create Daily Work Plan"
+              >
+                +
+              </button>
+            )}
+            {activeTab === 'users' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-create-user-modal'))}
+                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
+                title="Create User Account"
+              >
+                +
+              </button>
+            )}
             {activeTab === 'overview' && (user?.role === 'superadmin' || user?.role === 'superior') && employeeList.length > 0 && (
               <HeaderEmployeeSelector
                 employeeList={employeeList}
