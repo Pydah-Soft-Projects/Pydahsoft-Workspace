@@ -135,7 +135,7 @@ export default function TeamChatPage({ currentUser }) {
   };
 
   return (
-    <div className="chat-page h-[calc(100dvh-6rem)] min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row">
+    <div className="chat-page h-full min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row">
       {/* LEFT PANEL: Persons & Group Conversations List */}
       <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto md:overflow-hidden`}>
         {/* Header */}
@@ -398,7 +398,7 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Message Stream */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
+        <div className="min-h-0 flex-1 p-4 overflow-y-auto overscroll-contain space-y-3 bg-slate-50/50">
           {loadingMessages && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
               Loading chat history...
