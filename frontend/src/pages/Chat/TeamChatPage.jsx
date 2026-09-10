@@ -30,6 +30,22 @@ export default function TeamChatPage({ currentUser }) {
     }
   };
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const previousRootOverflow = root.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+
+    root.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    window.scrollTo(0, 0);
+
+    return () => {
+      root.style.overflow = previousRootOverflow;
+      body.style.overflow = previousBodyOverflow;
+    };
+  }, []);
+
   // Fetch all staff members & teams
   useEffect(() => {
     fetchApi('/employees?purpose=chat')
@@ -529,6 +545,7 @@ export default function TeamChatPage({ currentUser }) {
             onChange={(e) => setNewMessageText(e.target.value)}
             onFocus={() => {
               setTimeout(() => {
+                window.scrollTo(0, 0);
                 if (chatStreamRef.current) {
                   chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
                 }
