@@ -14,37 +14,6 @@ export default function TeamChatPage({ currentUser }) {
   const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
 
   const messagesEndRef = useRef(null);
-  const chatStreamRef = useRef(null);
-
-  const openConversation = (recipient) => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-    setSelectedRecipient(recipient);
-    setMobileView('chat');
-  };
-
-  const closeKeyboard = () => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  };
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const body = document.body;
-    const previousRootOverflow = root.style.overflow;
-    const previousBodyOverflow = body.style.overflow;
-
-    root.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-    window.scrollTo(0, 0);
-
-    return () => {
-      root.style.overflow = previousRootOverflow;
-      body.style.overflow = previousBodyOverflow;
-    };
-  }, []);
 
   // Fetch all staff members & teams
   useEffect(() => {
@@ -81,11 +50,9 @@ export default function TeamChatPage({ currentUser }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll inside chat stream only (prevents full page jump on mobile)
+  // Auto-scroll to bottom of chat
   useEffect(() => {
-    if (chatStreamRef.current) {
-      chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, selectedRecipient]);
 
   // Filter messages for active selection
@@ -168,11 +135,11 @@ export default function TeamChatPage({ currentUser }) {
   };
 
   return (
-    <div className="chat-page h-full min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row">
+    <div className="h-[calc(100vh-6rem)] bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row">
       {/* LEFT PANEL: Persons & Group Conversations List */}
-      <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} chat-page__contacts w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto md:overflow-hidden`}>
+      <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto md:overflow-hidden`}>
         {/* Header */}
-        <div className="chat-page__contacts-header p-4 border-b border-gray-200 bg-white">
+        <div className="p-4 border-b border-gray-200 bg-white">
           <h2 className="text-base font-black text-[#09233d] flex items-center gap-2">
             Team Messaging Hub
             <span className="w-2.5 h-2.5 rounded-full bg-[#20b875] animate-pulse" />
@@ -184,7 +151,10 @@ export default function TeamChatPage({ currentUser }) {
         <div className="p-3 border-b border-gray-200">
           <button
             type="button"
-            onClick={() => openConversation({ type: 'all', data: null })}
+            onClick={() => {
+              setSelectedRecipient({ type: 'all', data: null });
+              setMobileView('chat');
+            }}
             className={`w-full p-3 rounded-xl font-bold text-xs text-left transition-all flex items-center justify-between cursor-pointer ${
               selectedRecipient.type === 'all'
                 ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
@@ -226,7 +196,10 @@ export default function TeamChatPage({ currentUser }) {
                   <button
                     key={team._id}
                     type="button"
-                    onClick={() => openConversation({ type: 'team', data: team })}
+                    onClick={() => {
+                      setSelectedRecipient({ type: 'team', data: team });
+                      setMobileView('chat');
+                    }}
                     className={`w-full p-2 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                       isSelected
                         ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
@@ -298,16 +271,13 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Staff Search Box */}
-        <div className="chat-page__search p-3 border-b border-gray-200 bg-white shrink-0">
+        <div className="p-3 border-b border-gray-200 bg-white shrink-0">
           <div className="relative">
             <input
               type="text"
               placeholder="Search staff, leads, or superadmin..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              inputMode="search"
-              autoComplete="off"
-              aria-label="Search contacts"
               className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-[#09233d] font-medium focus:bg-white focus:border-[#20b875] outline-none"
             />
             <svg className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -332,7 +302,10 @@ export default function TeamChatPage({ currentUser }) {
               <button
                 key={emp._id}
                 type="button"
-                onClick={() => openConversation({ type: 'individual', data: emp })}
+                onClick={() => {
+                  setSelectedRecipient({ type: 'individual', data: emp });
+                  setMobileView('chat');
+                }}
                 className={`w-full p-2.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                   isSelected
                     ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
@@ -373,29 +346,24 @@ export default function TeamChatPage({ currentUser }) {
       </div>
 
       {/* RIGHT PANEL: Chat Stream & Message Input */}
-      <div
-        className={`${mobileView === 'list' ? 'hidden md:flex md:flex-1' : 'flex'} min-h-0 flex-1 flex-col bg-white h-full overflow-hidden w-full`}
-      >
+      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-white h-full overflow-hidden`}>
         {/* Active Conversation Header */}
         <div className="p-3 md:p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
           <div className="flex items-center gap-2.5 md:gap-3 truncate">
             {/* Mobile Back Button */}
             <button
               type="button"
-              onClick={() => {
-                closeKeyboard();
-                setMobileView('list');
-              }}
+              onClick={() => setMobileView('list')}
               className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1 font-bold text-xs border border-gray-200"
               title="Back to contacts list"
             >
               <svg className="w-4 h-4 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Chats</span>
+              <span>Back</span>
             </button>
 
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-black text-sm md:text-base shrink-0 shadow-2xs">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-bold text-base md:text-lg shrink-0 shadow-2xs">
               {selectedRecipient.type === 'all' ? (
                 <svg className="w-5 h-5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
@@ -405,65 +373,32 @@ export default function TeamChatPage({ currentUser }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               ) : (
-                selectedRecipient.data?.name?.charAt(0).toUpperCase() || 'U'
+                <svg className="w-5 h-5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
               )}
             </div>
             <div className="truncate">
               <h3 className="text-xs md:text-sm font-black text-[#09233d] truncate">
                 {selectedRecipient.type === 'all'
-                  ? 'Everyone'
+                  ? 'Everyone (Company Broadcast Channel)'
                   : selectedRecipient.type === 'team'
-                  ? selectedRecipient.data?.name
-                  : selectedRecipient.data?.name}
+                  ? `Team Broadcast: ${selectedRecipient.data?.name}`
+                  : `Direct 1-on-1 Chat: ${selectedRecipient.data?.name}`}
               </h3>
               <p className="text-[10px] md:text-[11px] text-gray-500 font-medium truncate">
                 {selectedRecipient.type === 'all'
-                  ? 'Company broadcast channel'
+                  ? 'All company staff receive and view messages in this channel'
                   : selectedRecipient.type === 'team'
-                  ? 'Team conversation'
-                  : `Private conversation · ${selectedRecipient.data?.role || 'Staff'}`}
+                  ? `Broadcast to all members of ${selectedRecipient.data?.name}`
+                  : `Private conversation with ${selectedRecipient.data?.name} (${selectedRecipient.data?.role || 'Staff'})`}
               </p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-0.5 shrink-0">
-            <button
-              type="button"
-              className="p-2 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors"
-              title="Start video call"
-              aria-label="Start video call"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="p-2 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors"
-              title="Start voice call"
-              aria-label="Start voice call"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M3 5a2 2 0 012-2h2.28a1 1 0 01.95.684l1.1 3.3a1 1 0 01-.27 1.04L7.6 9.49a16 16 0 006.91 6.91l1.46-1.46a1 1 0 011.04-.27l3.3 1.1A1 1 0 0121 16.72V19a2 2 0 01-2 2h-1C9.16 21 3 14.84 3 7V5z" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="p-2 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors"
-              title="Chat options"
-              aria-label="Chat options"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="5" r="1.5" />
-                <circle cx="12" cy="12" r="1.5" />
-                <circle cx="12" cy="19" r="1.5" />
-              </svg>
-            </button>
           </div>
         </div>
 
         {/* Message Stream */}
-        <div ref={chatStreamRef} className="chat-page__messages min-h-0 flex-1 p-4 overflow-y-auto overscroll-contain space-y-3 bg-slate-50/50">
+        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
           {loadingMessages && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
               Loading chat history...
@@ -524,33 +459,11 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Message Form */}
-        <form onSubmit={handleSendMessage} className="chat-page__composer sticky bottom-0 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-200 flex items-center gap-2 shrink-0 z-10">
-          <button
-            type="button"
-            className="p-2 text-gray-400 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors shrink-0"
-            title="Attach a file"
-            aria-label="Attach a file"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a4 4 0 00-5.656-5.656l-6.586 6.586a6 6 0 108.485 8.485L20.5 13.5" />
-            </svg>
-          </button>
+        <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-200 flex items-center gap-2 shrink-0">
           <input
             type="text"
             value={newMessageText}
-            inputMode="text"
-            enterKeyHint="send"
-            autoComplete="off"
-            aria-label="Message"
             onChange={(e) => setNewMessageText(e.target.value)}
-            onFocus={() => {
-              setTimeout(() => {
-                window.scrollTo(0, 0);
-                if (chatStreamRef.current) {
-                  chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
-                }
-              }, 100);
-            }}
             placeholder={
               selectedRecipient.type === 'all'
                 ? 'Type a broadcast message to everyone...'
