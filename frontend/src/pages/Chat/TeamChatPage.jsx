@@ -155,11 +155,11 @@ export default function TeamChatPage({ currentUser }) {
   };
 
   return (
-    <div className="h-[calc(100vh-6rem)] bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row">
+    <div className="chat-page h-full min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row">
       {/* LEFT PANEL: Persons & Group Conversations List */}
-      <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto md:overflow-hidden`}>
+      <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} chat-page__contacts w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto md:overflow-hidden`}>
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 bg-white">
+        <div className="chat-page__contacts-header p-4 border-b border-gray-200 bg-white">
           <h2 className="text-base font-black text-[#09233d] flex items-center gap-2">
             Team Messaging Hub
             <span className="w-2.5 h-2.5 rounded-full bg-[#20b875] animate-pulse" />
@@ -291,13 +291,16 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Staff Search Box */}
-        <div className="p-3 border-b border-gray-200 bg-white shrink-0">
+        <div className="chat-page__search p-3 border-b border-gray-200 bg-white shrink-0">
           <div className="relative">
             <input
               type="text"
               placeholder="Search staff, leads, or superadmin..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              inputMode="search"
+              autoComplete="off"
+              aria-label="Search contacts"
               className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-[#09233d] font-medium focus:bg-white focus:border-[#20b875] outline-none"
             />
             <svg className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -383,10 +386,10 @@ export default function TeamChatPage({ currentUser }) {
               <svg className="w-4 h-4 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Back</span>
+              <span>Chats</span>
             </button>
 
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-bold text-base md:text-lg shrink-0 shadow-2xs">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-black text-sm md:text-base shrink-0 shadow-2xs">
               {selectedRecipient.type === 'all' ? (
                 <svg className="w-5 h-5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
@@ -396,27 +399,60 @@ export default function TeamChatPage({ currentUser }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+                selectedRecipient.data?.name?.charAt(0).toUpperCase() || 'U'
               )}
             </div>
             <div className="truncate">
               <h3 className="text-xs md:text-sm font-black text-[#09233d] truncate">
                 {selectedRecipient.type === 'all'
-                  ? 'Everyone (Company Broadcast Channel)'
+                  ? 'Everyone'
                   : selectedRecipient.type === 'team'
-                  ? `Team Broadcast: ${selectedRecipient.data?.name}`
-                  : `Direct 1-on-1 Chat: ${selectedRecipient.data?.name}`}
+                  ? selectedRecipient.data?.name
+                  : selectedRecipient.data?.name}
               </h3>
               <p className="text-[10px] md:text-[11px] text-gray-500 font-medium truncate">
                 {selectedRecipient.type === 'all'
-                  ? 'All company staff receive and view messages in this channel'
+                  ? 'Company broadcast channel'
                   : selectedRecipient.type === 'team'
-                  ? `Broadcast to all members of ${selectedRecipient.data?.name}`
-                  : `Private conversation with ${selectedRecipient.data?.name} (${selectedRecipient.data?.role || 'Staff'})`}
+                  ? 'Team conversation'
+                  : `Private conversation · ${selectedRecipient.data?.role || 'Staff'}`}
               </p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              type="button"
+              className="p-2 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors"
+              title="Start video call"
+              aria-label="Start video call"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="p-2 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors"
+              title="Start voice call"
+              aria-label="Start voice call"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M3 5a2 2 0 012-2h2.28a1 1 0 01.95.684l1.1 3.3a1 1 0 01-.27 1.04L7.6 9.49a16 16 0 006.91 6.91l1.46-1.46a1 1 0 011.04-.27l3.3 1.1A1 1 0 0121 16.72V19a2 2 0 01-2 2h-1C9.16 21 3 14.84 3 7V5z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="p-2 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors"
+              title="Chat options"
+              aria-label="Chat options"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="5" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="12" cy="19" r="1.5" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -482,10 +518,24 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Message Form */}
-        <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-200 flex items-center gap-2 shrink-0">
+        <form onSubmit={handleSendMessage} className="chat-page__composer sticky bottom-0 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-200 flex items-center gap-2 shrink-0 z-10">
+          <button
+            type="button"
+            className="p-2 text-gray-400 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors shrink-0"
+            title="Attach a file"
+            aria-label="Attach a file"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a4 4 0 00-5.656-5.656l-6.586 6.586a6 6 0 108.485 8.485L20.5 13.5" />
+            </svg>
+          </button>
           <input
             type="text"
             value={newMessageText}
+            inputMode="text"
+            enterKeyHint="send"
+            autoComplete="off"
+            aria-label="Message"
             onChange={(e) => setNewMessageText(e.target.value)}
             onFocus={() => {
               setTimeout(() => {

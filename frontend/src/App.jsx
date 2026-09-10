@@ -275,7 +275,7 @@ function DashboardLayout({ user, onLogout }) {
   };
 
   return (
-    <div className="dashboard-shell flex h-screen overflow-hidden bg-gray-50 text-gray-900 font-sans relative">
+    <div className={`dashboard-shell flex h-screen overflow-hidden bg-gray-50 text-gray-900 font-sans relative ${activeTab === 'chat' ? 'chat-active' : ''}`}>
       {/* Mobile Drawer Dark Backdrop Overlay */}
       {mobileSidebarOpen && (
         <div
@@ -296,7 +296,7 @@ function DashboardLayout({ user, onLogout }) {
         }}
       />
 
-      <main className="flex-1 h-screen overflow-y-auto w-full">
+      <main className={`flex-1 h-screen w-full ${activeTab === 'chat' ? 'chat-main overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
         <header className="dashboard-header bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3.5 flex flex-wrap gap-3 justify-between items-center sticky top-0 z-30 shadow-xs">
           <div className="dashboard-header__title flex items-center justify-between gap-3 flex-1 min-w-0">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -499,7 +499,7 @@ function DashboardLayout({ user, onLogout }) {
             </div>
         </header>
 
-        <div className="dashboard-content p-3 sm:p-6">
+        <div className={`dashboard-content p-3 sm:p-6 ${activeTab === 'chat' ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : ''}`}>
           <Suspense fallback={<PageLoader />}>
             {visitedTabs.has('overview') && (
               <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
@@ -513,7 +513,7 @@ function DashboardLayout({ user, onLogout }) {
               </div>
             )}
             {visitedTabs.has('chat') && (
-              <div style={{ display: activeTab === 'chat' ? 'block' : 'none' }}>
+              <div className={activeTab === 'chat' ? 'flex-1 min-h-0 flex flex-col' : ''} style={{ display: activeTab === 'chat' ? 'flex' : 'none' }}>
                 <TeamChatPage currentUser={user} />
               </div>
             )}
