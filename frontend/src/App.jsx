@@ -350,6 +350,16 @@ function DashboardLayout({ user, onLogout }) {
                       +
                     </button>
                   )}
+                  {activeTab === 'projects' && subTab === 'modules' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-module-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Create Module"
+                    >
+                      +
+                    </button>
+                  )}
                   {activeTab === 'teams' && subTab === 'teams' && (user?.role === 'superior' || user?.role === 'superadmin') && (
                     <button
                       type="button"

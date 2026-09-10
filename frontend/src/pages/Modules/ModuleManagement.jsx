@@ -48,7 +48,14 @@ export default function ModuleManagement({ currentUser }) {
 
   useEffect(() => {
     loadData();
-  }, []);
+
+    const handleOpenModal = () => {
+      setFormData(prev => ({ ...prev, project: projects[0]?._id || '' }));
+      setShowModal(true);
+    };
+    window.addEventListener('open-create-module-modal', handleOpenModal);
+    return () => window.removeEventListener('open-create-module-modal', handleOpenModal);
+  }, [projects]);
 
   const loadData = async () => {
     if (!modules || modules.length === 0) setLoading(true);
@@ -156,7 +163,7 @@ export default function ModuleManagement({ currentUser }) {
               setFormData(prev => ({ ...prev, project: projects[0]?._id || '' }));
               setShowModal(true);
             }}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#20b875] text-white rounded-lg sm:rounded-xl text-xs font-bold shadow-xs hover:bg-[#169e63] transition-all whitespace-nowrap shrink-0"
+            className="hidden md:block px-4 py-2 bg-[#20b875] text-white rounded-xl text-xs font-bold shadow-xs hover:bg-[#169e63] transition-all whitespace-nowrap shrink-0"
           >
             + Create Module
           </button>
