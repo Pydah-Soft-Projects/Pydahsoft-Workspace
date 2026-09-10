@@ -18,6 +18,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
   const [mobileView, setMobileView] = useState('list');
 
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   // Fetch staff contacts with ?purpose=chat so all roles are included for every user
   useEffect(() => {
@@ -67,7 +68,13 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
 
   // Auto-scroll to bottom of chat stream
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const messagesContainer = messagesContainerRef.current;
+    if (messagesContainer) {
+      messagesContainer.scrollTo({
+        top: messagesContainer.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
   }, [messages, selectedRecipient]);
 
   // Filter messages for current active recipient view
@@ -151,7 +158,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row h-[600px] md:h-[580px]">
+    <div className="dashboard-chat-box min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row h-[600px] md:h-[580px]">
       {/* LEFT PANEL: Team Messaging Hub Contact Directory */}
       <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto md:overflow-hidden`}>
         {/* Hub Header */}
@@ -362,7 +369,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
       </div>
 
       {/* RIGHT PANEL: Chat Stream & Message Input */}
-      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-white h-full overflow-hidden`}>
+      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} min-h-0 flex-1 flex-col bg-white h-full overflow-hidden`}>
         {/* Active Conversation Header */}
         <div className="p-3 md:p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
           <div className="flex items-center gap-2.5 md:gap-3 truncate">
@@ -414,7 +421,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
         </div>
 
         {/* Message Stream */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
+        <div ref={messagesContainerRef} className="min-h-0 flex-1 p-4 overflow-y-auto overscroll-contain space-y-3 bg-slate-50/50">
           {loading && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
               Loading chat stream...

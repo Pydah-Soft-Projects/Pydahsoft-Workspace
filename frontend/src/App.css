@@ -27,7 +27,8 @@ html {
 
 .chat-main,
 .chat-main .dashboard-content,
-.chat-main .chat-page {
+.chat-main .chat-page,
+.dashboard-chat-box {
   min-height: 0;
 }
 
