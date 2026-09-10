@@ -25,6 +25,32 @@ html {
   min-width: 0;
 }
 
+.dashboard-sidebar {
+  min-height: 0;
+}
+
+.dashboard-sidebar__navigation {
+  min-height: 0;
+}
+
+@media (max-width: 767px) {
+  .dashboard-sidebar {
+    height: 100dvh;
+    max-height: 100dvh;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  .dashboard-sidebar__navigation {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 1rem;
+  }
+
+  .dashboard-sidebar__profile {
+    padding-bottom: 0.25rem;
+  }
+}
+
 .chat-main,
 .chat-main .dashboard-content,
 .chat-main .chat-page,
