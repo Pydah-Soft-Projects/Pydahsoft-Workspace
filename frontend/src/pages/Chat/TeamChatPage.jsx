@@ -15,23 +15,20 @@ export default function TeamChatPage({ currentUser }) {
 
   const messagesEndRef = useRef(null);
   const chatStreamRef = useRef(null);
-  const [viewportHeight, setViewportHeight] = useState(null);
 
-  // Dynamic visualViewport listener for mobile keyboard resizing
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.visualViewport) return;
-    const updateHeight = () => {
-      setViewportHeight(window.visualViewport.height);
-      window.scrollTo(0, 0);
-    };
-    window.visualViewport.addEventListener('resize', updateHeight);
-    window.visualViewport.addEventListener('scroll', updateHeight);
-    updateHeight();
-    return () => {
-      window.visualViewport.removeEventListener('resize', updateHeight);
-      window.visualViewport.removeEventListener('scroll', updateHeight);
-    };
-  }, []);
+  const openConversation = (recipient) => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    setSelectedRecipient(recipient);
+    setMobileView('chat');
+  };
+
+  const closeKeyboard = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
 
   // Fetch all staff members & teams
   useEffect(() => {
@@ -171,10 +168,7 @@ export default function TeamChatPage({ currentUser }) {
         <div className="p-3 border-b border-gray-200">
           <button
             type="button"
-            onClick={() => {
-              setSelectedRecipient({ type: 'all', data: null });
-              setMobileView('chat');
-            }}
+            onClick={() => openConversation({ type: 'all', data: null })}
             className={`w-full p-3 rounded-xl font-bold text-xs text-left transition-all flex items-center justify-between cursor-pointer ${
               selectedRecipient.type === 'all'
                 ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
@@ -216,10 +210,7 @@ export default function TeamChatPage({ currentUser }) {
                   <button
                     key={team._id}
                     type="button"
-                    onClick={() => {
-                      setSelectedRecipient({ type: 'team', data: team });
-                      setMobileView('chat');
-                    }}
+                    onClick={() => openConversation({ type: 'team', data: team })}
                     className={`w-full p-2 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                       isSelected
                         ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
@@ -325,10 +316,7 @@ export default function TeamChatPage({ currentUser }) {
               <button
                 key={emp._id}
                 type="button"
-                onClick={() => {
-                  setSelectedRecipient({ type: 'individual', data: emp });
-                  setMobileView('chat');
-                }}
+                onClick={() => openConversation({ type: 'individual', data: emp })}
                 className={`w-full p-2.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                   isSelected
                     ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
@@ -370,8 +358,7 @@ export default function TeamChatPage({ currentUser }) {
 
       {/* RIGHT PANEL: Chat Stream & Message Input */}
       <div
-        style={viewportHeight && mobileView === 'chat' && typeof window !== 'undefined' && window.innerWidth < 768 ? { height: `${viewportHeight}px`, top: `${window.visualViewport?.offsetTop || 0}px` } : {}}
-        className={`${mobileView === 'list' ? 'hidden md:flex md:flex-1' : 'fixed inset-0 z-50 bg-white flex flex-col h-full w-full md:static md:z-auto md:flex-1'} flex-col bg-white h-full overflow-hidden w-full`}
+        className={`${mobileView === 'list' ? 'hidden md:flex md:flex-1' : 'fixed inset-0 z-50 bg-white flex flex-col h-full w-full md:static md:z-auto md:flex-1'} min-h-0 flex-col bg-white h-full overflow-hidden w-full`}
       >
         {/* Active Conversation Header */}
         <div className="p-3 md:p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
@@ -379,7 +366,10 @@ export default function TeamChatPage({ currentUser }) {
             {/* Mobile Back Button */}
             <button
               type="button"
-              onClick={() => setMobileView('list')}
+              onClick={() => {
+                closeKeyboard();
+                setMobileView('list');
+              }}
               className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1 font-bold text-xs border border-gray-200"
               title="Back to contacts list"
             >
@@ -457,7 +447,7 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Message Stream */}
-        <div ref={chatStreamRef} className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
+        <div ref={chatStreamRef} className="chat-page__messages min-h-0 flex-1 p-4 overflow-y-auto overscroll-contain space-y-3 bg-slate-50/50">
           {loadingMessages && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
               Loading chat history...
@@ -539,7 +529,6 @@ export default function TeamChatPage({ currentUser }) {
             onChange={(e) => setNewMessageText(e.target.value)}
             onFocus={() => {
               setTimeout(() => {
-                window.scrollTo(0, 0);
                 if (chatStreamRef.current) {
                   chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
                 }
