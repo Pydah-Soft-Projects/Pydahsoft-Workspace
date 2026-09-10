@@ -126,7 +126,7 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, mobil
   };
 
   return (
-    <aside className={`dashboard-sidebar fixed inset-y-0 left-0 z-50 w-64 bg-[#072b1e] text-[#ffffff] flex flex-col justify-between h-screen p-4 border-r border-[#0e4733] shrink-0 shadow-xl transition-transform duration-300 ${
+    <aside className={`dashboard-sidebar fixed inset-y-0 left-0 z-50 w-64 bg-[#072b1e] text-[#ffffff] flex flex-col h-[100dvh] md:h-screen p-4 border-r border-[#0e4733] shrink-0 shadow-xl transition-transform duration-300 ${
       mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
     } md:sticky md:top-0`}>
       {/* Scrollable Top Header & Navigation Container */}
@@ -175,7 +175,7 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, mobil
       </div>
 
       {/* Constantly Fixed / Pinned Bottom User Profile Card */}
-      <div className="dashboard-sidebar__profile pt-3 mt-2 border-t border-[#0e4733] shrink-0">
+      <div className="dashboard-sidebar__profile pt-3 mt-2 border-t border-[#0e4733] shrink-0 sticky bottom-0 bg-[#072b1e]">
         <div className="flex items-center justify-between p-2.5 bg-[#0b3828] rounded-xl border border-[#13523c] shadow-sm">
           <div className="flex items-center gap-2.5 overflow-hidden">
             {/* Avatar Circle */}
