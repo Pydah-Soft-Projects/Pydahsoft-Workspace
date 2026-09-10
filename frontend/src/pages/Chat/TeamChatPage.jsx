@@ -174,58 +174,58 @@ export default function TeamChatPage({ currentUser }) {
   };
 
   return (
-    <div className="chat-page h-[calc(100svh-120px)] md:h-full min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg flex flex-col md:flex-row overflow-hidden">
-      {/* LEFT PANEL: Persons & Group Conversations List - Full Desktop Layout */}
-      <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} chat-page__contacts w-full md:w-96 bg-white border-r border-gray-200 flex-col shrink-0 h-full overflow-hidden`}>
+    <div className="chat-page h-[calc(100dvh-95px)] md:h-[calc(100vh-140px)] md:min-h-[550px] bg-white rounded-2xl border border-gray-200 shadow-lg flex flex-col md:flex-row overflow-hidden">
+      {/* LEFT PANEL: Persons & Group Conversations List */}
+      <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} chat-page__contacts w-full md:w-96 bg-white border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto no-scrollbar md:scrollbar-thin`}>
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 bg-white shrink-0">
-          <h2 className="text-lg font-black text-[#09233d] flex items-center gap-2">
+        <div className="p-3 md:p-4 border-b border-gray-200 bg-white shrink-0">
+          <h2 className="text-base md:text-lg font-black text-[#09233d] flex items-center gap-2">
             Team Messaging Hub
-            <span className="w-2.5 h-2.5 rounded-full bg-[#20b875] animate-pulse" />
+            <span className="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-[#20b875] animate-pulse" />
           </h2>
-          <p className="text-sm text-gray-500 font-medium mt-1">Select group, team, or staff member to chat</p>
+          <p className="text-xs md:text-sm text-gray-500 font-medium mt-0.5 md:mt-1">Select group, team, or staff member to chat</p>
         </div>
 
         {/* Global Broadcast Option */}
-        <div className="p-3 border-b border-gray-200 shrink-0">
+        <div className="p-2 md:p-3 border-b border-gray-200 shrink-0">
           <button
             type="button"
             onClick={() => {
               setSelectedRecipient({ type: 'all', data: null });
               setMobileView('chat');
             }}
-            className={`w-full p-3 rounded-xl font-bold text-sm text-left transition-all flex items-center justify-between cursor-pointer ${
+            className={`w-full p-2 md:p-3 rounded-lg md:rounded-xl font-bold text-xs md:text-sm text-left transition-all flex items-center justify-between cursor-pointer ${
               selectedRecipient.type === 'all'
                 ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
                 : 'bg-white text-gray-700 hover:bg-emerald-50/50 border border-gray-200'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#20b875] text-white flex items-center justify-center font-bold text-sm shrink-0">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="w-8 md:w-10 h-8 md:h-10 rounded-lg md:rounded-xl bg-[#20b875] text-white flex items-center justify-center font-bold text-xs md:text-sm shrink-0">
+                <svg className="w-4 md:w-5 h-4 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                 </svg>
               </div>
               <div>
-                <span className="block font-black text-sm text-[#09233d]">Everyone (Company Broadcast)</span>
-                <span className="block text-xs font-medium text-gray-500 mt-0.5">
+                <span className="block font-black text-xs md:text-sm text-[#09233d]">Everyone (Company Broadcast)</span>
+                <span className="block text-xs md:text-xs font-medium text-gray-500 mt-0.5">
                   Public All-Staff Announcements
                 </span>
               </div>
             </div>
             {selectedRecipient.type === 'all' && (
-              <span className="w-2.5 h-2.5 rounded-full bg-[#20b875] shrink-0" />
+              <span className="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-[#20b875] shrink-0" />
             )}
           </button>
         </div>
 
         {/* Teams List */}
         {teamsList.length > 0 && (
-          <div className="px-3 pt-3 pb-2 border-b border-gray-200 shrink-0">
-            <div className="px-1 mb-2 text-xs font-extrabold text-gray-400 uppercase tracking-wider">
+          <div className="px-2 md:px-3 pt-2 md:pt-3 pb-1.5 md:pb-2 border-b border-gray-200">
+            <div className="px-1 mb-1.5 md:mb-2 text-xs font-extrabold text-gray-400 uppercase tracking-wider">
               Teams & Departments ({teamsList.length})
             </div>
-            <div className="space-y-1.5 max-h-40 overflow-y-auto">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 md:py-0 md:block md:space-y-1.5">
               {teamsList.map((team) => {
                 const isSelected =
                   selectedRecipient.type === 'team' &&
@@ -239,19 +239,19 @@ export default function TeamChatPage({ currentUser }) {
                       setSelectedRecipient({ type: 'team', data: team });
                       setMobileView('chat');
                     }}
-                    className={`w-full p-2.5 rounded-xl text-left text-sm font-bold transition-all flex items-center justify-between cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg md:rounded-xl text-xs md:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 md:w-full md:p-2.5 md:flex md:items-center md:justify-between border ${
                       isSelected
                         ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
-                        : 'bg-white hover:bg-emerald-50/50 text-[#09233d] border border-gray-100'
+                        : 'bg-white hover:bg-emerald-50/50 text-[#09233d] border-gray-200 shadow-2xs'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 truncate">
-                      <svg className="w-4 h-4 shrink-0 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-1.5 md:gap-2.5 truncate">
+                      <svg className="w-3.5 md:w-4 h-3.5 md:h-4 shrink-0 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
-                      <span className="truncate text-sm font-bold text-[#09233d]">{team.name}</span>
+                      <span className="truncate text-xs md:text-sm font-bold text-[#09233d]">{team.name}</span>
                     </div>
-                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 text-[#20b875]">
+                    <span className="hidden md:inline-block text-xs font-extrabold px-1.5 md:px-2 py-0.5 rounded-md bg-emerald-100 text-[#20b875]">
                       Team
                     </span>
                   </button>
@@ -262,11 +262,11 @@ export default function TeamChatPage({ currentUser }) {
         )}
 
         {/* Role Filter Pills */}
-        <div className="px-3 py-2.5 flex items-center gap-1.5 overflow-x-auto scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-[#20b875] bg-slate-50 border-b border-gray-200 shrink-0">
+        <div className="grid grid-cols-4 gap-1.5 p-2 md:p-2.5 bg-slate-50 border-b border-gray-200 w-full">
           <button
             type="button"
             onClick={() => handleRoleFilterClick('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
               roleFilter === 'all'
                 ? 'bg-[#20b875] text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -277,7 +277,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => handleRoleFilterClick('admin')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
               roleFilter === 'admin'
                 ? 'bg-rose-600 text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -288,7 +288,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => handleRoleFilterClick('lead')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
               roleFilter === 'lead'
                 ? 'bg-purple-600 text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -299,7 +299,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => handleRoleFilterClick('employee')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
               roleFilter === 'employee'
                 ? 'bg-[#20b875] text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -310,7 +310,7 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Search Input Box */}
-        <div className="p-3 border-b border-gray-200 bg-white shrink-0">
+        <div className="p-2 md:p-3 border-b border-gray-200 bg-white">
           <div className="relative">
             <input
               type="text"
@@ -320,22 +320,22 @@ export default function TeamChatPage({ currentUser }) {
               inputMode="search"
               autoComplete="off"
               aria-label="Search contacts"
-              className="w-full pl-8 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-[#09233d] font-medium focus:bg-white focus:border-[#20b875] outline-none"
+              className="w-full pl-7 md:pl-8 pr-3 py-2 md:py-2.5 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl text-xs md:text-sm text-[#09233d] font-medium focus:bg-white focus:border-[#20b875] outline-none"
             />
-            <svg className="w-4 h-4 text-gray-400 absolute left-2.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 md:w-4 h-3.5 md:h-4 text-gray-400 absolute left-2 md:left-2.5 top-2.5 md:top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
         </div>
 
         {/* Individual Contact Directory List */}
-        <div className="flex-1 p-3 space-y-1.5 overflow-y-auto">
-          <div className="px-1 py-1 text-xs font-extrabold text-gray-400 uppercase tracking-wider">
+        <div className="p-2 md:p-3 space-y-1 md:space-y-1.5">
+          <div className="px-1 py-0.5 md:py-1 text-xs font-extrabold text-gray-400 uppercase tracking-wider">
             Direct 1-on-1 Contacts ({filteredStaff.length})
           </div>
 
           {filteredStaff.length === 0 ? (
-            <div className="p-4 text-center text-sm text-gray-500 bg-white rounded-xl border border-gray-100 font-medium">
+            <div className="p-3 md:p-4 text-center text-xs md:text-sm text-gray-500 bg-white rounded-lg md:rounded-xl border border-gray-100 font-medium">
               {searchQuery.trim()
                 ? `No staff found matching "${searchQuery}"`
                 : 'No contacts found'}
@@ -355,18 +355,18 @@ export default function TeamChatPage({ currentUser }) {
                     setSelectedRecipient({ type: 'individual', data: emp });
                     setMobileView('chat');
                   }}
-                  className={`w-full p-3 rounded-xl text-left text-sm font-bold transition-all flex items-center justify-between cursor-pointer ${
+                  className={`w-full p-2 md:p-3 rounded-lg md:rounded-xl text-left text-xs md:text-sm font-bold transition-all flex items-center justify-between cursor-pointer ${
                     isSelected
                       ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
                       : 'bg-white hover:bg-emerald-50/40 text-[#09233d] border border-gray-100'
                   }`}
                 >
-                  <div className="flex items-center gap-3 truncate">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 bg-emerald-100 text-[#20b875]">
+                  <div className="flex items-center gap-2 md:gap-3 truncate">
+                    <div className="w-7 md:w-9 h-7 md:h-9 rounded-full flex items-center justify-center font-bold text-xs md:text-sm shrink-0 bg-emerald-100 text-[#20b875]">
                       {emp.name ? emp.name.charAt(0).toUpperCase() : 'E'}
                     </div>
                     <div className="truncate">
-                      <span className="block text-sm font-bold truncate text-[#09233d]">
+                      <span className="block text-xs md:text-sm font-bold truncate text-[#09233d]">
                         {emp.name} {isMe && '(You)'}
                       </span>
                       <span className="block text-xs font-medium truncate text-gray-400 mt-0.5">
@@ -376,7 +376,7 @@ export default function TeamChatPage({ currentUser }) {
                   </div>
 
                   <span
-                    className={`text-xs font-extrabold px-2 py-1 rounded-md uppercase shrink-0 ${
+                    className={`text-xs font-extrabold px-1.5 md:px-2 py-0.5 md:py-1 rounded-md uppercase shrink-0 ${
                       emp.role === 'superadmin' || emp.role === 'admin'
                         ? 'bg-rose-100 text-rose-700'
                         : emp.role === 'superior' || emp.role === 'teamlead'
@@ -402,13 +402,13 @@ export default function TeamChatPage({ currentUser }) {
             <button
               type="button"
               onClick={() => setMobileView('list')}
-              className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1 font-bold text-xs border border-gray-200"
+              className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all shrink-0 cursor-pointer flex items-center justify-center border border-gray-200"
               title="Back to contacts list"
+              aria-label="Back to contacts list"
             >
               <svg className="w-4 h-4 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Chats</span>
             </button>
 
             <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-black text-sm md:text-base shrink-0 shadow-sm">
@@ -571,15 +571,15 @@ export default function TeamChatPage({ currentUser }) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* 3. INPUT SECTION - Desktop Styled */}
-        <div className="p-4 bg-white border-t border-gray-200 flex items-center gap-3 shrink-0">
+        {/* 3. INPUT SECTION */}
+        <div className="p-2 sm:p-3 md:p-4 bg-white border-t border-gray-200 flex items-center gap-2 md:gap-3 shrink-0">
           <button
             type="button"
-            className="p-2.5 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors shrink-0"
+            className="p-2 md:p-2.5 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors shrink-0"
             title="Attach a file"
             aria-label="Attach a file"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a4 4 0 00-5.656-5.656l-6.586 6.586a6 6 0 108.485 8.485L20.5 13.5" />
             </svg>
           </button>
@@ -593,25 +593,30 @@ export default function TeamChatPage({ currentUser }) {
               autoComplete="off"
               aria-label="Message"
               onChange={(e) => setNewMessageText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage(e);
+                }
+              }}
               onFocus={() => {
                 setTimeout(() => {
-                  window.scrollTo(0, 0);
                   if (chatStreamRef.current) {
                     chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
                   }
                 }, 100);
               }}
-              placeholder="Type a message"
-              className="flex-1 px-5 py-3 bg-transparent text-sm text-[#09233d] font-medium outline-none placeholder:text-gray-500"
+              placeholder="Type a message..."
+              className="flex-1 px-3.5 md:px-5 py-2 md:py-3 bg-transparent text-xs md:text-sm text-[#09233d] font-medium outline-none placeholder:text-gray-500"
             />
             
             <button
               type="button"
-              className="p-2.5 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors mr-2"
+              className="p-1.5 md:p-2.5 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors mr-1 md:mr-2"
               title="Add emoji"
               aria-label="Add emoji"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </button>
@@ -621,18 +626,14 @@ export default function TeamChatPage({ currentUser }) {
             type="submit"
             disabled={sending || !newMessageText.trim()}
             onClick={handleSendMessage}
-            className="w-12 h-12 rounded-full bg-[#20b875] hover:bg-[#18995e] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center shrink-0 shadow-md transition-all cursor-pointer"
+            className="w-9 h-9 md:w-12 md:h-12 rounded-full bg-[#20b875] hover:bg-[#18995e] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center shrink-0 shadow-md transition-all cursor-pointer"
             title="Send Message"
           >
             {sending ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : newMessageText.trim() ? (
-              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-              </svg>
+              <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              <svg className="w-4 h-4 md:w-6 md:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
               </svg>
             )}
           </button>

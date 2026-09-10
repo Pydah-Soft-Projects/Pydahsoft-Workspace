@@ -49,19 +49,17 @@ html {
 
   .chat-main .dashboard-content {
     padding: 0;
-    overflow: hidden;
   }
 
   .chat-main .chat-page {
     position: relative;
     height: 100%;
-    overflow: hidden;
     border: 0;
     border-radius: 0;
   }
 
   .chat-page__contacts {
-    overflow: hidden;
+    overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
