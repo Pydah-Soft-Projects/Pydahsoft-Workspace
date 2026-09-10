@@ -14,6 +14,23 @@ export default function TeamChatPage({ currentUser }) {
   const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
 
   const messagesEndRef = useRef(null);
+  const chatStreamRef = useRef(null);
+  const [viewportHeight, setViewportHeight] = useState(null);
+
+  // Dynamic visualViewport listener for mobile keyboard resizing
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const updateHeight = () => {
+      setViewportHeight(window.visualViewport.height);
+      window.scrollTo(0, 0);
+    };
+    window.visualViewport.addEventListener('resize', updateHeight);
+    window.visualViewport.addEventListener('scroll', updateHeight);
+    return () => {
+      window.visualViewport.removeEventListener('resize', updateHeight);
+      window.visualViewport.removeEventListener('scroll', updateHeight);
+    };
+  }, []);
 
   // Fetch all staff members & teams
   useEffect(() => {
