@@ -239,51 +239,86 @@ export default function ReportGenerator({ currentUser }) {
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Detailed Tasks Breakdown</h4>
             {reportData.tasks && reportData.tasks.length > 0 ? (
-              <div className="overflow-x-auto border border-gray-100 rounded-xl">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 text-[10px] font-bold uppercase text-gray-500 border-b border-gray-100">
-                      <th className="p-3">Task ID & Title</th>
-                      <th className="p-3">Project & Module</th>
-                      <th className="p-3">Team & Assigned Staff</th>
-                      <th className="p-3">Est / Act Hours</th>
-                      <th className="p-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 text-xs">
-                    {reportData.tasks.map((task) => (
-                      <tr key={task._id} className="hover:bg-gray-50/60">
-                        <td className="p-3">
-                          <span className="text-[10px] font-bold text-[#20b875] bg-emerald-50 px-2 py-0.5 rounded mr-1">
+              <div className="space-y-3">
+                {/* MOBILE CARDS VIEW (< md) */}
+                <div className="grid grid-cols-1 gap-2.5 md:hidden">
+                  {reportData.tasks.map((task) => (
+                    <div key={task._id} className="p-2.5 bg-white rounded-xl border border-gray-100 shadow-sm space-y-1.5 text-xs">
+                      <div className="flex justify-between items-center border-b border-gray-100 pb-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-bold text-[#20b875] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
                             {task.taskId || 'TSK'}
                           </span>
-                          <strong className="text-[#09233d] font-bold">{task.title}</strong>
-                        </td>
-                        <td className="p-3 text-gray-700">
-                          <strong className="block text-gray-900">{task.project?.name || 'N/A'}</strong>
-                          <span className="text-[10px] text-gray-400">{task.module?.name || 'N/A'}</span>
-                        </td>
-                        <td className="p-3 text-gray-700">
-                          <strong className="block text-gray-900">{task.assignedTo?.name || 'Unassigned'}</strong>
-                          <span className="text-[10px] text-purple-700 font-semibold">{task.team?.name || 'General Team'}</span>
-                        </td>
-                        <td className="p-3 font-semibold text-gray-700">
-                          {task.estimatedHours || 0}h / <span className="text-[#20b875]">{formatHours(task.actualHours)}</span>
-                        </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                            task.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
-                            task.status === 'Submitted for Review' ? 'bg-amber-100 text-amber-800' :
-                            task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                            task.status === 'Rejected' ? 'bg-rose-100 text-rose-800' : 'bg-gray-100 text-gray-700'
-                          }`}>
-                            {task.status}
-                          </span>
-                        </td>
+                          <strong className="text-[#09233d] font-bold text-xs">{task.title}</strong>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase shrink-0 ${
+                          task.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
+                          task.status === 'Submitted for Review' ? 'bg-amber-100 text-amber-800' :
+                          task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                          task.status === 'Rejected' ? 'bg-rose-100 text-rose-800' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {task.status}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-gray-500">
+                        <span>Project: <strong className="text-gray-800">{task.project?.name || 'N/A'}</strong></span>
+                        <span>Module: <strong className="text-gray-800">{task.module?.name || 'N/A'}</strong></span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-gray-500 pt-1 border-t border-gray-100">
+                        <span>Assigned: <strong className="text-gray-800">{task.assignedTo?.name || 'Unassigned'}</strong></span>
+                        <span>Est/Act: <strong>{task.estimatedHours || 0}h / <span className="text-[#20b875]">{formatHours(task.actualHours)}</span></strong></span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* DESKTOP TABLE VIEW (>= md) */}
+                <div className="hidden md:block overflow-x-auto border border-gray-100 rounded-xl">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-[10px] font-bold uppercase text-gray-500 border-b border-gray-100">
+                        <th className="p-3">Task ID & Title</th>
+                        <th className="p-3">Project & Module</th>
+                        <th className="p-3">Team & Assigned Staff</th>
+                        <th className="p-3">Est / Act Hours</th>
+                        <th className="p-3">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-xs">
+                      {reportData.tasks.map((task) => (
+                        <tr key={task._id} className="hover:bg-gray-50/60">
+                          <td className="p-3">
+                            <span className="text-[10px] font-bold text-[#20b875] bg-emerald-50 px-2 py-0.5 rounded mr-1">
+                              {task.taskId || 'TSK'}
+                            </span>
+                            <strong className="text-[#09233d] font-bold">{task.title}</strong>
+                          </td>
+                          <td className="p-3 text-gray-700">
+                            <strong className="block text-gray-900">{task.project?.name || 'N/A'}</strong>
+                            <span className="text-[10px] text-gray-400">{task.module?.name || 'N/A'}</span>
+                          </td>
+                          <td className="p-3 text-gray-700">
+                            <strong className="block text-gray-900">{task.assignedTo?.name || 'Unassigned'}</strong>
+                            <span className="text-[10px] text-purple-700 font-semibold">{task.team?.name || 'General Team'}</span>
+                          </td>
+                          <td className="p-3 font-semibold text-gray-700">
+                            {task.estimatedHours || 0}h / <span className="text-[#20b875]">{formatHours(task.actualHours)}</span>
+                          </td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              task.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
+                              task.status === 'Submitted for Review' ? 'bg-amber-100 text-amber-800' :
+                              task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                              task.status === 'Rejected' ? 'bg-rose-100 text-rose-800' : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {task.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             ) : (
               <div className="p-6 text-center text-xs text-gray-400 bg-gray-50 rounded-xl">

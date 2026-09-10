@@ -183,18 +183,18 @@ export default function TaskManagement({ currentUser }) {
       ) : (
         <>
           {/* MOBILE CARDS VIEW (< md) */}
-          <div className="grid grid-cols-1 gap-3 md:hidden">
+          <div className="grid grid-cols-1 gap-2.5 md:hidden">
             {displayedTasks.map((task, idx) => {
               const taskBadgeStyle = getKeyBadgeColor(task.taskId, idx);
               return (
-                <div key={task._id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-3">
+                <div key={task._id} className="bg-white rounded-xl border border-gray-100 p-2.5 shadow-sm space-y-2">
                   {/* Header: Task ID + Priority + Status */}
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-2.5 gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg border ${taskBadgeStyle}`}>
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-1.5 gap-1.5">
+                    <div className="flex items-center gap-1">
+                      <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded-md border ${taskBadgeStyle}`}>
                         {task.taskId || 'TSK'}
                       </span>
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${
+                      <span className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase ${
                         task.priority === 'Critical' ? 'bg-red-100 text-red-700' :
                         task.priority === 'High' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
                       }`}>
@@ -202,7 +202,7 @@ export default function TaskManagement({ currentUser }) {
                       </span>
                     </div>
 
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase shrink-0 ${
+                    <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-extrabold uppercase shrink-0 ${
                       task.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
                       task.status === 'Submitted for Review' ? 'bg-amber-100 text-amber-800' :
                       task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
@@ -213,45 +213,45 @@ export default function TaskManagement({ currentUser }) {
                   </div>
 
                   {/* Task Title & Parent Module */}
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-black text-[#09233d]">{task.title}</h4>
-                    <p className="text-[11px] text-gray-500 font-medium">
+                  <div className="space-y-0.5">
+                    <h4 className="text-[11px] font-black text-[#09233d]">{task.title}</h4>
+                    <p className="text-[9.5px] text-gray-500 font-medium">
                       Module: <strong className="text-gray-700">{task.module?.name || 'General'}</strong>
                       {task.project?.name && <span className="text-gray-400"> • {task.project.name}</span>}
                     </p>
                   </div>
 
                   {/* Employee & Team Details Card Box */}
-                  <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 text-xs space-y-1.5">
+                  <div className="p-2 bg-gray-50/80 rounded-lg border border-gray-100 text-[10px] space-y-1">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500 font-medium">Assigned Person:</span>
-                      <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${getKeyBadgeColor(task.assignedTo?.name || 'Unassigned', 1)}`}>
+                      <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-extrabold border ${getKeyBadgeColor(task.assignedTo?.name || 'Unassigned', 1)}`}>
                         {task.assignedTo?.name || 'Unassigned'}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center text-[11px]">
+                    <div className="flex justify-between items-center text-[9.5px]">
                       <span className="text-gray-400 font-medium">Team:</span>
-                      <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${getKeyBadgeColor(task.team?.name || 'Team', 2)}`}>
+                      <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-extrabold border ${getKeyBadgeColor(task.team?.name || 'Team', 2)}`}>
                         {task.team?.name || 'Team Assigned'}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-gray-100">
+                    <div className="flex justify-between items-center text-[9.5px] pt-1 border-t border-gray-100">
                       <span className="text-gray-400 font-medium">Logged Hours:</span>
                       <span className="font-bold text-gray-700">{task.estimatedHours || 0}h Est / <strong className="text-[#20b875]">{task.actualHours || 0}h Act</strong></span>
                     </div>
                   </div>
 
                   {/* Actions Footer */}
-                  <div className="pt-2 border-t border-gray-100 flex items-center justify-end gap-1.5">
+                  <div className="pt-1.5 border-t border-gray-100 flex items-center justify-end gap-1">
                     {canCreateTasks && (
                       <button
                         onClick={() => {
                           setReassigningTask(task);
                           setSelectedAssigneeId(task.assignedTo?._id || '');
                         }}
-                        className="py-1.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[11px] font-bold border border-indigo-200 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+                        className="py-1 px-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[9px] font-bold border border-indigo-200 flex items-center justify-center gap-0.5 cursor-pointer transition-all active:scale-95"
                       >
-                        <Icon name="activity" className="w-3.5 h-3.5 text-indigo-600" /> Re-assign Task
+                        <Icon name="activity" className="w-2.5 h-2.5 text-indigo-600" /> Re-assign Task
                       </button>
                     )}
 
@@ -260,7 +260,7 @@ export default function TaskManagement({ currentUser }) {
                         {task.status === 'Not Started' && (
                           <button
                             onClick={() => updateStatus(task._id, 'In Progress')}
-                            className="py-1.5 px-3 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-[11px] font-bold border border-blue-200 active:scale-95"
+                            className="py-1 px-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[9px] font-bold border border-blue-200 active:scale-95"
                           >
                             Start Task
                           </button>
@@ -269,13 +269,13 @@ export default function TaskManagement({ currentUser }) {
                           <>
                             <button
                               onClick={() => updateStatus(task._id, 'Paused')}
-                              className="py-1.5 px-2.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-xl text-[11px] font-bold border border-amber-200 active:scale-95"
+                              className="py-1 px-2 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg text-[9px] font-bold border border-amber-200 active:scale-95"
                             >
                               Pause
                             </button>
                             <button
                               onClick={() => updateStatus(task._id, 'Submitted for Review')}
-                              className="py-1.5 px-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl text-[11px] font-bold border border-emerald-200 active:scale-95"
+                              className="py-1 px-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg text-[9px] font-bold border border-emerald-200 active:scale-95"
                             >
                               Submit
                             </button>
@@ -284,7 +284,7 @@ export default function TaskManagement({ currentUser }) {
                         {task.status === 'Paused' && (
                           <button
                             onClick={() => updateStatus(task._id, 'In Progress')}
-                            className="py-1.5 px-3 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-[11px] font-bold border border-blue-200 active:scale-95"
+                            className="py-1 px-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[9px] font-bold border border-blue-200 active:scale-95"
                           >
                             Resume
                           </button>

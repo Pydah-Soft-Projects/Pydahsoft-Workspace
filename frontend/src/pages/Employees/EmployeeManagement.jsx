@@ -157,18 +157,18 @@ export default function EmployeeManagement({ currentUser }) {
       ) : (
         <>
           {/* MOBILE CARDS VIEW (< md) */}
-          <div className="grid grid-cols-1 gap-3 md:hidden">
+          <div className="grid grid-cols-1 gap-2.5 md:hidden">
             {employees.map((emp, idx) => {
               const isInactive = emp.status === 'Inactive';
               const idBadgeStyle = getEmpIdBadgeColor(emp.employeeId, idx);
               return (
-                <div key={emp._id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-3">
+                <div key={emp._id} className="bg-white rounded-xl border border-gray-100 p-2.5 shadow-sm space-y-2 text-xs">
                   {/* Card Header: Employee ID + Status */}
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
-                    <span className={`font-extrabold text-xs px-2.5 py-1 rounded-lg border ${idBadgeStyle}`}>
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-1.5">
+                    <span className={`font-extrabold text-[10px] px-2 py-0.5 rounded-md border ${idBadgeStyle}`}>
                       {emp.employeeId || 'EMP-000'}
                     </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
                       !isInactive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'
                     }`}>
                       {emp.status || 'Active'}
@@ -176,27 +176,27 @@ export default function EmployeeManagement({ currentUser }) {
                   </div>
 
                   {/* Card Body: Profile Info & Department */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-[#20b875] flex items-center justify-center font-bold text-base border border-emerald-200 shrink-0 shadow-2xs">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-[#20b875] flex items-center justify-center font-bold text-xs border border-emerald-200 shrink-0 shadow-2xs">
                       {emp.name ? emp.name.charAt(0).toUpperCase() : 'E'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <h4 className="text-xs font-black text-[#09233d] truncate">{emp.name}</h4>
-                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase shrink-0 ${
+                        <h4 className="text-[11px] font-black text-[#09233d] truncate">{emp.name}</h4>
+                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase shrink-0 ${
                           emp.role === 'superior' ? 'bg-purple-100 text-purple-800' :
                           emp.role === 'teamlead' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'
                         }`}>
                           {emp.role}
                         </span>
                       </div>
-                      <p className="text-[11px] text-gray-400 font-medium truncate mt-0.5">@{emp.username}</p>
+                      <p className="text-[9.5px] text-gray-400 font-medium truncate mt-0.5">@{emp.username}</p>
 
-                      <div className="mt-2 text-xs font-semibold text-gray-700 flex flex-col gap-0.5 bg-gray-50/80 p-2 rounded-xl border border-gray-100">
-                        <div className="flex items-center gap-1.5 text-gray-600 text-[11px]">
+                      <div className="mt-1.5 text-[9.5px] font-semibold text-gray-700 flex flex-col gap-0.5 bg-gray-50/80 p-1.5 rounded-lg border border-gray-100">
+                        <div className="flex items-center gap-1 text-gray-600 text-[9.5px]">
                           <span className="font-bold text-[#09233d]">Dept:</span> {emp.department}
                         </div>
-                        <div className="flex items-center gap-1.5 text-gray-500 text-[10px]">
+                        <div className="flex items-center gap-1 text-gray-500 text-[9px]">
                           <span className="font-bold text-gray-600">Designation:</span> {emp.designation}
                         </div>
                       </div>
@@ -204,41 +204,41 @@ export default function EmployeeManagement({ currentUser }) {
                   </div>
 
                   {/* Card Actions Footer */}
-                  <div className="pt-2 border-t border-gray-100 flex items-center justify-between gap-1.5 overflow-x-auto">
+                  <div className="pt-1.5 border-t border-gray-100 flex items-center gap-1 w-full text-[9.5px]">
                     <button
                       onClick={() => setViewingEmployee(emp)}
-                      className="flex-1 py-1.5 px-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-[11px] font-bold border border-gray-200 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+                      className="flex-1 py-1 px-1 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg font-bold border border-gray-200 flex items-center justify-center gap-0.5 cursor-pointer transition-all active:scale-95 text-[9px]"
                     >
-                      <Icon name="eye" className="w-3.5 h-3.5 text-gray-500" /> View
+                      <Icon name="eye" className="w-3 h-3 text-gray-500 shrink-0" /> View
                     </button>
                     {(currentUser?.role === 'superior' || currentUser?.role === 'superadmin') && (
                       <button
                         onClick={() => setEditingEmployee({ ...emp })}
-                        className="flex-1 py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-[11px] font-bold border border-blue-100 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+                        className="flex-1 py-1 px-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-bold border border-blue-100 flex items-center justify-center gap-0.5 cursor-pointer transition-all active:scale-95 text-[9px]"
                       >
-                        <Icon name="edit" className="w-3.5 h-3.5 text-blue-600" /> Edit
+                        <Icon name="edit" className="w-3 h-3 text-blue-600 shrink-0" /> Edit
                       </button>
                     )}
                     <button
                       onClick={() => viewPerformance(emp._id)}
-                      className="flex-1 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[11px] font-bold border border-indigo-200 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+                      className="flex-1 py-1 px-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-bold border border-indigo-200 flex items-center justify-center gap-0.5 cursor-pointer transition-all active:scale-95 text-[9px]"
                     >
-                      <Icon name="award" className="w-3.5 h-3.5 text-indigo-600" /> Perf
+                      <Icon name="award" className="w-3 h-3 text-indigo-600 shrink-0" /> Perf
                     </button>
                     {(currentUser?.role === 'superior' || currentUser?.role === 'superadmin') && (
                       isInactive ? (
                         <button
                           onClick={() => toggleEmployeeStatus(emp)}
-                          className="py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-[11px] font-bold border border-emerald-200 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0"
+                          className="flex-1 py-1 px-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-bold border border-emerald-200 flex items-center justify-center gap-0.5 cursor-pointer transition-all active:scale-95 text-[9px] truncate"
                         >
-                          <Icon name="check" className="w-3.5 h-3.5 text-emerald-600" /> Activate
+                          <Icon name="check" className="w-3 h-3 text-emerald-600 shrink-0" /> Active
                         </button>
                       ) : (
                         <button
                           onClick={() => toggleEmployeeStatus(emp)}
-                          className="py-1.5 px-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-[11px] font-bold border border-red-200 flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0"
+                          className="flex-1 py-1 px-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-bold border border-red-200 flex items-center justify-center gap-0.5 cursor-pointer transition-all active:scale-95 text-[9px] truncate"
                         >
-                          Deactivate
+                          Deactive
                         </button>
                       )
                     )}
