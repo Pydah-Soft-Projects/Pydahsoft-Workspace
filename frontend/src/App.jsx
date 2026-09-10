@@ -298,107 +298,105 @@ function DashboardLayout({ user, onLogout }) {
 
       <main className="flex-1 h-screen overflow-y-auto w-full">
         <header className="dashboard-header bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3.5 flex flex-wrap gap-3 justify-between items-center sticky top-0 z-30 shadow-xs">
-          <div className="dashboard-header__title flex items-center gap-3">
-            {/* Mobile Sidebar Hamburger Toggle */}
-            <button
-              type="button"
-              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-              className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all border border-gray-200 shrink-0"
-              title="Toggle sidebar menu"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+          <div className="dashboard-header__title flex items-center justify-between gap-3 flex-1 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              {/* Mobile Sidebar Hamburger Toggle */}
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+                className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all border border-gray-200 shrink-0"
+                title="Toggle sidebar menu"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
 
-            {activeTab === 'overview' ? (
-              <div>
-                <h1 className="dashboard-header__heading text-base md:text-xl font-black text-[#09233d] tracking-tight whitespace-normal">
-                  Welcome back, <span className="text-[#10b981]">{user.name}!</span>
-                </h1>
-                <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 truncate hidden sm:block">
-                  {viewAsEmployeeId
-                    ? `Currently inspecting employee dashboard for: ${employeeList.find((e) => e._id === viewAsEmployeeId)?.name || 'Selected Staff'}`
-                    : "Here's what's happening with your work today."}
-                </p>
-              </div>
-            ) : (
-              <div>
-                <h1 className="dashboard-header__heading text-sm md:text-lg font-black text-[#09233d] whitespace-normal">
-                  {getTabTitle(activeTab)}
-                </h1>
-                {activeTab === 'audit-logs' && (
-                  <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
-                    Track every change made across the platform.
+              {activeTab === 'overview' ? (
+                <div className="min-w-0 flex-1">
+                  <h1 className="dashboard-header__heading text-base md:text-xl font-black text-[#09233d] tracking-tight truncate">
+                    Welcome back, <span className="text-[#10b981]">{user.name}!</span>
+                  </h1>
+                  <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 truncate hidden sm:block">
+                    {viewAsEmployeeId
+                      ? `Currently inspecting employee dashboard for: ${employeeList.find((e) => e._id === viewAsEmployeeId)?.name || 'Selected Staff'}`
+                      : "Here's what's happening with your work today."}
                   </p>
-                )}
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2 min-w-0 flex-1">
+                  <h1 className="dashboard-header__heading text-xs sm:text-sm md:text-lg font-black text-[#09233d] truncate">
+                    {getTabTitle(activeTab)}
+                  </h1>
+
+                  {/* Mobile (+) Action Button locked right on the right side of page name on same line */}
+                  {activeTab === 'employees' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-add-employee-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Add New Employee"
+                    >
+                      +
+                    </button>
+                  )}
+                  {activeTab === 'projects' && subTab === 'projects' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-project-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Create New Project"
+                    >
+                      +
+                    </button>
+                  )}
+                  {activeTab === 'teams' && subTab === 'teams' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-team-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Create New Team"
+                    >
+                      +
+                    </button>
+                  )}
+                  {activeTab === 'teams' && subTab === 'tasks' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-task-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Create & Assign Task"
+                    >
+                      +
+                    </button>
+                  )}
+                  {activeTab === 'daily-plans' && (user?.role === 'teamlead' || user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-daily-plan-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Create Daily Work Plan"
+                    >
+                      +
+                    </button>
+                  )}
+                  {activeTab === 'users' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-user-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Create User Account"
+                    >
+                      +
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
           <div className="dashboard-header__controls flex items-center gap-3 text-xs" aria-label="Dashboard filters and view controls">
-            {/* Top Right Mobile (+) Action Button for Pages with Create/Add Actions */}
-            {activeTab === 'employees' && (user?.role === 'superior' || user?.role === 'superadmin') && (
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-add-employee-modal'))}
-                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
-                title="Add New Employee"
-              >
-                +
-              </button>
-            )}
-            {activeTab === 'projects' && subTab === 'projects' && (user?.role === 'superior' || user?.role === 'superadmin') && (
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-create-project-modal'))}
-                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
-                title="Create New Project"
-              >
-                +
-              </button>
-            )}
-            {activeTab === 'teams' && subTab === 'teams' && (user?.role === 'superior' || user?.role === 'superadmin') && (
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-create-team-modal'))}
-                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
-                title="Create New Team"
-              >
-                +
-              </button>
-            )}
-            {activeTab === 'teams' && subTab === 'tasks' && (user?.role === 'superior' || user?.role === 'superadmin') && (
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-create-task-modal'))}
-                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
-                title="Create & Assign Task"
-              >
-                +
-              </button>
-            )}
-            {activeTab === 'daily-plans' && (user?.role === 'teamlead' || user?.role === 'superior' || user?.role === 'superadmin') && (
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-create-daily-plan-modal'))}
-                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
-                title="Create Daily Work Plan"
-              >
-                +
-              </button>
-            )}
-            {activeTab === 'users' && (user?.role === 'superior' || user?.role === 'superadmin') && (
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-create-user-modal'))}
-                className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0"
-                title="Create User Account"
-              >
-                +
-              </button>
-            )}
             {activeTab === 'overview' && (user?.role === 'superadmin' || user?.role === 'superior') && employeeList.length > 0 && (
               <HeaderEmployeeSelector
                 employeeList={employeeList}
