@@ -97,10 +97,8 @@ html {
   }
 
   .chat-page__composer {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: env(safe-area-inset-bottom);
+    position: sticky;
+    bottom: 0;
     border-radius: 0 0 16px 16px;
   }
 }
