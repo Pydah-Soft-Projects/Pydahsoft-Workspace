@@ -278,6 +278,9 @@ export default function TeamChatPage({ currentUser }) {
               placeholder="Search staff, leads, or superadmin..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              inputMode="search"
+              autoComplete="off"
+              aria-label="Search contacts"
               className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-[#09233d] font-medium focus:bg-white focus:border-[#20b875] outline-none"
             />
             <svg className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,7 +363,7 @@ export default function TeamChatPage({ currentUser }) {
               <svg className="w-4 h-4 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Back</span>
+              <span>Chats</span>
             </button>
 
             <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-bold text-base md:text-lg shrink-0 shadow-2xs">
@@ -381,17 +384,17 @@ export default function TeamChatPage({ currentUser }) {
             <div className="truncate">
               <h3 className="text-xs md:text-sm font-black text-[#09233d] truncate">
                 {selectedRecipient.type === 'all'
-                  ? 'Everyone (Company Broadcast Channel)'
+                  ? 'Everyone'
                   : selectedRecipient.type === 'team'
-                  ? `Team Broadcast: ${selectedRecipient.data?.name}`
-                  : `Direct 1-on-1 Chat: ${selectedRecipient.data?.name}`}
+                  ? selectedRecipient.data?.name
+                  : selectedRecipient.data?.name}
               </h3>
               <p className="text-[10px] md:text-[11px] text-gray-500 font-medium truncate">
                 {selectedRecipient.type === 'all'
-                  ? 'All company staff receive and view messages in this channel'
+                  ? 'Company broadcast channel'
                   : selectedRecipient.type === 'team'
-                  ? `Broadcast to all members of ${selectedRecipient.data?.name}`
-                  : `Private conversation with ${selectedRecipient.data?.name} (${selectedRecipient.data?.role || 'Staff'})`}
+                  ? 'Team conversation'
+                  : `Private conversation · ${selectedRecipient.data?.role || 'Staff'}`}
               </p>
             </div>
           </div>
@@ -463,6 +466,10 @@ export default function TeamChatPage({ currentUser }) {
           <input
             type="text"
             value={newMessageText}
+            inputMode="text"
+            enterKeyHint="send"
+            autoComplete="off"
+            aria-label="Message"
             onChange={(e) => setNewMessageText(e.target.value)}
             placeholder={
               selectedRecipient.type === 'all'
