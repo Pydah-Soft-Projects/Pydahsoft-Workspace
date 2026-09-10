@@ -499,7 +499,7 @@ function DashboardLayout({ user, onLogout }) {
             </div>
         </header>
 
-        <div className={`dashboard-content p-3 sm:p-6 ${activeTab === 'chat' ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : ''}`}>
+        <div className={`dashboard-content p-3 sm:p-6 ${activeTab === 'chat' ? 'flex-1 min-h-0 flex flex-col overflow-y-auto md:overflow-hidden' : ''}`}>
           <Suspense fallback={<PageLoader />}>
             {visitedTabs.has('overview') && (
               <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
