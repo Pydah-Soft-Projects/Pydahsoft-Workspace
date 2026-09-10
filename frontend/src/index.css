@@ -30,7 +30,12 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Custom Modern Minimalist Scrollbar Theme */
+/* Universal Custom Scrollbar Theme - Visible across all views and browsers */
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: #cbd5e1 #f1f5f9 !important;
+}
+
 ::-webkit-scrollbar-button,
 *::-webkit-scrollbar-button {
   display: none !important;
@@ -43,178 +48,113 @@ body {
   background: transparent !important;
 }
 
-/* Main Dashboard Page Scrollbar (Blends with light dashboard background) */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Chrome, Edge, Safari Global Scrollbar */
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+  display: block !important;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+  border-radius: 6px !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 9999px;
+::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 6px !important;
+  border: 1.5px solid #f1f5f9 !important;
+  min-height: 36px !important;
   transition: background-color 0.2s ease;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #20b875;
+::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:hover {
+  background: #20b875 !important;
 }
 
-/* Sidebar Specific Scrollbar (Targets aside and all nested scrollable containers) */
+::-webkit-scrollbar-thumb:active,
+*::-webkit-scrollbar-thumb:active {
+  background: #169e63 !important;
+}
+
+/* Sidebar Specific Scrollbar */
 aside::-webkit-scrollbar,
 aside *::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px !important;
+  height: 6px !important;
 }
 
 aside::-webkit-scrollbar-track,
 aside *::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(0, 0, 0, 0.1) !important;
 }
 
 aside::-webkit-scrollbar-thumb,
 aside *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-radius: 6px !important;
 }
 
 aside::-webkit-scrollbar-thumb:hover,
 aside *::-webkit-scrollbar-thumb:hover {
-  background: #20b875;
-}
-
-/* Firefox Custom Scrollbars */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  background: #20b875 !important;
 }
 
 aside,
 aside * {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent !important;
 }
 
-/* Universal Light Theme Scrollbar - Works in All Views & Both Light/Dark Themes */
-*::-webkit-scrollbar {
-  width: 12px !important;
-  height: 12px !important;
-}
-
-*::-webkit-scrollbar-track {
-  background: linear-gradient(90deg, #f8fafc, #f1f5f9) !important;
-  border-radius: 10px !important;
-  border: 1px solid rgba(226, 232, 240, 0.5) !important;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #e2e8f0, #cbd5e1) !important;
-  border-radius: 10px !important;
-  min-height: 50px;
-  border: 2px solid #ffffff !important;
-  box-shadow: 0 2px 8px rgba(148, 163, 184, 0.2) !important;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #cbd5e1, #94a3b8) !important;
-  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.3) !important;
-  transform: scale(1.05);
-}
-
-*::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(135deg, #94a3b8, #64748b) !important;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-}
-
-*::-webkit-scrollbar-corner {
-  background: #f8fafc !important;
-  border-radius: 10px !important;
-}
-
-/* Enhanced styling for chat components */
+/* Chat and Page Containers - Smooth & Guaranteed Visible Scrollbars */
 .chat-page,
-.chat-page__contacts,
 .chat-page__stream,
-.dashboard-chat-box {
-  scrollbar-width: auto;
-  scrollbar-color: #e2e8f0 #f1f5f9;
-  scrollbar-gutter: stable;
+.dashboard-content,
+.dashboard-main {
+  scrollbar-width: thin !important;
+  scrollbar-color: #cbd5e1 #f1f5f9 !important;
 }
 
-/* Desktop/Laptop/Tablet proper layout */
-@media (min-width: 768px) {
-  .chat-page {
-    overflow: hidden !important;
-    min-width: auto !important;
-  }
-  
-  .dashboard-chat-box {
-    overflow: hidden !important;
-    min-width: auto !important;
-  }
-  
-  .chat-page__contacts {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    min-width: auto !important;
-  }
-}
-
-/* ONLY Mobile optimizations - Horizontal scrolling ONLY on mobile */
-@media (max-width: 767px) {
-  *::-webkit-scrollbar {
-    width: 10px !important;
-    height: 10px !important;
-  }
-  
-  *::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
-    border-radius: 8px !important;
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    box-shadow: 0 2px 6px rgba(148, 163, 184, 0.15) !important;
-  }
-  
-  *::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #e2e8f0, #cbd5e1) !important;
-    box-shadow: 0 3px 8px rgba(148, 163, 184, 0.25) !important;
-  }
-  
-  /* Chat page horizontal scroll ONLY on mobile */
-  .chat-page,
-  .dashboard-chat-box {
-    overflow-x: auto !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    min-width: 100vw !important;
-  }
-  
-  .chat-page__contacts {
-    overflow-x: auto !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    min-width: 100vw !important;
-  }
+.chat-page::-webkit-scrollbar,
+.chat-page__stream::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+  display: block !important;
 }
 
 /* Dark theme compatibility */
 @media (prefers-color-scheme: dark) {
   *::-webkit-scrollbar-track {
-    background: linear-gradient(90deg, rgba(248, 250, 252, 0.1), rgba(241, 245, 249, 0.1)) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(241, 245, 249, 0.1) !important;
   }
   
   *::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, rgba(226, 232, 240, 0.3), rgba(203, 213, 225, 0.3)) !important;
-    border: 2px solid rgba(255, 255, 255, 0.2) !important;
-    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1) !important;
+    background: rgba(203, 213, 225, 0.35) !important;
+    border: 1.5px solid transparent !important;
   }
   
   *::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, rgba(203, 213, 225, 0.4), rgba(148, 163, 184, 0.4)) !important;
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15) !important;
+    background: #20b875 !important;
   }
 }
+
+/* Utility to hide scrollbar while maintaining smooth touch swipe & scroll */
+.no-scrollbar::-webkit-scrollbar,
+*.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar,
+*.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+
+
