@@ -288,11 +288,11 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Role Filters Grid */}
-        <div className="grid grid-cols-4 w-full gap-1 p-2 md:p-3 border-b border-gray-200 bg-gray-50/50">
+        <div className="grid grid-cols-4 w-full gap-1 p-2 md:p-2.5 border-b border-gray-200 bg-gray-50/50">
           <button
             type="button"
             onClick={() => handleRoleFilterClick('all')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1.5 rounded-lg md:rounded-xl text-[11px] md:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
               roleFilter === 'all'
                 ? 'bg-[#09233d] text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -303,7 +303,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => handleRoleFilterClick('admin')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1.5 rounded-lg md:rounded-xl text-[11px] md:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
               roleFilter === 'admin'
                 ? 'bg-rose-600 text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -314,7 +314,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => handleRoleFilterClick('lead')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1 rounded-lg md:rounded-xl text-[10.5px] md:text-[11px] lg:text-xs font-extrabold text-center transition-all cursor-pointer whitespace-nowrap overflow-hidden ${
               roleFilter === 'lead'
                 ? 'bg-purple-600 text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -325,7 +325,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => handleRoleFilterClick('employee')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1 rounded-lg md:rounded-xl text-[10.5px] md:text-[11px] lg:text-xs font-extrabold text-center transition-all cursor-pointer whitespace-nowrap overflow-hidden ${
               roleFilter === 'employee'
                 ? 'bg-[#20b875] text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
