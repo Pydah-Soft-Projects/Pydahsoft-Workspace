@@ -19,23 +19,38 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
 
   const messagesEndRef = useRef(null);
   const chatStreamRef = useRef(null);
-  const [viewportHeight, setViewportHeight] = useState(null);
 
-  // Dynamic visualViewport listener for mobile keyboard resizing
+  const openConversation = (recipient) => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    setSelectedRecipient(recipient);
+    setMobileView('chat');
+  };
+
+  const closeKeyboard = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    };
+  };
+
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.visualViewport) return;
-    const updateHeight = () => {
-      setViewportHeight(window.visualViewport.height);
-      window.scrollTo(0, 0);
-    };
-    window.visualViewport.addEventListener('resize', updateHeight);
-    window.visualViewport.addEventListener('scroll', updateHeight);
-    updateHeight();
+    if (mobileView !== 'chat') return undefined;
+
+    const root = document.documentElement;
+    const body = document.body;
+    const previousRootOverflow = root.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+
+    root.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    window.scrollTo(0, 0);
+
     return () => {
-      window.visualViewport.removeEventListener('resize', updateHeight);
-      window.visualViewport.removeEventListener('scroll', updateHeight);
+      root.style.overflow = previousRootOverflow;
+      body.style.overflow = previousBodyOverflow;
     };
-  }, []);
+  }, [mobileView]);
 
   // Fetch staff contacts with ?purpose=chat so all roles are included for every user
   useEffect(() => {
@@ -171,7 +186,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
   };
 
   return (
-    <div className="dashboard-chat-box min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row h-[calc(100dvh-120px)] md:h-[580px]">
+    <div className={`dashboard-chat-box ${mobileView === 'chat' ? 'dashboard-chat-box--active' : ''} min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row h-[600px] md:h-[580px]`}>
       {/* LEFT PANEL: Team Messaging Hub Contact Directory */}
       <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto no-scrollbar md:scrollbar-thin`}>
         {/* Hub Header (Desktop only) */}
@@ -187,10 +202,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
         <div className="hidden md:block p-3 border-b border-gray-200">
           <button
             type="button"
-            onClick={() => {
-              setSelectedRecipient({ type: 'all', data: null });
-              setMobileView('chat');
-            }}
+            onClick={() => openConversation({ type: 'all', data: null })}
             className={`w-full p-3 rounded-2xl font-bold text-xs text-left transition-all flex items-center justify-between cursor-pointer border ${
               selectedRecipient.type === 'all'
                 ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-sm'
@@ -217,61 +229,41 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
         </div>
 
         {/* Teams List (Team Broadcasts) */}
-        <div className="px-3 pt-2.5 pb-1 border-b border-gray-200">
-          <div className="px-1 mb-1 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-            TEAMS & DEPARTMENTS ({teamsList.length})
-          </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 md:py-0 md:block md:space-y-1">
-            {/* Mobile-only "Everyone" pill button */}
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedRecipient({ type: 'all', data: null });
-                setMobileView('chat');
-              }}
-              className={`md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
-                selectedRecipient.type === 'all'
-                  ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
-                  : 'bg-white hover:bg-emerald-50/50 text-[#09233d] border-gray-200 shadow-2xs'
-              }`}
-            >
-              <svg className="w-3.5 h-3.5 shrink-0 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-              </svg>
-              <span className="truncate">Everyone</span>
-            </button>
+        {teamsList.length > 0 && (
+          <div className="px-3 pt-2.5 pb-1 border-b border-gray-200">
+            <div className="px-1 mb-1 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+              TEAMS & DEPARTMENTS ({teamsList.length})
+            </div>
+            <div className="space-y-1 max-h-28 overflow-y-auto">
+              {teamsList.map((team) => {
+                const isSelected =
+                  selectedRecipient.type === 'team' &&
+                  selectedRecipient.data?._id === team._id;
 
-            {teamsList.map((team) => {
-              const isSelected =
-                selectedRecipient.type === 'team' &&
-                selectedRecipient.data?._id === team._id;
-
-              return (
-                <button
-                  key={team._id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedRecipient({ type: 'team', data: team });
-                    setMobileView('chat');
-                  }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg md:rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 md:w-full md:p-2 md:flex md:items-center md:justify-between border ${
-                    isSelected
-                      ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
-                      : 'bg-white hover:bg-emerald-50/50 text-[#09233d] border-gray-200 shadow-2xs'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 md:gap-2 truncate">
-                    <svg className="w-3.5 md:w-4 h-3.5 md:h-4 shrink-0 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    <span className="truncate text-xs font-bold text-[#09233d]">{team.name}</span>
-                  </div>
-                  <span className="hidden md:inline-block text-[9px] font-extrabold px-1.5 py-0.2 rounded-md bg-emerald-100 text-[#20b875]">
-                    Team
-                  </span>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={team._id}
+                    type="button"
+                    onClick={() => openConversation({ type: 'team', data: team })}
+                    className={`w-full p-2 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
+                      isSelected
+                        ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
+                        : 'bg-white hover:bg-emerald-50/50 text-[#09233d] border-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <svg className="w-4 h-4 shrink-0 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      <span className="truncate text-xs font-bold text-[#09233d]">{team.name}</span>
+                    </div>
+                    <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-md bg-emerald-100 text-[#20b875]">
+                      Team
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -355,10 +347,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
               <button
                 key={emp._id}
                 type="button"
-                onClick={() => {
-                  setSelectedRecipient({ type: 'individual', data: emp });
-                  setMobileView('chat');
-                }}
+                onClick={() => openConversation({ type: 'individual', data: emp })}
                 className={`w-full p-3 rounded-2xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
                   isSelected
                     ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
@@ -400,8 +389,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
 
       {/* RIGHT PANEL: Chat Stream & Message Input */}
       <div
-        style={viewportHeight && mobileView === 'chat' && typeof window !== 'undefined' && window.innerWidth < 768 ? { height: `${viewportHeight}px`, top: `${window.visualViewport?.offsetTop || 0}px` } : {}}
-        className={`${mobileView === 'list' ? 'hidden md:flex md:flex-1' : 'fixed inset-0 z-50 bg-white flex flex-col h-full w-full md:static md:z-auto md:flex-1'} flex-col bg-white h-full overflow-hidden w-full`}
+        className={`${mobileView === 'list' ? 'hidden md:flex md:flex-1' : 'flex'} min-h-0 flex-1 flex-col bg-white h-full overflow-hidden w-full`}
       >
         {/* Active Conversation Header */}
         <div className="p-3 md:p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
@@ -409,8 +397,11 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
             {/* Mobile Back Button */}
             <button
               type="button"
-              onClick={() => setMobileView('list')}
-              className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all shrink-0 cursor-pointer flex items-center justify-center border border-gray-200"
+              onClick={() => {
+                closeKeyboard();
+                setMobileView('list');
+              }}
+              className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1 font-bold text-xs border border-gray-200"
               title="Back to contacts list"
               aria-label="Back to contacts list"
             >
@@ -487,7 +478,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
         </div>
 
         {/* Message Stream */}
-        <div ref={chatStreamRef} className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-3 bg-gray-50 min-h-0">
+        <div ref={chatStreamRef} className="min-h-0 flex-1 p-4 overflow-y-auto overscroll-contain space-y-3 bg-slate-50/50">
           {loading && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
               Loading chat stream...
@@ -559,6 +550,13 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
             type="text"
             value={newMessageText}
             onChange={(e) => setNewMessageText(e.target.value)}
+            onFocus={() => {
+              setTimeout(() => {
+                if (chatStreamRef.current) {
+                  chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
+                }
+              }, 100);
+            }}
             placeholder={
               selectedRecipient.type === 'all'
                 ? 'Type a broadcast message to everyone...'

@@ -67,7 +67,10 @@ const getTeamLeadDashboard = async (teamLeadId) => {
   const teams = await Team.find({ teamLead: teamLeadId }).populate('members', 'name username employeeId designation status');
   const teamIds = teams.map(t => t._id);
 
-  const projects = await Project.find({ assignedTeam: { $in: teamIds } });
+  const [projects, todayPlans] = await Promise.all([
+    Project.find({ assignedTeam: { $in: teamIds } }),
+    getTodayPlansForTeamLead(teamLeadId)
+  ]);
   const projectIds = projects.map(p => p._id);
 
   const tasks = await Task.find({
@@ -87,11 +90,6 @@ const getTeamLeadDashboard = async (teamLeadId) => {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const todayPlans = await DailyPlan.find({
-    teamLead: teamLeadId,
-    date: { $gte: today, $lt: tomorrow }
-  }).populate('employee', 'name username').populate('tasks.task', 'title status');
-
   return {
     managedTeams: teams,
     assignedProjects: projects,
@@ -107,19 +105,26 @@ const getTeamLeadDashboard = async (teamLeadId) => {
   };
 };
 
-const getEmployeeDashboard = async (employeeId) => {
-  const employee = await User.findById(employeeId).select('-password');
-  if (!employee) {
-    throw new Error('Employee not found');
-  }
-
+const getTodayPlansForTeamLead = (teamLeadId) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // Parallelize database queries for fast response
-  const [allTasks, performance, activeTimer, todayPlan, timeEntries] = await Promise.all([
+  return DailyPlan.find({
+    teamLead: teamLeadId,
+    date: { $gte: today, $lt: tomorrow }
+  }).populate('employee', 'name username').populate('tasks.task', 'title status');
+};
+
+const getEmployeeDashboard = async (employeeId) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const [employee, allTasks, performance, activeTimer, todayPlan, timeEntries] = await Promise.all([
+    User.findById(employeeId).select('-password'),
     Task.find({ assignedTo: employeeId })
       .populate('project', 'name projectId')
       .populate('module', 'name')
@@ -139,6 +144,10 @@ const getEmployeeDashboard = async (employeeId) => {
       startTime: { $gte: today, $lt: tomorrow }
     })
   ]);
+
+  if (!employee) {
+    throw new Error('Employee not found');
+  }
 
   // Task Status counts
   const totalTasks = allTasks.length;

@@ -14,24 +14,6 @@ export default function TeamChatPage({ currentUser }) {
   const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
 
   const messagesEndRef = useRef(null);
-  const chatStreamRef = useRef(null);
-  const [viewportHeight, setViewportHeight] = useState(null);
-
-  // Dynamic visualViewport listener for mobile keyboard resizing
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.visualViewport) return;
-    const updateHeight = () => {
-      setViewportHeight(window.visualViewport.height);
-      window.scrollTo(0, 0);
-    };
-    window.visualViewport.addEventListener('resize', updateHeight);
-    window.visualViewport.addEventListener('scroll', updateHeight);
-    updateHeight();
-    return () => {
-      window.visualViewport.removeEventListener('resize', updateHeight);
-      window.visualViewport.removeEventListener('scroll', updateHeight);
-    };
-  }, []);
 
   // Fetch all staff members & teams
   useEffect(() => {
@@ -68,11 +50,9 @@ export default function TeamChatPage({ currentUser }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll inside chat stream only (prevents full page jump on mobile)
+  // Auto-scroll to bottom of chat
   useEffect(() => {
-    if (chatStreamRef.current) {
-      chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, selectedRecipient]);
 
   // Filter messages for active selection
@@ -441,6 +421,7 @@ export default function TeamChatPage({ currentUser }) {
               <svg className="w-4 h-4 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
+              <span>Back</span>
             </button>
 
             <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-black text-sm md:text-base shrink-0 shadow-sm">
@@ -453,23 +434,25 @@ export default function TeamChatPage({ currentUser }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               ) : (
-                selectedRecipient.data?.name?.charAt(0).toUpperCase() || 'U'
+                <svg className="w-5 h-5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
               )}
             </div>
             <div className="truncate">
               <h3 className="text-sm md:text-base font-black text-[#09233d] truncate">
                 {selectedRecipient.type === 'all'
-                  ? 'Everyone'
+                  ? 'Everyone (Company Broadcast Channel)'
                   : selectedRecipient.type === 'team'
-                  ? selectedRecipient.data?.name
-                  : selectedRecipient.data?.name}
+                  ? `Team Broadcast: ${selectedRecipient.data?.name}`
+                  : `Direct 1-on-1 Chat: ${selectedRecipient.data?.name}`}
               </h3>
               <p className="text-xs md:text-sm text-gray-500 font-medium truncate">
                 {selectedRecipient.type === 'all'
-                  ? 'Company broadcast channel'
+                  ? 'All company staff receive and view messages in this channel'
                   : selectedRecipient.type === 'team'
-                  ? 'Team conversation'
-                  : `Private conversation · ${selectedRecipient.data?.role || 'Staff'}`}
+                  ? `Broadcast to all members of ${selectedRecipient.data?.name}`
+                  : `Private conversation with ${selectedRecipient.data?.name} (${selectedRecipient.data?.role || 'Staff'})`}
               </p>
             </div>
           </div>
