@@ -14,6 +14,7 @@ export default function TeamChatPage({ currentUser }) {
   const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
 
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   // Fetch all staff members & teams
   useEffect(() => {
@@ -52,7 +53,13 @@ export default function TeamChatPage({ currentUser }) {
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const messagesContainer = messagesContainerRef.current;
+    if (messagesContainer) {
+      messagesContainer.scrollTo({
+        top: messagesContainer.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
   }, [messages, selectedRecipient]);
 
   // Filter messages for active selection
@@ -137,9 +144,9 @@ export default function TeamChatPage({ currentUser }) {
   return (
     <div className="chat-page h-full min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row">
       {/* LEFT PANEL: Persons & Group Conversations List */}
-      <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto md:overflow-hidden`}>
+      <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} chat-page__contacts w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto md:overflow-hidden`}>
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 bg-white">
+        <div className="chat-page__contacts-header p-4 border-b border-gray-200 bg-white">
           <h2 className="text-base font-black text-[#09233d] flex items-center gap-2">
             Team Messaging Hub
             <span className="w-2.5 h-2.5 rounded-full bg-[#20b875] animate-pulse" />
@@ -271,7 +278,7 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Staff Search Box */}
-        <div className="p-3 border-b border-gray-200 bg-white shrink-0">
+        <div className="chat-page__search p-3 border-b border-gray-200 bg-white shrink-0">
           <div className="relative">
             <input
               type="text"
@@ -434,7 +441,7 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Message Stream */}
-        <div className="chat-page__messages min-h-0 flex-1 p-4 overflow-y-auto overscroll-contain space-y-3 bg-slate-50/50">
+        <div ref={messagesContainerRef} className="chat-page__messages min-h-0 flex-1 p-4 overflow-y-auto overscroll-contain space-y-3 bg-slate-50/50">
           {loadingMessages && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
               Loading chat history...

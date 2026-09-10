@@ -45,6 +45,26 @@ html {
   .chat-main .chat-page {
     position: relative;
     height: 100%;
+    overflow: hidden;
+  }
+
+  .chat-page__contacts {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-page__contacts-header,
+  .chat-page__search {
+    position: sticky;
+    z-index: 20;
+  }
+
+  .chat-page__contacts-header {
+    top: 0;
+  }
+
+  .chat-page__search {
+    top: 73px;
   }
 
   .chat-page__messages {
