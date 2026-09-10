@@ -397,7 +397,7 @@ export default function TeamChatPage({ currentUser }) {
             </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0">
             <button
               type="button"
               className="p-2 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors"
@@ -434,7 +434,7 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Message Stream */}
-        <div className="min-h-0 flex-1 p-4 overflow-y-auto overscroll-contain space-y-3 bg-slate-50/50">
+        <div className="chat-page__messages min-h-0 flex-1 p-4 overflow-y-auto overscroll-contain space-y-3 bg-slate-50/50">
           {loadingMessages && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
               Loading chat history...
