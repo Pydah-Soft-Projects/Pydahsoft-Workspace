@@ -156,10 +156,22 @@ export default function AuditLogsView() {
               ))}
             </select>
             <input
-              type="date"
+              type={dateFilter ? "date" : "text"}
               value={dateFilter}
               onChange={(event) => setDateFilter(event.target.value)}
-              className="h-9 col-span-1 lg:w-44 bg-white border border-gray-200 rounded-xl px-3 text-xs font-semibold text-gray-800 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs cursor-pointer"
+              onFocus={(event) => {
+                event.target.type = 'date';
+                try { event.target.showPicker?.(); } catch {}
+              }}
+              onClick={(event) => {
+                event.target.type = 'date';
+                try { event.target.showPicker?.(); } catch {}
+              }}
+              onBlur={(event) => {
+                if (!event.target.value) event.target.type = 'text';
+              }}
+              placeholder="Select date"
+              className="h-9 col-span-1 lg:w-36 bg-white border border-gray-200 rounded-xl px-2.5 text-xs font-semibold text-gray-800 placeholder-gray-400 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs cursor-pointer"
             />
             {(search || userFilter || actionFilter || entityFilter || dateFilter) && (
               <button
