@@ -53,7 +53,7 @@ export default function Login({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7fcf9] text-[#09233d] flex flex-col justify-between relative overflow-hidden font-sans">
+    <div className="h-screen sm:min-h-screen bg-[#f7fcf9] text-[#09233d] flex flex-col justify-between relative overflow-hidden font-sans">
       <div className="login-background" aria-hidden="true">
         <div className="login-background__grid" />
         <div className="login-background__ring login-background__ring--one" />
@@ -71,7 +71,7 @@ export default function Login({ onLoginSuccess }) {
       <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[#dff7e9] opacity-70 blur-2xl" />
       <div className="pointer-events-none absolute -left-28 bottom-10 h-96 w-96 rounded-full bg-[#e5f2ee] opacity-80 blur-2xl" />
 
-      <header className="login-header relative z-10 flex w-full items-center justify-between px-6 py-6 lg:px-12">
+      <header className="login-header relative z-10 flex w-full items-center justify-between px-6 py-3 sm:py-6 lg:px-12 shrink-0">
         <Link to="/" className="flex items-center gap-2.5 text-left focus:outline-none group">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#27b878] text-xl font-black text-white shadow-[0_8px_20px_rgba(39,184,120,0.25)] transition-transform group-hover:scale-105">
             &lt;&gt;
@@ -85,10 +85,10 @@ export default function Login({ onLoginSuccess }) {
         </Link>
       </header>
 
-      <main className="login-stage relative z-10 mx-auto my-auto flex w-full max-w-5xl flex-col items-center justify-center px-4 py-4 sm:py-8 sm:px-6 lg:px-12">
+      <main className="login-stage relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center justify-center px-4 py-1 sm:py-8 sm:px-6 lg:px-12 flex-1 min-h-0 overflow-hidden">
         {/* Mobile Vector Illustration Banner (shown on mobile view) */}
-        <div className="sm:hidden w-full flex justify-center items-center pt-2 pb-1 px-4 relative z-10">
-          <div className="relative w-full max-w-[260px] h-28 flex items-end justify-center">
+        <div className="sm:hidden w-full flex justify-center items-center pt-0 pb-0 px-4 relative z-10 shrink-0 scale-90 origin-bottom">
+          <div className="relative w-full max-w-[260px] h-24 flex items-end justify-center">
             {/* Light Bulb floating top left */}
             <div className="absolute top-0 left-12 bg-[#e6f7ef] p-1.5 rounded-full text-[#20b875] shadow-2xs">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -106,7 +106,7 @@ export default function Login({ onLoginSuccess }) {
 
             {/* Plant Pot on Left */}
             <div className="absolute bottom-1 left-2 flex flex-col items-center">
-              <svg className="w-12 h-14" viewBox="0 0 48 56" fill="none">
+              <svg className="w-10 h-12" viewBox="0 0 48 56" fill="none">
                 <path d="M24 28C24 28 14 20 12 12C10 4 22 2 24 14C26 2 38 4 36 12C34 20 24 28 24 28Z" fill="#34d399" />
                 <path d="M24 28C24 28 8 26 4 18C0 10 12 8 18 18C24 28 24 28 24 28Z" fill="#10b981" />
                 <path d="M24 28C24 28 40 26 44 18C48 10 36 8 30 18C24 28 24 28 24 28Z" fill="#059669" />
@@ -116,24 +116,24 @@ export default function Login({ onLoginSuccess }) {
 
             {/* Laptop with </> in Center */}
             <div className="relative z-10 flex flex-col items-center">
-              <div className="w-32 h-20 bg-[#09233d] rounded-t-xl border-4 border-slate-700 flex items-center justify-center p-1.5 shadow-md">
+              <div className="w-28 h-16 bg-[#09233d] rounded-t-xl border-4 border-slate-700 flex items-center justify-center p-1 shadow-md">
                 <div className="w-full h-full bg-slate-900 rounded flex items-center justify-center border border-slate-800">
-                  <span className="text-[#20b875] font-mono font-black text-lg tracking-widest">&lt;/&gt;</span>
+                  <span className="text-[#20b875] font-mono font-black text-base tracking-widest">&lt;/&gt;</span>
                 </div>
               </div>
-              <div className="w-40 h-2.5 bg-slate-300 rounded-b-lg border-t border-slate-400 shadow-xs flex justify-center">
-                <div className="w-7 h-1 bg-slate-400 rounded-full mt-0.5" />
+              <div className="w-36 h-2 bg-slate-300 rounded-b-lg border-t border-slate-400 shadow-xs flex justify-center">
+                <div className="w-6 h-0.5 bg-slate-400 rounded-full mt-0.5" />
               </div>
             </div>
 
             {/* Coffee Cup with Steam on Right */}
             <div className="absolute bottom-1 right-2 flex flex-col items-center">
               <div className="flex gap-1 mb-0.5 opacity-60">
-                <div className="w-0.5 h-2 bg-[#20b875] rounded-full animate-pulse" />
-                <div className="w-0.5 h-3 bg-[#20b875] rounded-full animate-pulse delay-100" />
+                <div className="w-0.5 h-1.5 bg-[#20b875] rounded-full animate-pulse" />
+                <div className="w-0.5 h-2.5 bg-[#20b875] rounded-full animate-pulse delay-100" />
               </div>
-              <div className="relative w-6 h-7 bg-[#20b875] rounded-b-md rounded-t-xs">
-                <div className="absolute -right-2 top-1.5 w-2 h-3.5 border-2 border-[#20b875] rounded-r-md" />
+              <div className="relative w-5 h-6 bg-[#20b875] rounded-b-md rounded-t-xs">
+                <div className="absolute -right-1.5 top-1 w-1.5 h-3 border-2 border-[#20b875] rounded-r-md" />
               </div>
             </div>
           </div>
@@ -155,45 +155,45 @@ export default function Login({ onLoginSuccess }) {
             <span className="login-prop__lock-body"><i /></span>
           </div>
 
-          <div className="login-card relative rounded-3xl border border-white/80 bg-white/95 sm:bg-white/90 p-6 sm:p-8 shadow-[0_20px_60px_rgba(15,48,34,0.08)] backdrop-blur-md w-full max-w-sm sm:max-w-md">
+          <div className="login-card relative rounded-3xl border border-white/80 bg-white/95 sm:bg-white/90 p-5 sm:p-8 shadow-[0_20px_60px_rgba(15,48,34,0.08)] backdrop-blur-md w-full max-w-sm sm:max-w-md">
             <Link
               to="/"
-              className="absolute top-5 left-5 flex h-9 w-9 items-center justify-center rounded-full border border-[#d1e8dc] bg-white text-[#09233d] shadow-xs transition-all hover:bg-[#edf9f2] hover:scale-105"
+              className="absolute top-4 left-4 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-[#d1e8dc] bg-white text-[#09233d] shadow-xs transition-all hover:bg-[#edf9f2] hover:scale-105"
               aria-label="Back to landing page"
             >
-              <Icon name="arrowLeft" className="w-4 h-4" />
+              <Icon name="arrowLeft" className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </Link>
 
-            <div className="text-center pt-2">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f7ef] text-[#169a61]">
+            <div className="text-center pt-1 sm:pt-2">
+              <div className="mx-auto mb-2 sm:mb-3 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-[#e6f7ef] text-[#169a61]">
                 {/* Desktop Lock Icon */}
                 <svg className="hidden sm:block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 {/* Mobile User Profile Symbol */}
-                <svg className="sm:hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="sm:hidden h-5 h-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-black tracking-tight text-[#09233d]">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#09233d]">
                 <span className="hidden sm:inline">System </span>Login
               </h1>
             </div>
 
             {error && (
-              <div className="mt-4 rounded-xl bg-red-50 border border-red-200 p-3 text-xs font-semibold text-red-600">
+              <div className="mt-3 rounded-xl bg-red-50 border border-red-200 p-2.5 text-xs font-semibold text-red-600">
                 {error}
               </div>
             )}
             {successMsg && (
-              <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs font-semibold text-emerald-700">
+              <div className="mt-3 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-xs font-semibold text-emerald-700">
                 {successMsg}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            <form onSubmit={handleSubmit} className="mt-3 sm:mt-5 space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#43566a] mb-1.5">
+                <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#43566a] mb-1">
                   USERNAME
                 </label>
                 <input
@@ -202,12 +202,12 @@ export default function Login({ onLoginSuccess }) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter username"
-                  className="w-full rounded-2xl sm:rounded-xl border-0 sm:border border-[#d2e6dc] bg-[#eef4f8] sm:bg-[#fbfdfc] px-4 py-3 text-sm text-[#09233d] placeholder-[#9cb0bd] focus:border-[#20b875] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#20b875]/20"
+                  className="w-full rounded-2xl sm:rounded-xl border-0 sm:border border-[#d2e6dc] bg-[#eef4f8] sm:bg-[#fbfdfc] px-3.5 py-2.5 text-xs sm:text-sm text-[#09233d] placeholder-[#9cb0bd] focus:border-[#20b875] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#20b875]/20"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#43566a] mb-1.5">
+                <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#43566a] mb-1">
                   PASSWORD
                 </label>
                 <input
@@ -216,14 +216,14 @@ export default function Login({ onLoginSuccess }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-2xl sm:rounded-xl border-0 sm:border border-[#d2e6dc] bg-[#eef4f8] sm:bg-[#fbfdfc] px-4 py-3 text-sm text-[#09233d] placeholder-[#9cb0bd] focus:border-[#20b875] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#20b875]/20"
+                  className="w-full rounded-2xl sm:rounded-xl border-0 sm:border border-[#d2e6dc] bg-[#eef4f8] sm:bg-[#fbfdfc] px-3.5 py-2.5 text-xs sm:text-sm text-[#09233d] placeholder-[#9cb0bd] focus:border-[#20b875] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#20b875]/20"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 w-full rounded-2xl sm:rounded-xl bg-[#20b875] py-3.5 text-sm font-bold text-white shadow-[0_10px_20px_rgba(32,184,117,0.25)] transition-all hover:bg-[#159e63] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
+                className="mt-1 w-full rounded-2xl sm:rounded-xl bg-[#20b875] py-3 text-xs sm:text-sm font-bold text-white shadow-[0_10px_20px_rgba(32,184,117,0.25)] transition-all hover:bg-[#159e63] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
               >
                 {loading ? 'Authenticating...' : <span className="inline-flex items-center justify-center gap-1.5 w-full">Sign In to Workspace <Icon name="arrowRight" className="w-3.5 h-3.5" /></span>}
               </button>
@@ -238,7 +238,7 @@ export default function Login({ onLoginSuccess }) {
         </div>
       </main>
 
-      <footer className="relative z-10 py-4 text-center text-xs font-medium text-[#79919f]">
+      <footer className="relative z-10 py-2 sm:py-4 text-center text-xs font-medium text-[#79919f] shrink-0">
         PydahSoft &copy; 2026. All rights reserved.
       </footer>
     </div>
