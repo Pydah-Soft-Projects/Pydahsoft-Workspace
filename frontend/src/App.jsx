@@ -238,6 +238,24 @@ function DashboardLayout({ user, onLogout }) {
     document.title = tabDocumentTitles[activeTab] || 'PydahSoft | Dashboard';
   }, [activeTab]);
 
+  const getMobileTabTitle = (tab) => {
+    switch (tab) {
+      case 'overview': return 'Overview';
+      case 'chat': return 'Team Chat';
+      case 'users': return 'Users';
+      case 'employees': return 'Employees';
+      case 'projects': return 'Projects';
+      case 'teams': return 'Teams';
+      case 'time-tracker': return 'Time Tracker';
+      case 'reviews': return 'Reviews';
+      case 'daily-plans': return 'Daily Plans';
+      case 'analytics': return 'Analytics';
+      case 'audit-logs': return 'Audit Logs';
+      case 'settings': return 'Settings';
+      default: return 'Dashboard';
+    }
+  };
+
   const getTabTitle = (tab) => {
     switch (tab) {
       case 'overview': return 'Dashboard Overview';
@@ -280,46 +298,105 @@ function DashboardLayout({ user, onLogout }) {
 
       <main className={`flex-1 h-screen w-full ${activeTab === 'chat' ? 'chat-main overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
         <header className="dashboard-header bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3.5 flex flex-wrap gap-3 justify-between items-center sticky top-0 z-30 shadow-xs">
-          <div className="dashboard-header__title flex items-center gap-3">
-            {/* Mobile Sidebar Hamburger Toggle */}
-            <button
-              type="button"
-              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-              className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all border border-gray-200 shrink-0"
-              title="Toggle sidebar menu"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+          <div className="dashboard-header__title flex items-center justify-between gap-3 flex-1 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              {/* Mobile Sidebar Hamburger Toggle */}
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+                className="md:hidden p-2 text-gray-600 hover:text-[#09233d] hover:bg-gray-100 rounded-xl transition-all border border-gray-200 shrink-0"
+                title="Toggle sidebar menu"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
 
-            {activeTab === 'overview' ? (
-              <div>
-                <h1 className="dashboard-header__heading text-base md:text-xl font-black text-[#09233d] tracking-tight whitespace-normal">
-                  Welcome back, <span className="text-[#10b981]">{user.name}!</span>
-                </h1>
-                <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 truncate hidden sm:block">
-                  {viewAsEmployeeId
-                    ? `Currently inspecting employee dashboard for: ${employeeList.find((e) => e._id === viewAsEmployeeId)?.name || 'Selected Staff'}`
-                    : "Here's what's happening with your work today."}
-                </p>
-              </div>
-            ) : (
-              <div>
-                <h1 className="dashboard-header__heading text-sm md:text-lg font-black text-[#09233d] whitespace-normal">
-                  {getTabTitle(activeTab)}
-                </h1>
-                {activeTab === 'audit-logs' && (
-                  <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
-                    Track every change made across the platform.
+              {activeTab === 'overview' ? (
+                <div className="min-w-0 flex-1">
+                  <h1 className="dashboard-header__heading text-base md:text-xl font-black text-[#09233d] tracking-tight truncate">
+                    Welcome back, <span className="text-[#10b981]">{user.name}!</span>
+                  </h1>
+                  <p className="text-[11px] md:text-xs text-gray-500 font-medium mt-0.5 truncate hidden sm:block">
+                    {viewAsEmployeeId
+                      ? `Currently inspecting employee dashboard for: ${employeeList.find((e) => e._id === viewAsEmployeeId)?.name || 'Selected Staff'}`
+                      : "Here's what's happening with your work today."}
                   </p>
-                )}
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2 min-w-0 flex-1">
+                  <h1 className="dashboard-header__heading text-xs sm:text-sm md:text-lg font-black text-[#09233d] truncate">
+                    {getTabTitle(activeTab)}
+                  </h1>
+
+                  {/* Mobile (+) Action Button locked right on the right side of page name on same line */}
+                  {activeTab === 'employees' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-add-employee-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Add New Employee"
+                    >
+                      +
+                    </button>
+                  )}
+                  {activeTab === 'projects' && subTab === 'projects' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-project-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Create New Project"
+                    >
+                      +
+                    </button>
+                  )}
+                  {activeTab === 'teams' && subTab === 'teams' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-team-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Create New Team"
+                    >
+                      +
+                    </button>
+                  )}
+                  {activeTab === 'teams' && subTab === 'tasks' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-task-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Create & Assign Task"
+                    >
+                      +
+                    </button>
+                  )}
+                  {activeTab === 'daily-plans' && (user?.role === 'teamlead' || user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-daily-plan-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Create Daily Work Plan"
+                    >
+                      +
+                    </button>
+                  )}
+                  {activeTab === 'users' && (user?.role === 'superior' || user?.role === 'superadmin') && (
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-create-user-modal'))}
+                      className="md:hidden w-7 h-7 bg-[#20b875] hover:bg-[#169e63] text-white rounded-lg font-black text-sm flex items-center justify-center shadow-xs active:scale-95 shrink-0 ml-auto"
+                      title="Create User Account"
+                    >
+                      +
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
-          <div className="dashboard-header__controls flex items-center gap-3 text-xs" aria-label="Dashboard filters and view controls">
+          <div className="dashboard-header__controls flex items-center gap-3 text-xs w-full sm:w-auto" aria-label="Dashboard filters and view controls">
             {activeTab === 'overview' && (user?.role === 'superadmin' || user?.role === 'superior') && employeeList.length > 0 && (
               <HeaderEmployeeSelector
                 employeeList={employeeList}
@@ -328,98 +405,98 @@ function DashboardLayout({ user, onLogout }) {
               />
             )}
             {activeTab === 'projects' && (
-              <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
+              <div className="w-full sm:w-auto bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
                 <button
                   onClick={() => setSubTab('projects')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`flex-1 sm:flex-initial justify-center px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                     subTab === 'projects'
                       ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
                       : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
                   }`}
                 >
-                  <svg className="w-3.5 h-3.5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                   </svg>
-                  Projects Lifecycle
+                  <span className="truncate">Projects Lifecycle</span>
                 </button>
                 <button
                   onClick={() => setSubTab('modules')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`flex-1 sm:flex-initial justify-center px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                     subTab === 'modules'
                       ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
                       : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
                   }`}
                 >
-                  <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
-                  Modules Breakdown
+                  <span className="truncate">Modules Breakdown</span>
                 </button>
               </div>
             )}
 
-            {activeTab === 'teams' && (
-              <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
-                <button
-                  onClick={() => setSubTab('teams')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    subTab === 'teams'
-                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                  Teams & Roster
-                </button>
-                <button
-                  onClick={() => setSubTab('tasks')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    subTab === 'tasks'
-                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                  </svg>
-                  Tasks Management
-                </button>
-              </div>
-            )}
+              {activeTab === 'teams' && (
+                <div className="w-full sm:w-auto bg-slate-100/90 p-1 rounded-xl sm:rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
+                  <button
+                    onClick={() => setSubTab('teams')}
+                    className={`flex-1 sm:flex-initial justify-center px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      subTab === 'teams'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span className="truncate">Teams & Roster</span>
+                  </button>
+                  <button
+                    onClick={() => setSubTab('tasks')}
+                    className={`flex-1 sm:flex-initial justify-center px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      subTab === 'tasks'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    <span className="truncate">Tasks Management</span>
+                  </button>
+                </div>
+              )}
 
-            {activeTab === 'analytics' && (
-              <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
-                <button
-                  onClick={() => setSubTab('analytics')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    subTab === 'analytics'
-                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                  Performance Analytics
-                </button>
-                <button
-                  onClick={() => setSubTab('reports')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    subTab === 'reports'
-                      ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
-                      : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Executive Reports
-                </button>
-              </div>
-            )}
-          </div>
+              {activeTab === 'analytics' && (
+                <div className="w-full sm:w-auto bg-slate-100/90 p-1 rounded-xl sm:rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
+                  <button
+                    onClick={() => setSubTab('analytics')}
+                    className={`flex-1 sm:flex-initial justify-center px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      subTab === 'analytics'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#20b875] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    <span className="truncate">Performance Analytics</span>
+                  </button>
+                  <button
+                    onClick={() => setSubTab('reports')}
+                    className={`flex-1 sm:flex-initial justify-center px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      subTab === 'reports'
+                        ? 'bg-white text-[#09233d] shadow-xs border border-slate-200/60'
+                        : 'text-slate-600 hover:text-[#09233d] hover:bg-white/50 font-semibold'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span className="truncate">Executive Reports</span>
+                  </button>
+                </div>
+              )}
+            </div>
         </header>
 
         <div className={`dashboard-content p-3 sm:p-6 ${activeTab === 'chat' ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : ''}`}>

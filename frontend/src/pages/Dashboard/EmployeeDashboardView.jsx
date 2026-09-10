@@ -547,162 +547,135 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
-      {/* Top KPI Metric Cards (5 Cards Grid) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Card 1: My Tasks */}
+      {/* Top KPI Metric Cards (Hero Card 1 top + 2x2 Grid below on Mobile, 5-Column Grid on Desktop) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-1.5 sm:gap-4">
+        {/* Card 1: My Tasks (Full-width hero card on mobile) */}
         <div
           onClick={() => setActiveTab('time-tracker')}
-          className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
+          className="col-span-2 sm:col-span-1 dashboard-section-hover bg-emerald-50/40 hover:bg-emerald-50/70 p-2 sm:p-4 rounded-lg sm:rounded-2xl border border-emerald-100/80 shadow-xs hover:shadow-sm transition-all cursor-pointer flex items-center justify-between group relative"
         >
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#10b981]">
-              <Icon name="tasks" className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-bold text-gray-500 block leading-none">My Tasks</span>
-              <span className="text-2xl font-black text-[#09233d] block mt-1 leading-none">
-                {metrics.myTasksCount || 5}
-              </span>
-              <span className="text-[11px] font-bold text-rose-500 mt-1 block">
-                {metrics.overdueTasksCount || 2} Overdue
-              </span>
-            </div>
+          <div className="min-w-0">
+            <span className="text-[9px] sm:text-xs font-semibold text-gray-400 block leading-none">My Tasks</span>
+            <span className="text-base sm:text-2xl font-black text-[#10b981] block mt-0.5 sm:mt-1.5 leading-none">
+              {metrics.myTasksCount || 1}
+            </span>
+            <span className="text-[9px] sm:text-xs font-bold text-rose-500 mt-0.5 sm:mt-1.5 block">
+              {metrics.overdueTasksCount || 2} Overdue
+            </span>
           </div>
-          <Icon
-            name="chevron-right"
-            className="w-4 h-4 text-gray-300 group-hover:text-[#10b981] group-hover:translate-x-0.5 transition-all"
-          />
+
+          <div className="w-6 h-6 sm:w-11 sm:h-11 rounded-md sm:rounded-xl bg-emerald-100/80 border border-emerald-200/80 flex items-center justify-center text-[#10b981] shrink-0">
+            <Icon name="tasks" className="w-3 h-3 sm:w-5 sm:h-5" />
+          </div>
         </div>
 
         {/* Card 2: Hours Logged */}
         <div
           onClick={() => setShowLogTimeModal(true)}
-          className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
+          className="dashboard-section-hover bg-white p-1.5 sm:p-4 rounded-lg sm:rounded-2xl border border-gray-100 shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between group relative"
         >
-          <div className="flex items-center gap-3.5 w-full mr-2">
-            <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-              <Icon name="clock" className="w-5 h-5" />
-            </div>
-            <div className="flex-1">
-              <span className="text-xs font-bold text-gray-500 block leading-none">Hours Logged</span>
-              <div className="flex items-baseline gap-1 mt-1 leading-none">
-                <span className="text-2xl font-black text-[#09233d]">
-                  {metrics.hoursLoggedToday || '6.5'}
-                </span>
-                <span className="text-xs font-bold text-gray-400">/ {metrics.targetHours || 8}</span>
-              </div>
-              {/* Progress bar */}
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className="bg-[#10b981] h-full rounded-full transition-all duration-500"
-                    style={{ width: `${metrics.hoursProgress || 81}%` }}
-                  />
-                </div>
-                <span className="text-[10px] font-extrabold text-[#10b981]">
-                  {metrics.hoursProgress || 81}%
-                </span>
-              </div>
-            </div>
-          </div>
-          <Icon
-            name="chevron-right"
-            className="w-4 h-4 text-gray-300 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all shrink-0"
-          />
-        </div>
-
-        {/* Card 3: Projects Assigned */}
-        <div
-          onClick={() => setActiveTab('projects')}
-          className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
-              <Icon name="folder" className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-bold text-gray-500 block leading-none">Projects Assigned</span>
-              <span className="text-2xl font-black text-[#09233d] block mt-1 leading-none">
-                {metrics.assignedProjectsCount || 3}
-              </span>
-              <span className="text-[11px] font-semibold text-gray-400 mt-1 block">Active Projects</span>
-            </div>
-          </div>
-          <Icon
-            name="chevron-right"
-            className="w-4 h-4 text-gray-300 group-hover:text-sky-600 group-hover:translate-x-0.5 transition-all"
-          />
-        </div>
-
-        {/* Card 4: My Performance Score */}
-        <div
-          onClick={() => setActiveTab('analytics')}
-          className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500">
-              <Icon name="star" className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-bold text-gray-500 block leading-none">
-                My Performance Score
-              </span>
-              <span className="text-2xl font-black text-[#09233d] block mt-1 leading-none">
-                {metrics.performanceScore || 94}
-              </span>
-              <span className="text-[11px] font-semibold text-gray-400 mt-1 block">Out of 100</span>
-            </div>
-          </div>
-          <Icon
-            name="chevron-right"
-            className="w-4 h-4 text-gray-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all"
-          />
-        </div>
-
-        {/* Card 5: Today */}
-        <div className="dashboard-section-hover bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-600">
-            <Icon name="calendar" className="w-5 h-5" />
+          <div className="w-3.5 h-3.5 sm:w-6 sm:h-6 rounded bg-blue-50 text-blue-500 border border-blue-100 flex items-center justify-center absolute top-1.5 right-1.5 sm:top-3 sm:right-3 shrink-0">
+            <Icon name="clock" className="w-2 h-2 sm:w-3.5 sm:h-3.5" />
           </div>
           <div>
-            <span className="text-xs font-bold text-gray-500 block leading-none">Today</span>
-            <span className="text-base font-black text-[#09233d] block mt-1.5 leading-tight">
-              {metrics.todayDateFormatted || '27 Aug 2025'}
+            <span className="text-[9px] sm:text-xs font-semibold text-gray-400 block leading-none truncate pr-3">Hours Logged</span>
+            <div className="flex items-baseline gap-0.5 mt-0.5 sm:mt-2 leading-none">
+              <span className="text-base sm:text-2xl font-black text-[#09233d]">
+                {metrics.hoursLoggedToday || '6.5'}
+              </span>
+              <span className="text-[8px] sm:text-xs font-bold text-gray-400">/ {metrics.targetHours || 8}</span>
+            </div>
+          </div>
+          {/* Progress bar */}
+          <div className="w-full bg-gray-100 h-1 sm:h-1.5 rounded-full overflow-hidden mt-1 sm:mt-3">
+            <div
+              className="bg-[#10b981] h-full rounded-full transition-all duration-500"
+              style={{ width: `${metrics.hoursProgress || 81}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Card 3: Projects */}
+        <div
+          onClick={() => setActiveTab('projects')}
+          className="dashboard-section-hover bg-white p-1.5 sm:p-4 rounded-lg sm:rounded-2xl border border-gray-100 shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between group relative"
+        >
+          <div className="w-3.5 h-3.5 sm:w-6 sm:h-6 rounded bg-blue-50 text-blue-500 border border-blue-100 flex items-center justify-center absolute top-1.5 right-1.5 sm:top-3 sm:right-3 shrink-0">
+            <Icon name="folder" className="w-2 h-2 sm:w-3.5 sm:h-3.5" />
+          </div>
+          <div>
+            <span className="text-[9px] sm:text-xs font-semibold text-gray-400 block leading-none truncate pr-3">Projects</span>
+            <span className="text-base sm:text-2xl font-black text-[#09233d] block mt-0.5 sm:mt-2 leading-none">
+              {metrics.assignedProjectsCount || 1}
             </span>
+            <span className="text-[9px] sm:text-xs font-bold text-blue-500 mt-0.5 sm:mt-1 block">Active</span>
+          </div>
+        </div>
+
+        {/* Card 4: Performance */}
+        <div
+          onClick={() => setActiveTab('analytics')}
+          className="dashboard-section-hover bg-white p-1.5 sm:p-4 rounded-lg sm:rounded-2xl border border-gray-100 shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between group relative"
+        >
+          <div className="w-3.5 h-3.5 sm:w-6 sm:h-6 rounded bg-amber-50 text-amber-500 border border-amber-100 flex items-center justify-center absolute top-1.5 right-1.5 sm:top-3 sm:right-3 shrink-0">
+            <Icon name="trending-up" className="w-2 h-2 sm:w-3.5 sm:h-3.5" />
+          </div>
+          <div>
+            <span className="text-[9px] sm:text-xs font-semibold text-gray-400 block leading-none truncate pr-3">Performance</span>
+            <span className="text-base sm:text-2xl font-black text-[#09233d] block mt-0.5 sm:mt-2 leading-none">
+              {metrics.performanceScore || 94}
+            </span>
+            <span className="text-[9px] sm:text-xs font-bold text-amber-500 mt-0.5 sm:mt-1 block">/ 100</span>
+          </div>
+        </div>
+
+        {/* Card 5: Status */}
+        <div className="dashboard-section-hover bg-white p-1.5 sm:p-4 rounded-lg sm:rounded-2xl border border-gray-100 shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between group relative">
+          <div className="w-3.5 h-3.5 sm:w-6 sm:h-6 rounded bg-emerald-50 text-emerald-500 border border-emerald-100 flex items-center justify-center absolute top-1.5 right-1.5 sm:top-3 sm:right-3 shrink-0">
+            <Icon name="bolt" className="w-2 h-2 sm:w-3.5 sm:h-3.5" />
+          </div>
+          <div>
+            <span className="text-[9px] sm:text-xs font-semibold text-gray-400 block leading-none truncate pr-3">Status</span>
+            <span className="text-base sm:text-2xl font-black text-[#09233d] block mt-0.5 sm:mt-2 leading-none">
+              {metrics.hoursProgress || 81}%
+            </span>
+            <span className="text-[9px] sm:text-xs font-bold text-[#10b981] mt-0.5 sm:mt-1 block">On track</span>
           </div>
         </div>
       </div>
 
       {/* 3. Middle Row: 3 Analytics Visual Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-6">
         {/* Chart 1: Task Status Overview (Donut Chart) */}
-        <div className="dashboard-section-hover lg:col-span-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
-              <Icon name="clock" className="w-4 h-4" />
+        <div className="dashboard-section-hover lg:col-span-4 bg-white p-2.5 sm:p-5 rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center gap-2.5 mb-1.5 sm:mb-3">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
+              <Icon name="clock" className="w-3 h-3 sm:w-4 sm:h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-[#09233d] leading-none">Task Status Overview</h2>
-              <span className="text-[11px] text-gray-400 font-medium">Your task distribution</span>
+              <h2 className="text-[11px] sm:text-sm font-bold text-[#09233d] leading-none">Task Status Overview</h2>
+              <span className="text-[9px] sm:text-[11px] text-gray-400 font-medium">Your task distribution</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4 my-auto py-2">
-            <DonutChart
-              data={donutData}
-              centerCount={statusOverview.total || 5}
-              totalLabel="Total Tasks"
-            />
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 my-auto py-0.5 sm:py-2">
+            <div className="scale-90 sm:scale-100 transform origin-center">
+              <DonutChart
+                data={donutData}
+                centerCount={statusOverview.total || 5}
+                totalLabel="Total Tasks"
+              />
+            </div>
 
             {/* Legend */}
-            <div className="space-y-2.5 flex-1 pl-2">
+            <div className="w-full sm:w-auto space-y-1 sm:space-y-2.5 flex-1 sm:pl-2">
               {donutData.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="font-semibold text-gray-700 text-xs">{item.label}</span>
+                <div key={idx} className="flex items-center justify-between text-[11px] sm:text-xs border-b border-gray-50 pb-0.5 sm:pb-0 sm:border-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                    <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                    <span className="font-semibold text-gray-700 text-[10px] sm:text-xs truncate">{item.label}</span>
                   </div>
-                  <span className="font-extrabold text-[#09233d]">{item.count}</span>
+                  <span className="font-extrabold text-[#09233d] ml-2 shrink-0 text-[10px] sm:text-xs">{item.count}</span>
                 </div>
               ))}
             </div>
@@ -710,65 +683,67 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         </div>
 
         {/* Chart 2: Task Completion Trend (Grouped Bar Graph) */}
-        <div className="dashboard-section-hover lg:col-span-5 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3">
+        <div className="dashboard-section-hover lg:col-span-5 bg-white p-2.5 sm:p-5 rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
-                <Icon name="trending-up" className="w-4 h-4" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
+                <Icon name="trending-up" className="w-3 h-3 sm:w-4 sm:h-4" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-[#09233d] leading-none">Task Completion Trend</h2>
-                <span className="text-[11px] text-gray-400 font-medium">
+                <h2 className="text-[11px] sm:text-sm font-bold text-[#09233d] leading-none">Task Completion Trend</h2>
+                <span className="text-[9px] sm:text-[11px] text-gray-400 font-medium">
                   Daily completed vs pending tasks
                 </span>
               </div>
             </div>
 
             {/* Top Right Legend */}
-            <div className="flex items-center gap-3 text-xs font-semibold text-gray-600">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#10b981]" />
-                <span className="text-[11px]">Completed</span>
+            <div className="flex items-center gap-2 sm:gap-3 text-xs font-semibold text-gray-600">
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#10b981]" />
+                <span className="text-[9px] sm:text-[11px]">Completed</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#f59e0b]" />
-                <span className="text-[11px]">Pending</span>
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#f59e0b]" />
+                <span className="text-[9px] sm:text-[11px]">Pending</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-0.5 sm:pt-2">
             <BarGraph trendData={dailyTrend} />
           </div>
         </div>
 
         {/* Chart 3: Project-wise Task Count (Pie Chart) */}
-        <div className="dashboard-section-hover lg:col-span-3 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
-              <Icon name="folder" className="w-4 h-4" />
+        <div className="dashboard-section-hover lg:col-span-3 bg-white p-2.5 sm:p-5 rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center gap-2.5 mb-1.5 sm:mb-3">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
+              <Icon name="folder" className="w-3 h-3 sm:w-4 sm:h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-[#09233d] leading-none">Project-wise Task Count</h2>
-              <span className="text-[11px] text-gray-400 font-medium">Your assigned projects</span>
+              <h2 className="text-[11px] sm:text-sm font-bold text-[#09233d] leading-none">Project-wise Task Count</h2>
+              <span className="text-[9px] sm:text-[11px] text-gray-400 font-medium">Your assigned projects</span>
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center my-auto py-2">
-            <PieChart data={projectBreakdown} />
+          <div className="flex flex-col items-center justify-center my-auto py-0.5 sm:py-2">
+            <div className="scale-90 sm:scale-100 transform origin-center">
+              <PieChart data={projectBreakdown} />
+            </div>
 
             {/* Legend underneath / side */}
-            <div className="w-full space-y-2 mt-3 pt-2 border-t border-gray-100">
+            <div className="w-full space-y-1 sm:space-y-2 mt-2 sm:mt-3 pt-1.5 sm:pt-2 border-t border-gray-100">
               {projectBreakdown.map((item, idx) => (
                 <div key={idx} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 truncate max-w-[150px]">
+                  <div className="flex items-center gap-1.5 sm:gap-2 truncate max-w-[150px]">
                     <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="font-semibold text-gray-700 truncate">{item.name}</span>
+                    <span className="font-semibold text-gray-700 text-[10px] sm:text-xs truncate">{item.name}</span>
                   </div>
-                  <span className="font-extrabold text-[#09233d] shrink-0">{item.count}</span>
+                  <span className="font-extrabold text-[#09233d] shrink-0 text-[10px] sm:text-xs">{item.count}</span>
                 </div>
               ))}
             </div>
@@ -777,19 +752,19 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
       </div>
 
       {/* 4. Bottom Row: Recent Tasks, Upcoming Tasks, and Profile / Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-6">
         {/* Left Column (5 Cols): My Recent Tasks */}
-        <div className="dashboard-section-hover lg:col-span-5 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+        <div className="dashboard-section-hover lg:col-span-5 bg-white p-2.5 sm:p-5 rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-2 sm:mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
-                <Icon name="tasks" className="w-3.5 h-3.5" />
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
+                <Icon name="tasks" className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
-              <h2 className="text-sm font-bold text-[#09233d]">My Recent Tasks</h2>
+              <h2 className="text-[11px] sm:text-sm font-bold text-[#09233d]">My Recent Tasks</h2>
             </div>
             <button
               onClick={() => setActiveTab('time-tracker')}
-              className="text-xs font-bold text-[#10b981] hover:underline"
+              className="text-[10px] sm:text-xs font-bold text-[#10b981] hover:underline"
             >
               View All
             </button>
@@ -798,16 +773,16 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-[11px] font-bold text-gray-400 border-b border-gray-100 pb-2">
-                  <th className="pb-2 font-semibold">Task Title</th>
-                  <th className="pb-2 font-semibold">Project</th>
-                  <th className="pb-2 font-semibold">Priority</th>
-                  <th className="pb-2 font-semibold">Due Date</th>
-                  <th className="pb-2 font-semibold">Status</th>
-                  <th className="pb-2"></th>
+                <tr className="text-[10px] sm:text-[11px] font-bold text-gray-400 border-b border-gray-100 pb-1.5 sm:pb-2">
+                  <th className="pb-1.5 sm:pb-2 font-semibold">Task Title</th>
+                  <th className="pb-1.5 sm:pb-2 font-semibold">Project</th>
+                  <th className="pb-1.5 sm:pb-2 font-semibold">Priority</th>
+                  <th className="pb-1.5 sm:pb-2 font-semibold">Due Date</th>
+                  <th className="pb-1.5 sm:pb-2 font-semibold">Status</th>
+                  <th className="pb-1.5 sm:pb-2"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 text-xs">
+              <tbody className="divide-y divide-gray-50 text-[11px] sm:text-xs">
                 {recentTasks.map((t, idx) => {
                   const dueFormatted = t.dueDate
                     ? new Intl.DateTimeFormat('en-US', {
@@ -823,39 +798,39 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
                       onClick={() => setActiveTab('time-tracker')}
                       className="hover:bg-gray-50/80 transition-colors group cursor-pointer"
                     >
-                      <td className="py-2.5 pr-2">
-                        <span className="font-bold text-[#09233d] block truncate max-w-[130px]">
+                      <td className="py-1.5 sm:py-2.5 pr-2">
+                        <span className="font-bold text-[#09233d] block truncate max-w-[110px] sm:max-w-[130px] text-[11px] sm:text-xs">
                           {t.title}
                         </span>
                       </td>
-                      <td className="py-2.5 pr-2">
-                        <span className="text-[11px] font-medium text-gray-500 truncate max-w-[110px] block">
+                      <td className="py-1.5 sm:py-2.5 pr-2">
+                        <span className="text-[10px] sm:text-[11px] font-medium text-gray-500 truncate max-w-[90px] sm:max-w-[110px] block">
                           {t.project}
                         </span>
                       </td>
-                      <td className="py-2.5 pr-2">
+                      <td className="py-1.5 sm:py-2.5 pr-2">
                         <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full inline-block ${getPriorityBadge(
+                          className={`text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full inline-block ${getPriorityBadge(
                             t.priority
                           )}`}
                         >
                           {t.priority}
                         </span>
                       </td>
-                      <td className="py-2.5 pr-2 text-gray-500 text-[11px] font-medium whitespace-nowrap">
+                      <td className="py-1.5 sm:py-2.5 pr-2 text-gray-500 text-[10px] sm:text-[11px] font-medium whitespace-nowrap">
                         {dueFormatted}
                       </td>
-                      <td className="py-2.5 pr-2">
+                      <td className="py-1.5 sm:py-2.5 pr-2">
                         <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full inline-block ${getStatusBadge(
+                          className={`text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full inline-block ${getStatusBadge(
                             t.status
                           )}`}
                         >
                           {t.status}
                         </span>
                       </td>
-                      <td className="py-2.5 text-right text-gray-300 group-hover:text-[#10b981] transition-colors">
-                        <Icon name="chevron-right" className="w-3.5 h-3.5 inline" />
+                      <td className="py-1.5 sm:py-2.5 text-right text-gray-300 group-hover:text-[#10b981] transition-colors">
+                        <Icon name="chevron-right" className="w-3 h-3 sm:w-3.5 sm:h-3.5 inline" />
                       </td>
                     </tr>
                   );
@@ -866,24 +841,24 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
         </div>
 
         {/* Middle Column (4 Cols): Upcoming Tasks */}
-        <div className="dashboard-section-hover lg:col-span-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="dashboard-section-hover lg:col-span-4 bg-white p-2.5 sm:p-5 rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
-                  <Icon name="calendar" className="w-3.5 h-3.5" />
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10b981]">
+                  <Icon name="calendar" className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </div>
-                <h2 className="text-sm font-bold text-[#09233d]">Upcoming Tasks</h2>
+                <h2 className="text-[11px] sm:text-sm font-bold text-[#09233d]">Upcoming Tasks</h2>
               </div>
               <button
                 onClick={() => setActiveTab('time-tracker')}
-                className="text-xs font-bold text-[#10b981] hover:underline"
+                className="text-[10px] sm:text-xs font-bold text-[#10b981] hover:underline"
               >
                 View All
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {upcomingTasks.map((task, idx) => {
                 const dateObj = task.dueDate ? new Date(task.dueDate) : new Date();
                 const dayNum = dateObj.getDate();
@@ -893,33 +868,33 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
                   <div
                     key={task._id || idx}
                     onClick={() => setActiveTab('time-tracker')}
-                    className="flex items-center justify-between p-2.5 bg-gray-50/70 hover:bg-gray-50 rounded-xl transition-all border border-gray-100/80 cursor-pointer group"
+                    className="flex items-center justify-between p-2 sm:p-2.5 bg-gray-50/70 hover:bg-gray-50 rounded-xl transition-all border border-gray-100/80 cursor-pointer group"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                       {/* Date Box */}
-                      <div className="text-center min-w-[32px] leading-tight">
-                        <span className="text-sm font-black text-[#09233d] block leading-none">
+                      <div className="text-center min-w-[28px] sm:min-w-[32px] leading-tight">
+                        <span className="text-xs sm:text-sm font-black text-[#09233d] block leading-none">
                           {dayNum < 10 ? `0${dayNum}` : dayNum}
                         </span>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase leading-none mt-0.5 block">
+                        <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase leading-none mt-0.5 block">
                           {monthName}
                         </span>
                       </div>
 
                       {/* Details */}
                       <div className="min-w-0">
-                        <span className="text-xs font-bold text-[#09233d] block truncate">
+                        <span className="text-[11px] sm:text-xs font-bold text-[#09233d] block truncate">
                           {task.title}
                         </span>
-                        <span className="text-[11px] text-gray-500 truncate block">
+                        <span className="text-[10px] sm:text-[11px] text-gray-500 truncate block">
                           {task.project}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full inline-block ${getPriorityBadge(
+                        className={`text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full inline-block ${getPriorityBadge(
                           task.priority
                         )}`}
                       >
@@ -927,7 +902,7 @@ export default function EmployeeDashboardView({ user, data, setActiveTab, reload
                       </span>
                       <Icon
                         name="chevron-right"
-                        className="w-3.5 h-3.5 text-gray-300 group-hover:text-[#10b981] transition-all"
+                        className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-300 group-hover:text-[#10b981] transition-all"
                       />
                     </div>
                   </div>

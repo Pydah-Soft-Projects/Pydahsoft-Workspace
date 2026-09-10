@@ -14,7 +14,24 @@ export default function TeamChatPage({ currentUser }) {
   const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
 
   const messagesEndRef = useRef(null);
-  const messagesContainerRef = useRef(null);
+  const chatStreamRef = useRef(null);
+  const [viewportHeight, setViewportHeight] = useState(null);
+
+  // Dynamic visualViewport listener for mobile keyboard resizing
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const updateHeight = () => {
+      setViewportHeight(window.visualViewport.height);
+      window.scrollTo(0, 0);
+    };
+    window.visualViewport.addEventListener('resize', updateHeight);
+    window.visualViewport.addEventListener('scroll', updateHeight);
+    updateHeight();
+    return () => {
+      window.visualViewport.removeEventListener('resize', updateHeight);
+      window.visualViewport.removeEventListener('scroll', updateHeight);
+    };
+  }, []);
 
   // Fetch all staff members & teams
   useEffect(() => {
@@ -51,14 +68,10 @@ export default function TeamChatPage({ currentUser }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to bottom of chat
+  // Auto-scroll inside chat stream only (prevents full page jump on mobile)
   useEffect(() => {
-    const messagesContainer = messagesContainerRef.current;
-    if (messagesContainer) {
-      messagesContainer.scrollTo({
-        top: messagesContainer.scrollHeight,
-        behavior: 'smooth',
-      });
+    if (chatStreamRef.current) {
+      chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
     }
   }, [messages, selectedRecipient]);
 
@@ -356,7 +369,10 @@ export default function TeamChatPage({ currentUser }) {
       </div>
 
       {/* RIGHT PANEL: Chat Stream & Message Input */}
-      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} min-h-0 flex-1 flex-col bg-white h-full overflow-hidden`}>
+      <div
+        style={viewportHeight && mobileView === 'chat' && typeof window !== 'undefined' && window.innerWidth < 768 ? { height: `${viewportHeight}px`, top: `${window.visualViewport?.offsetTop || 0}px` } : {}}
+        className={`${mobileView === 'list' ? 'hidden md:flex md:flex-1' : 'fixed inset-0 z-50 bg-white flex flex-col h-full w-full md:static md:z-auto md:flex-1'} flex-col bg-white h-full overflow-hidden w-full`}
+      >
         {/* Active Conversation Header */}
         <div className="p-3 md:p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
           <div className="flex items-center gap-2.5 md:gap-3 truncate">
@@ -441,7 +457,7 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Message Stream */}
-        <div ref={messagesContainerRef} className="chat-page__messages min-h-0 flex-1 p-4 overflow-y-auto overscroll-contain space-y-3 bg-slate-50/50">
+        <div ref={chatStreamRef} className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
           {loadingMessages && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-xs text-gray-400 font-medium">
               Loading chat history...
@@ -521,7 +537,21 @@ export default function TeamChatPage({ currentUser }) {
             autoComplete="off"
             aria-label="Message"
             onChange={(e) => setNewMessageText(e.target.value)}
-            placeholder="Message"
+            onFocus={() => {
+              setTimeout(() => {
+                window.scrollTo(0, 0);
+                if (chatStreamRef.current) {
+                  chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
+                }
+              }, 100);
+            }}
+            placeholder={
+              selectedRecipient.type === 'all'
+                ? 'Type a broadcast message to everyone...'
+                : selectedRecipient.type === 'team'
+                ? `Type a team message to ${selectedRecipient.data?.name}...`
+                : `Type a direct message to ${selectedRecipient.data?.name}...`
+            }
             className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 focus:border-[#20b875] focus:bg-white rounded-xl text-xs text-[#09233d] font-medium outline-none transition-all"
           />
           <button

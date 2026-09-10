@@ -91,32 +91,97 @@ export default function AuditLogsView() {
       {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-xs font-semibold">{error}</div>}
       {loading ? <LoadingSpinner message="Loading audit trail..." /> : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-3">
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm min-h-[92px]">
-              <span className="text-[11px] font-semibold text-gray-500">Total events</span>
-              <p className="text-2xl text-[#09233d] mt-2 leading-none">{logs.length.toLocaleString()}</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 pt-2">
+            <div className="bg-blue-50/70 p-2.5 sm:p-4 rounded-2xl border border-blue-100 shadow-2xs">
+              <span className="text-[10px] sm:text-[11px] font-bold text-blue-700 block uppercase tracking-wider">Total events</span>
+              <p className="text-lg sm:text-2xl font-black text-[#09233d] mt-1 leading-none">{logs.length.toLocaleString()}</p>
             </div>
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm min-h-[92px]">
-              <span className="text-[11px] font-semibold text-gray-500">Today</span>
-              <p className="text-2xl text-[#09233d] mt-2 leading-none">{todayCount}</p>
+            <div className="bg-emerald-50/70 p-2.5 sm:p-4 rounded-2xl border border-emerald-100 shadow-2xs">
+              <span className="text-[10px] sm:text-[11px] font-bold text-emerald-700 block uppercase tracking-wider">Today</span>
+              <p className="text-lg sm:text-2xl font-black text-emerald-900 mt-1 leading-none">{todayCount}</p>
             </div>
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm min-h-[92px]">
-              <span className="text-[11px] font-semibold text-gray-500">Deletions</span>
-              <p className="text-2xl text-rose-600 mt-2 leading-none">{deletionCount}</p>
+            <div className="bg-rose-50/70 p-2.5 sm:p-4 rounded-2xl border border-rose-100 shadow-2xs">
+              <span className="text-[10px] sm:text-[11px] font-bold text-rose-700 block uppercase tracking-wider">Deletions</span>
+              <p className="text-lg sm:text-2xl font-black text-rose-600 mt-1 leading-none">{deletionCount}</p>
             </div>
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm min-h-[92px]">
-              <span className="text-[11px] font-semibold text-gray-500">Active admins</span>
-              <p className="text-2xl text-[#09233d] mt-2 leading-none">{activeAdminCount}</p>
+            <div className="bg-purple-50/70 p-2.5 sm:p-4 rounded-2xl border border-purple-100 shadow-2xs">
+              <span className="text-[10px] sm:text-[11px] font-bold text-purple-700 block uppercase tracking-wider">Active admins</span>
+              <p className="text-lg sm:text-2xl font-black text-purple-900 mt-1 leading-none">{activeAdminCount}</p>
             </div>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-2 pt-5">
-            <label className="relative flex-1"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by user, action, or entity id" className="w-full h-9 px-3 border border-gray-300 rounded-sm text-xs text-gray-700 focus:border-[#20b875] focus:outline-none" /></label>
-            <select value={userFilter} onChange={(event) => setUserFilter(event.target.value)} className="h-9 lg:w-40 border border-gray-300 rounded-sm px-2 text-xs text-gray-700 focus:border-[#20b875] focus:outline-none"><option value="">All users</option>{users.map((user) => <option key={user._id || user.username} value={user._id || user.username}>{user.name || user.username}</option>)}</select>
-            <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)} className="h-9 lg:w-40 border border-gray-300 rounded-sm px-2 text-xs text-gray-700 focus:border-[#20b875] focus:outline-none"><option value="">All actions</option>{actions.map((action) => <option key={action} value={action}>{action}</option>)}</select>
-            <select value={entityFilter} onChange={(event) => setEntityFilter(event.target.value)} className="h-9 lg:w-40 border border-gray-300 rounded-sm px-2 text-xs text-gray-700 focus:border-[#20b875] focus:outline-none"><option value="">All entities</option>{entities.map((entity) => <option key={entity} value={entity}>{entity}</option>)}</select>
-            <label className="flex items-center gap-2 text-xs text-gray-700 whitespace-nowrap"><span>Date range</span><input type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} className="h-9 border border-gray-300 rounded-sm px-2 text-xs focus:border-[#20b875] focus:outline-none" /></label>
-            {(search || userFilter || actionFilter || entityFilter || dateFilter) && <button type="button" onClick={resetFilters} className="h-9 px-3 text-xs font-bold text-gray-500 hover:text-[#20b875]">Reset</button>}
+          <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 pt-3">
+            <label className="relative col-span-2 lg:col-span-1 lg:flex-1">
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by user, action, or entity id"
+                className="w-full h-9 px-3 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 placeholder-gray-400 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs"
+              />
+            </label>
+            <select
+              value={userFilter}
+              onChange={(event) => setUserFilter(event.target.value)}
+              className="h-9 col-span-1 lg:w-36 bg-white border border-gray-200 rounded-xl px-2.5 text-xs font-semibold text-gray-800 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs"
+            >
+              <option value="">All users</option>
+              {users.map((user) => (
+                <option key={user._id || user.username} value={user._id || user.username}>
+                  {user.name || user.username}
+                </option>
+              ))}
+            </select>
+            <select
+              value={actionFilter}
+              onChange={(event) => setActionFilter(event.target.value)}
+              className="h-9 col-span-1 lg:w-36 bg-white border border-gray-200 rounded-xl px-2.5 text-xs font-semibold text-gray-800 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs"
+            >
+              <option value="">All actions</option>
+              {actions.map((action) => (
+                <option key={action} value={action}>
+                  {action}
+                </option>
+              ))}
+            </select>
+            <select
+              value={entityFilter}
+              onChange={(event) => setEntityFilter(event.target.value)}
+              className="h-9 col-span-1 lg:w-36 bg-white border border-gray-200 rounded-xl px-2.5 text-xs font-semibold text-gray-800 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs"
+            >
+              <option value="">All entities</option>
+              {entities.map((entity) => (
+                <option key={entity} value={entity}>
+                  {entity}
+                </option>
+              ))}
+            </select>
+            <input
+              type={dateFilter ? "date" : "text"}
+              value={dateFilter}
+              onChange={(event) => setDateFilter(event.target.value)}
+              onFocus={(event) => {
+                event.target.type = 'date';
+                try { event.target.showPicker?.(); } catch {}
+              }}
+              onClick={(event) => {
+                event.target.type = 'date';
+                try { event.target.showPicker?.(); } catch {}
+              }}
+              onBlur={(event) => {
+                if (!event.target.value) event.target.type = 'text';
+              }}
+              placeholder="Select date"
+              className="h-9 col-span-1 lg:w-36 bg-white border border-gray-200 rounded-xl px-2.5 text-xs font-semibold text-gray-800 placeholder-gray-400 focus:border-[#09233d] focus:outline-none transition-all shadow-2xs cursor-pointer"
+            />
+            {(search || userFilter || actionFilter || entityFilter || dateFilter) && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="h-9 col-span-2 lg:col-span-1 px-3 bg-gray-900 hover:bg-black text-white text-xs font-extrabold rounded-xl transition-all shadow-2xs"
+              >
+                Reset Filters
+              </button>
+            )}
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
