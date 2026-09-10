@@ -514,9 +514,10 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
                   className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                 >
                   <div className="flex items-center gap-1.5 mb-1 text-xs">
-                    <span className="font-extrabold text-[#09233d]">{msg.senderName}</span>
+                    {/* Hide name+role in individual chat on mobile */}
+                    <span className={`font-extrabold text-[#09233d] ${selectedRecipient.type === 'individual' ? 'hidden md:inline' : ''}`}>{msg.senderName}</span>
                     <span
-                      className="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-[#20b875]"
+                      className={`text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-[#20b875] ${selectedRecipient.type === 'individual' ? 'hidden md:inline' : ''}`}
                     >
                       {msg.senderRole || 'EMPLOYEE'}
                     </span>
