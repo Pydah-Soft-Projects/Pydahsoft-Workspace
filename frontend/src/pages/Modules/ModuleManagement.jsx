@@ -145,11 +145,11 @@ export default function ModuleManagement({ currentUser }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-gray-100 shadow-xs flex justify-between items-center gap-2 min-w-0">
+      <div className="bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-gray-100 shadow-xs flex items-center justify-start gap-2.5 sm:gap-3 min-w-0">
         <select
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="border border-gray-200/90 rounded-lg sm:rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-gray-700 bg-gray-50/80 hover:bg-gray-50 focus:border-[#20b875] focus:outline-none min-w-0 flex-1 sm:flex-none max-w-[160px] sm:max-w-none truncate transition-all cursor-pointer"
+          className="border border-gray-200/90 rounded-lg sm:rounded-xl px-3 py-2 text-xs font-bold text-gray-700 bg-gray-50/80 hover:bg-gray-50 focus:border-[#20b875] focus:outline-none min-w-0 shrink-0 max-w-[150px] sm:max-w-none truncate transition-all cursor-pointer"
         >
           <option value="ALL">All Projects ({projects.length})</option>
           {projects.map((p) => (
@@ -163,7 +163,7 @@ export default function ModuleManagement({ currentUser }) {
               setFormData(prev => ({ ...prev, project: projects[0]?._id || '' }));
               setShowModal(true);
             }}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#20b875] text-white rounded-lg sm:rounded-xl text-xs font-bold shadow-xs hover:bg-[#169e63] transition-all whitespace-nowrap shrink-0"
+            className="px-4 py-2 bg-[#20b875] text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold shadow-xs hover:bg-[#169e63] transition-all whitespace-nowrap shrink-0"
           >
             + Create Module
           </button>
