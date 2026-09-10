@@ -171,7 +171,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row h-[600px] md:h-[580px]">
+    <div className="dashboard-chat-box min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row h-[600px] md:h-[580px]">
       {/* LEFT PANEL: Team Messaging Hub Contact Directory */}
       <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto md:overflow-hidden`}>
         {/* Hub Header */}

@@ -25,6 +25,60 @@ html {
   min-width: 0;
 }
 
+.chat-main,
+.chat-main .dashboard-content,
+.chat-main .chat-page,
+.dashboard-chat-box {
+  min-height: 0;
+}
+
+@media (max-width: 767px) {
+  .chat-active,
+  .chat-active .chat-main {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .chat-active .chat-main {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    width: 100%;
+    background: #ffffff;
+  }
+
+  .chat-main .dashboard-content {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .chat-main .chat-page {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .chat-page__contacts {
+    overflow: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-page__messages {
+    padding-bottom: 5.5rem;
+  }
+
+  .chat-page__composer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: env(safe-area-inset-bottom);
+    border-radius: 0 0 16px 16px;
+  }
+}
+
 .dashboard-header__title {
   min-width: 0;
   max-width: 100%;
