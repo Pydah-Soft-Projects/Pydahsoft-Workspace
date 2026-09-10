@@ -174,8 +174,8 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
     <div className="dashboard-chat-box min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row h-[calc(100dvh-120px)] md:h-[580px]">
       {/* LEFT PANEL: Team Messaging Hub Contact Directory */}
       <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto no-scrollbar md:scrollbar-thin`}>
-        {/* Hub Header */}
-        <div className="p-4 border-b border-gray-200 bg-white">
+        {/* Hub Header (Desktop only) */}
+        <div className="hidden md:block p-4 border-b border-gray-200 bg-white">
           <h2 className="text-base font-black text-[#09233d] flex items-center gap-2">
             Team Messaging Hub
             <span className="w-2.5 h-2.5 rounded-full bg-[#20b875] animate-pulse" />
@@ -183,8 +183,8 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
           <p className="text-xs text-gray-500 font-medium">Select group, team, or individual to chat</p>
         </div>
 
-        {/* Group Broadcast Card */}
-        <div className="p-3 border-b border-gray-200">
+        {/* Group Broadcast Card (Desktop only) */}
+        <div className="hidden md:block p-3 border-b border-gray-200">
           <button
             type="button"
             onClick={() => {
@@ -217,46 +217,63 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
         </div>
 
         {/* Teams List (Team Broadcasts) */}
-        {teamsList.length > 0 && (
-          <div className="px-3 pt-2.5 pb-1 border-b border-gray-200">
-            <div className="px-1 mb-1 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-              TEAMS & DEPARTMENTS ({teamsList.length})
-            </div>
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 md:py-0 md:block md:space-y-1">
-              {teamsList.map((team) => {
-                const isSelected =
-                  selectedRecipient.type === 'team' &&
-                  selectedRecipient.data?._id === team._id;
-
-                return (
-                  <button
-                    key={team._id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedRecipient({ type: 'team', data: team });
-                      setMobileView('chat');
-                    }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg md:rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 md:w-full md:p-2 md:flex md:items-center md:justify-between border ${
-                      isSelected
-                        ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
-                        : 'bg-white hover:bg-emerald-50/50 text-[#09233d] border-gray-200 shadow-2xs'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 md:gap-2 truncate">
-                      <svg className="w-3.5 md:w-4 h-3.5 md:h-4 shrink-0 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                      <span className="truncate text-xs font-bold text-[#09233d]">{team.name}</span>
-                    </div>
-                    <span className="hidden md:inline-block text-[9px] font-extrabold px-1.5 py-0.2 rounded-md bg-emerald-100 text-[#20b875]">
-                      Team
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+        <div className="px-3 pt-2.5 pb-1 border-b border-gray-200">
+          <div className="px-1 mb-1 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+            TEAMS & DEPARTMENTS ({teamsList.length})
           </div>
-        )}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 md:py-0 md:block md:space-y-1">
+            {/* Mobile-only "Everyone" pill button */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedRecipient({ type: 'all', data: null });
+                setMobileView('chat');
+              }}
+              className={`md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+                selectedRecipient.type === 'all'
+                  ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
+                  : 'bg-white hover:bg-emerald-50/50 text-[#09233d] border-gray-200 shadow-2xs'
+              }`}
+            >
+              <svg className="w-3.5 h-3.5 shrink-0 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+              </svg>
+              <span className="truncate">Everyone</span>
+            </button>
+
+            {teamsList.map((team) => {
+              const isSelected =
+                selectedRecipient.type === 'team' &&
+                selectedRecipient.data?._id === team._id;
+
+              return (
+                <button
+                  key={team._id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedRecipient({ type: 'team', data: team });
+                    setMobileView('chat');
+                  }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg md:rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 md:w-full md:p-2 md:flex md:items-center md:justify-between border ${
+                    isSelected
+                      ? 'bg-emerald-50 text-[#09233d] border-[#20b875] shadow-xs'
+                      : 'bg-white hover:bg-emerald-50/50 text-[#09233d] border-gray-200 shadow-2xs'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 md:gap-2 truncate">
+                    <svg className="w-3.5 md:w-4 h-3.5 md:h-4 shrink-0 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span className="truncate text-xs font-bold text-[#09233d]">{team.name}</span>
+                  </div>
+                  <span className="hidden md:inline-block text-[9px] font-extrabold px-1.5 py-0.2 rounded-md bg-emerald-100 text-[#20b875]">
+                    Team
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Role Filter Pills */}
         <div className="grid grid-cols-4 gap-1.5 p-2 md:p-2.5 bg-slate-50 border-b border-gray-200 w-full">
