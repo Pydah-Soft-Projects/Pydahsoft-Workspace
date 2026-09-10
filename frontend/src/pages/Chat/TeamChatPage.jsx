@@ -438,7 +438,6 @@ export default function TeamChatPage({ currentUser }) {
               <svg className="w-4 h-4 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Back</span>
             </button>
 
             <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-black text-sm md:text-base shrink-0 shadow-sm">
