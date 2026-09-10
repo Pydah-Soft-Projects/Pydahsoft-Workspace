@@ -258,8 +258,8 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
           </div>
         )}
 
-        {/* Role Filter Pills */}
-        <div className="px-3 py-2.5 flex items-center gap-1.5 overflow-x-auto bg-slate-50 border-b border-gray-200 shrink-0">
+        {/* Role Filter Pills - Horizontal Scrolling */}
+        <div className="px-3 py-2.5 flex items-center gap-1.5 overflow-x-auto scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-[#20b875] bg-slate-50 border-b border-gray-200 shrink-0">
           <button
             type="button"
             onClick={() => setRoleFilter('all')}
