@@ -14,6 +14,23 @@ export default function TeamChatPage({ currentUser }) {
   const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
 
   const messagesEndRef = useRef(null);
+  const chatStreamRef = useRef(null);
+  const [viewportHeight, setViewportHeight] = useState(null);
+
+  // Dynamic visualViewport listener for mobile keyboard resizing
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const updateHeight = () => {
+      setViewportHeight(window.visualViewport.height);
+      window.scrollTo(0, 0);
+    };
+    window.visualViewport.addEventListener('resize', updateHeight);
+    window.visualViewport.addEventListener('scroll', updateHeight);
+    return () => {
+      window.visualViewport.removeEventListener('resize', updateHeight);
+      window.visualViewport.removeEventListener('scroll', updateHeight);
+    };
+  }, []);
 
   // Fetch all staff members & teams
   useEffect(() => {
@@ -271,11 +288,11 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Role Filters Grid */}
-        <div className="grid grid-cols-4 w-full gap-1 p-2 md:p-3 border-b border-gray-200 bg-gray-50/50">
+        <div className="grid grid-cols-4 w-full gap-1 p-2 md:p-2.5 border-b border-gray-200 bg-gray-50/50">
           <button
             type="button"
             onClick={() => handleRoleFilterClick('all')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1.5 rounded-lg md:rounded-xl text-[11px] md:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
               roleFilter === 'all'
                 ? 'bg-[#09233d] text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -286,7 +303,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => handleRoleFilterClick('admin')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1.5 rounded-lg md:rounded-xl text-[11px] md:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
               roleFilter === 'admin'
                 ? 'bg-rose-600 text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -297,7 +314,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => handleRoleFilterClick('lead')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1 rounded-lg md:rounded-xl text-[10.5px] md:text-[11px] lg:text-xs font-extrabold text-center transition-all cursor-pointer whitespace-nowrap overflow-hidden ${
               roleFilter === 'lead'
                 ? 'bg-purple-600 text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -308,7 +325,7 @@ export default function TeamChatPage({ currentUser }) {
           <button
             type="button"
             onClick={() => handleRoleFilterClick('employee')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] sm:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1 rounded-lg md:rounded-xl text-[10.5px] md:text-[11px] lg:text-xs font-extrabold text-center transition-all cursor-pointer whitespace-nowrap overflow-hidden ${
               roleFilter === 'employee'
                 ? 'bg-[#20b875] text-white shadow-2xs'
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -421,7 +438,6 @@ export default function TeamChatPage({ currentUser }) {
               <svg className="w-4 h-4 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Back</span>
             </button>
 
             <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-emerald-50 text-[#20b875] border border-emerald-100 flex items-center justify-center font-black text-sm md:text-base shrink-0 shadow-sm">

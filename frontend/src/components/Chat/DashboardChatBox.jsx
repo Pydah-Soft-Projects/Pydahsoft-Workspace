@@ -268,11 +268,11 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
         )}
 
         {/* Role Filter Pills */}
-        <div className="grid grid-cols-4 gap-1.5 p-2 md:p-2.5 bg-slate-50 border-b border-gray-200 w-full">
+        <div className="grid grid-cols-4 gap-1 p-2 md:p-2.5 bg-slate-50 border-b border-gray-200 w-full">
           <button
             type="button"
             onClick={() => setRoleFilter('all')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1.5 rounded-lg md:rounded-xl text-[10.5px] md:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
               roleFilter === 'all'
                 ? 'bg-[#20b875] text-white shadow-2xs'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
@@ -283,7 +283,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
           <button
             type="button"
             onClick={() => setRoleFilter('admin')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1.5 rounded-lg md:rounded-xl text-[10.5px] md:text-xs font-extrabold text-center transition-all cursor-pointer truncate ${
               roleFilter === 'admin'
                 ? 'bg-rose-600 text-white shadow-2xs'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
@@ -294,7 +294,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
           <button
             type="button"
             onClick={() => setRoleFilter('lead')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1 rounded-lg md:rounded-xl text-[10px] md:text-[11px] lg:text-xs font-extrabold text-center transition-all cursor-pointer whitespace-nowrap overflow-hidden ${
               roleFilter === 'lead'
                 ? 'bg-purple-600 text-white shadow-2xs'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
@@ -305,7 +305,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
           <button
             type="button"
             onClick={() => setRoleFilter('employee')}
-            className={`w-full py-1.5 px-1 md:px-2 rounded-lg md:rounded-xl text-[11px] font-extrabold text-center transition-all cursor-pointer truncate ${
+            className={`w-full py-1.5 px-0.5 md:px-1 rounded-lg md:rounded-xl text-[10px] md:text-[11px] lg:text-xs font-extrabold text-center transition-all cursor-pointer whitespace-nowrap overflow-hidden ${
               roleFilter === 'employee'
                 ? 'bg-[#20b875] text-white shadow-2xs'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
