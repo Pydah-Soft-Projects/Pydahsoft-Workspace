@@ -265,7 +265,7 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
               })}
             </div>
           </div>
-        </div>
+        )}
 
         {/* Role Filter Pills */}
         <div className="grid grid-cols-4 gap-1.5 p-2 md:p-2.5 bg-slate-50 border-b border-gray-200 w-full">
