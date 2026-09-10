@@ -8,18 +8,20 @@ export default function Login({ onLoginSuccess }) {
 
   useEffect(() => {
     document.title = 'PydahSoft | Login';
+    // Preload dashboard overview module in background for zero-delay login transition
+    try {
+      import('../Dashboard/DashboardOverview');
+    } catch (e) {}
   }, []);
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setSuccessMsg('');
     setLoading(true);
 
     try {
@@ -34,20 +36,20 @@ export default function Login({ onLoginSuccess }) {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setSuccessMsg(`Welcome back, ${data.data.name} (${data.data.role.toUpperCase()})!`);
         if (data.data.token) {
           sessionStorage.setItem('pydahsoft_token', data.data.token);
           sessionStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
         }
+        localStorage.setItem('pydahsoft_active_tab', 'overview');
         if (onLoginSuccess) onLoginSuccess(data.data);
         navigate('/dashboard', { replace: true });
       } else {
         const errorMsg = data.error?.message || data.message || 'Invalid username or password';
         setError(errorMsg);
+        setLoading(false);
       }
     } catch (err) {
       setError('Unable to connect to backend server. Please verify backend service is running.');
-    } finally {
       setLoading(false);
     }
   };
@@ -183,11 +185,6 @@ export default function Login({ onLoginSuccess }) {
             {error && (
               <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-2 text-[11px] font-semibold text-red-600">
                 {error}
-              </div>
-            )}
-            {successMsg && (
-              <div className="mt-2 rounded-lg bg-emerald-50 border border-emerald-200 p-2 text-[11px] font-semibold text-emerald-700">
-                {successMsg}
               </div>
             )}
 
