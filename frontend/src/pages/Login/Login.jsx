@@ -87,26 +87,26 @@ export default function Login({ onLoginSuccess }) {
 
       <main className="login-stage relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center justify-center px-3 py-0 sm:py-8 sm:px-6 lg:px-12 flex-1 min-h-0 overflow-hidden">
         {/* Mobile Vector Illustration Banner (shown on mobile view) */}
-        <div className="sm:hidden w-full flex justify-center items-center pt-0 pb-0 px-2 relative z-10 shrink-0 scale-75 origin-bottom">
-          <div className="relative w-full max-w-[240px] h-20 flex items-end justify-center">
+        <div className="sm:hidden w-full flex justify-center items-center pt-1 pb-1 px-2 relative z-10 shrink-0">
+          <div className="relative w-full max-w-[280px] h-28 flex items-end justify-center">
             {/* Light Bulb floating top left */}
-            <div className="absolute top-0 left-10 bg-[#e6f7ef] p-1 rounded-full text-[#20b875] shadow-2xs">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="absolute top-0 left-12 bg-[#e6f7ef] p-1.5 rounded-full text-[#20b875] shadow-2xs">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 01-2 2h-4a2 2 0 01-2-2v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             </div>
 
             {/* Gear floating top right */}
-            <div className="absolute top-0 right-10 bg-[#e6f7ef] p-1 rounded-full text-[#20b875] shadow-2xs">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="absolute top-0 right-12 bg-[#e6f7ef] p-1.5 rounded-full text-[#20b875] shadow-2xs">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
 
             {/* Plant Pot on Left */}
-            <div className="absolute bottom-1 left-1 flex flex-col items-center">
-              <svg className="w-9 h-11" viewBox="0 0 48 56" fill="none">
+            <div className="absolute bottom-1 left-2 flex flex-col items-center">
+              <svg className="w-11 h-13" viewBox="0 0 48 56" fill="none">
                 <path d="M24 28C24 28 14 20 12 12C10 4 22 2 24 14C26 2 38 4 36 12C34 20 24 28 24 28Z" fill="#34d399" />
                 <path d="M24 28C24 28 8 26 4 18C0 10 12 8 18 18C24 28 24 28 24 28Z" fill="#10b981" />
                 <path d="M24 28C24 28 40 26 44 18C48 10 36 8 30 18C24 28 24 28 24 28Z" fill="#059669" />
@@ -116,24 +116,24 @@ export default function Login({ onLoginSuccess }) {
 
             {/* Laptop with </> in Center */}
             <div className="relative z-10 flex flex-col items-center">
-              <div className="w-24 h-14 bg-[#09233d] rounded-t-lg border-2 border-slate-700 flex items-center justify-center p-1 shadow-md">
+              <div className="w-32 h-18 bg-[#09233d] rounded-t-xl border-3 border-slate-700 flex items-center justify-center p-1 shadow-md">
                 <div className="w-full h-full bg-slate-900 rounded flex items-center justify-center border border-slate-800">
-                  <span className="text-[#20b875] font-mono font-black text-sm tracking-widest">&lt;/&gt;</span>
+                  <span className="text-[#20b875] font-mono font-black text-base tracking-widest">&lt;/&gt;</span>
                 </div>
               </div>
-              <div className="w-32 h-1.5 bg-slate-300 rounded-b-md border-t border-slate-400 shadow-xs flex justify-center">
-                <div className="w-5 h-0.5 bg-slate-400 rounded-full mt-0.5" />
+              <div className="w-38 h-2 bg-slate-300 rounded-b-md border-t border-slate-400 shadow-xs flex justify-center">
+                <div className="w-6 h-0.5 bg-slate-400 rounded-full mt-0.5" />
               </div>
             </div>
 
             {/* Coffee Cup with Steam on Right */}
-            <div className="absolute bottom-1 right-1 flex flex-col items-center">
-              <div className="flex gap-0.5 mb-0.5 opacity-60">
+            <div className="absolute bottom-1 right-2 flex flex-col items-center">
+              <div className="flex gap-1 mb-0.5 opacity-60">
                 <div className="w-0.5 h-1.5 bg-[#20b875] rounded-full animate-pulse" />
-                <div className="w-0.5 h-2 bg-[#20b875] rounded-full animate-pulse delay-100" />
+                <div className="w-0.5 h-2.5 bg-[#20b875] rounded-full animate-pulse delay-100" />
               </div>
-              <div className="relative w-4.5 h-5 bg-[#20b875] rounded-b-md rounded-t-xs">
-                <div className="absolute -right-1 top-1 w-1 h-2.5 border-2 border-[#20b875] rounded-r-md" />
+              <div className="relative w-5.5 h-6.5 bg-[#20b875] rounded-b-md rounded-t-xs">
+                <div className="absolute -right-1.5 top-1 w-1.5 h-3 border-2 border-[#20b875] rounded-r-md" />
               </div>
             </div>
           </div>
