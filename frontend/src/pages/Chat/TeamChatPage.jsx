@@ -135,7 +135,7 @@ export default function TeamChatPage({ currentUser }) {
   };
 
   return (
-    <div className="h-[calc(100vh-6rem)] bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row">
+    <div className="chat-page h-[calc(100dvh-6rem)] min-h-0 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden flex flex-col md:flex-row">
       {/* LEFT PANEL: Persons & Group Conversations List */}
       <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-slate-50 border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto md:overflow-hidden`}>
         {/* Header */}
@@ -346,7 +346,7 @@ export default function TeamChatPage({ currentUser }) {
       </div>
 
       {/* RIGHT PANEL: Chat Stream & Message Input */}
-      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-white h-full overflow-hidden`}>
+      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} min-h-0 flex-1 flex-col bg-white h-full overflow-hidden`}>
         {/* Active Conversation Header */}
         <div className="p-3 md:p-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
           <div className="flex items-center gap-2.5 md:gap-3 truncate">
@@ -459,7 +459,7 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Message Form */}
-        <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-200 flex items-center gap-2 shrink-0">
+        <form onSubmit={handleSendMessage} className="chat-page__composer sticky bottom-0 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-200 flex items-center gap-2 shrink-0 z-10">
           <input
             type="text"
             value={newMessageText}
