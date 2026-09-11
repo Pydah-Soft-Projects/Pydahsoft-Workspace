@@ -89,7 +89,7 @@ const Icon = ({ name, className = "w-4 h-4" }) => {
 
 const ALL_SIDEBAR_ITEMS = [
   { id: 'overview', label: 'Dashboard Overview', permKey: 'canViewOverview', icon: 'overview' },
-  { id: 'meetings', label: 'Video Meetings (Teams)', permKey: 'canViewMeetings', icon: 'meetings' },
+  { id: 'meetings', label: 'MEETINGS & TEAM CONFERENCE', permKey: 'canViewMeetings', icon: 'meetings' },
   { id: 'chat', label: 'Team Chat Box', permKey: 'canViewChat', icon: 'chat' },
   { id: 'employees', label: 'Employee Directory', permKey: 'canViewEmployees', icon: 'employees' },
   { id: 'projects', label: 'Projects & Modules', permKey: 'canViewProjects', icon: 'projects' },

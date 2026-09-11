@@ -225,7 +225,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId }) {
 
     const tabDocumentTitles = {
       overview: 'PydahSoft | Dashboard Overview',
-      meetings: 'PydahSoft | Video Meetings',
+      meetings: 'PydahSoft | MEETINGS & TEAM CONFERENCE',
       chat: 'PydahSoft | Team Chat Box',
       users: 'PydahSoft | User Accounts',
       employees: 'PydahSoft | Employee Directory',
@@ -244,7 +244,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId }) {
   const getMobileTabTitle = (tab) => {
     switch (tab) {
       case 'overview': return 'Overview';
-      case 'meetings': return 'Meetings';
+      case 'meetings': return 'MEETINGS & TEAM CONFERENCE';
       case 'chat': return 'Team Chat';
       case 'users': return 'Users';
       case 'employees': return 'Employees';
@@ -263,7 +263,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId }) {
   const getTabTitle = (tab) => {
     switch (tab) {
       case 'overview': return 'Dashboard Overview';
-      case 'meetings': return 'Video Meetings & Teams Virtual Conference Rooms';
+      case 'meetings': return 'MEETINGS & TEAM CONFERENCE';
       case 'chat': return 'Team Chat Box & Direct Messaging Hub';
       case 'users': return 'User Accounts & Credentials Management';
       case 'employees': return 'Employee Directory & Staff Profiles';
@@ -302,8 +302,8 @@ function DashboardLayout({ user, onLogout, initialMeetingId }) {
       />
 
       <main className="dashboard-main flex-1 h-screen w-full overflow-y-auto">
-        <header className="dashboard-header bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3.5 flex flex-wrap gap-3 justify-between items-center sticky top-0 z-30 shadow-xs">
-          <div className="dashboard-header__title flex items-center justify-between gap-3 flex-1 min-w-0">
+        <header className="dashboard-header bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3 flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 justify-between items-center sticky top-0 z-30 shadow-xs">
+          <div className="dashboard-header__title flex items-center justify-between gap-2.5 flex-1 min-w-0">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
               {/* Mobile Sidebar Hamburger Toggle */}
               <button
@@ -401,7 +401,31 @@ function DashboardLayout({ user, onLogout, initialMeetingId }) {
           </div>
 
           {/* Sub-tab Pill Switcher & Employee Inspector Filter in Header Top Right */}
-          <div className="dashboard-header__controls flex items-center gap-3 text-xs w-full sm:w-auto" aria-label="Dashboard filters and view controls">
+          <div className="dashboard-header__controls flex items-center gap-2 sm:gap-3 text-xs w-full sm:w-auto" aria-label="Dashboard filters and view controls">
+            {activeTab === 'meetings' && (
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('start-instant-meeting'))}
+                  className="flex-1 sm:flex-initial justify-center bg-[#20b875] hover:bg-[#189b62] text-white font-extrabold px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+                >
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span className="truncate">Start Instant Meeting</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-schedule-meeting-modal'))}
+                  className="flex-1 sm:flex-initial justify-center bg-[#09233d] hover:bg-[#0f3459] text-white font-bold px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs border border-slate-700/50 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shrink-0"
+                >
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="truncate">Schedule Meeting</span>
+                </button>
+              </div>
+            )}
             {activeTab === 'overview' && (user?.role === 'superadmin' || user?.role === 'superior') && employeeList.length > 0 && (
               <HeaderEmployeeSelector
                 employeeList={employeeList}

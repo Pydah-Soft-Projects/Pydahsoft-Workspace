@@ -281,6 +281,33 @@ const leaveMeeting = async (req, res) => {
   }
 };
 
+// Delete meeting completely
+const deleteMeeting = async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+    const meeting = await Meeting.findOneAndDelete({
+      $or: [{ meetingId }, { _id: meetingId.match(/^[0-9a-fA-F]{24}$/) ? meetingId : null }]
+    });
+
+    if (!meeting) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Meeting not found' }
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Meeting deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: { message: error.message || 'Error deleting meeting' }
+    });
+  }
+};
+
 module.exports = {
   createMeeting,
   getMeetings,
@@ -288,5 +315,6 @@ module.exports = {
   joinMeeting,
   leaveMeeting,
   endMeeting,
-  sendInMeetingMessage
+  sendInMeetingMessage,
+  deleteMeeting
 };

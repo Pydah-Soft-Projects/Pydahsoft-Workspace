@@ -7,7 +7,8 @@ const {
   joinMeeting,
   leaveMeeting,
   endMeeting,
-  sendInMeetingMessage
+  sendInMeetingMessage,
+  deleteMeeting
 } = require('../controllers/meetingController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -20,5 +21,6 @@ router.post('/:meetingId/join', joinMeeting);
 router.post('/:meetingId/leave', leaveMeeting);
 router.post('/:meetingId/end', endMeeting);
 router.post('/:meetingId/chat', sendInMeetingMessage);
+router.delete('/:meetingId', deleteMeeting);
 
 module.exports = router;

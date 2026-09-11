@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchApi } from '../../config/api';
 import { getSocket } from '../../config/socket';
 
@@ -330,6 +331,15 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const iceCandidateQueueRef = useRef({}); // socketId -> Array of candidate objects
   const socketRef = useRef(null);
   const chatEndRef = useRef(null);
+
+  // Lock body scroll so outer application headers/sidebar are completely hidden under portal overlay
+  useEffect(() => {
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
 
   const getLiveMeetingUrl = () => {
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId || 'meet-room';
@@ -831,11 +841,11 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const remotePeerList = Object.values(remotePeers);
   const totalParticipantsCount = remotePeerList.length + 1; // Remote peers + Local user
 
-  return (
-    <div className="fixed inset-0 z-50 bg-[#041a12] text-white flex flex-col overflow-hidden font-sans relative">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] bg-[#041a12] text-white flex flex-col overflow-hidden font-sans">
       {/* Toast Notification */}
       {toastNotification && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#20b875] text-white px-5 py-2.5 rounded-2xl shadow-2xl font-extrabold text-xs flex items-center gap-2.5 border border-emerald-300 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[100000] bg-[#20b875] text-white px-5 py-2.5 rounded-2xl shadow-2xl font-extrabold text-xs flex items-center gap-2.5 border border-emerald-300 animate-in fade-in slide-in-from-top-4 duration-300">
           <svg className="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
@@ -844,39 +854,34 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       )}
 
       {/* Top Header */}
-      <header className="bg-[#072b1e] border-b border-[#0e4733] px-4 py-3 flex items-center justify-between shadow-lg shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-[#20b875] text-white font-extrabold flex items-center justify-center text-sm shadow-md shadow-[#20b875]/20">
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <header className="bg-[#072b1e] border-b border-[#0e4733] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between shadow-lg shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#20b875] text-white font-extrabold flex items-center justify-center text-sm shadow-md shadow-[#20b875]/20 shrink-0">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-extrabold text-sm sm:text-base text-white tracking-tight">
-                {liveMeetingData?.title || 'Live Video Conference'}
-              </h1>
-              <span className="bg-[#20b875]/20 text-[#4ade80] border border-[#20b875]/40 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1.5 animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]"></span> HD WEBRTC LIVE
-              </span>
-            </div>
-            <p className="text-[11px] text-emerald-300/80 font-mono truncate max-w-md">
-              Room Link: <span className="text-[#4ade80] font-bold">{getLiveMeetingUrl()}</span>
-            </p>
+          <div className="min-w-0 flex items-center gap-2">
+            <h1 className="font-black text-sm sm:text-base text-white tracking-tight truncate max-w-[110px] xs:max-w-[170px] sm:max-w-md">
+              {liveMeetingData?.title || 'Live Video Conference'}
+            </h1>
+            <span className="bg-[#0c3b29] border border-[#20b875]/50 text-[#4ade80] text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse"></span> LIVE
+            </span>
           </div>
         </div>
 
         {/* Top Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             type="button"
             onClick={handleCopyLink}
-            className="flex items-center gap-2 bg-[#0b3828] hover:bg-[#13523c] border border-[#166046] text-[#4ade80] text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 bg-[#093526] hover:bg-[#114533] border border-[#20b875]/50 text-[#4ade80] text-xs font-extrabold px-3 py-1.5 rounded-full transition-all shadow-xs cursor-pointer"
           >
-            <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            <svg className="w-3.5 h-3.5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002-2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
             </svg>
-            <span className="hidden sm:inline">{copiedLink ? 'Link Copied!' : 'Copy Link'}</span>
+            <span>{copiedLink ? 'Copied' : 'Link'}</span>
           </button>
 
           <button
@@ -885,17 +890,16 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               setSidebarOpen(!sidebarOpen);
               setActiveTab('chat');
             }}
-            className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`w-9 h-9 rounded-full border text-xs font-bold flex items-center justify-center transition-all cursor-pointer ${
               sidebarOpen && activeTab === 'chat'
                 ? 'bg-[#20b875] text-white border-[#20b875] shadow-md'
-                : 'bg-[#0b3828] text-gray-200 hover:text-white border-[#166046]'
+                : 'bg-[#093526] text-gray-200 hover:text-white border-[#20b875]/40'
             }`}
             title="In-Meeting Chat"
           >
-            <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <span className="hidden sm:inline">Chat</span>
           </button>
 
           <button
@@ -904,33 +908,33 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               setSidebarOpen(!sidebarOpen);
               setActiveTab('people');
             }}
-            className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 py-1.5 rounded-full border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
               sidebarOpen && activeTab === 'people'
                 ? 'bg-[#20b875] text-white border-[#20b875] shadow-md'
-                : 'bg-[#0b3828] text-gray-200 hover:text-white border-[#166046]'
+                : 'bg-[#093526] text-gray-200 hover:text-white border-[#20b875]/40'
             }`}
             title="Participants List"
           >
-            <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
-            <span className="hidden sm:inline">People ({totalParticipantsCount})</span>
+            <span>({totalParticipantsCount})</span>
           </button>
         </div>
       </header>
 
       {/* Main Video Call View Grid */}
       <div className="flex-1 flex overflow-hidden relative">
-        <div className="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col justify-center items-center">
-          <div className={`w-full max-w-6xl grid gap-4 ${
+        <div className="flex-1 p-3 sm:p-4 overflow-y-auto custom-scrollbar flex flex-col justify-start sm:justify-center items-center">
+          <div className={`w-full max-w-5xl grid gap-3 sm:gap-4 ${
             totalParticipantsCount === 1
-              ? 'grid-cols-1 max-w-2xl'
+              ? 'grid-cols-1 max-w-xl'
               : totalParticipantsCount === 2
               ? 'grid-cols-1 sm:grid-cols-2'
               : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2'
           }`}>
             {/* LOCAL USER VIDEO TILE */}
-            <div className="relative bg-[#09233d] border-2 border-[#20b875] rounded-2xl overflow-hidden aspect-video shadow-2xl flex items-center justify-center group">
+            <div className="relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-video shadow-2xl flex items-center justify-center group">
               <video
                 ref={localVideoRef}
                 autoPlay
@@ -942,29 +946,29 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               />
 
               {!videoOn && (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-20 h-20 rounded-full bg-[#20b875] text-white font-black text-2xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-lg">
+                <div className="flex flex-col items-center gap-2 sm:gap-3">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#20b875] text-white font-black text-xl sm:text-2xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-lg">
                     {(currentUser?.name || 'Y').charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-xs font-semibold text-emerald-200">Camera Off</span>
+                  <span className="text-[11px] sm:text-xs font-semibold text-emerald-200">Camera Off</span>
                 </div>
               )}
 
               {/* Local Participant Info */}
-              <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#0e4733] flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#4ade80]"></span>
-                <span className="text-xs font-extrabold text-white">
-                  {currentUser?.name || 'You'} (You) {screenSharing ? '[Sharing Screen]' : ''}
+              <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#166046] flex items-center gap-2 max-w-[88%] shadow-md">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#4ade80] shrink-0"></span>
+                <span className="text-xs font-extrabold text-white truncate">
+                  {currentUser?.name || 'You'} (You) {screenSharing ? '[Sharing]' : ''}
                 </span>
                 {handRaised && (
-                  <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
                   </svg>
                 )}
               </div>
 
               {/* Local Mic Status */}
-              <div className="absolute top-3 right-3 bg-[#072b1e]/90 backdrop-blur-md p-1.5 rounded-lg border border-[#0e4733]">
+              <div className="absolute top-3 right-3 bg-[#072b1e]/90 backdrop-blur-md p-2 rounded-xl border border-[#166046] shadow-md">
                 {micOn ? (
                   <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
@@ -986,18 +990,18 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             {totalParticipantsCount === 1 && (
               <div
                 onClick={handleCopyLink}
-                className="relative bg-[#072b1e]/60 border-2 border-dashed border-[#20b875]/40 hover:border-[#20b875] rounded-2xl overflow-hidden aspect-video shadow-lg flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all hover:bg-[#072b1e]"
+                className="relative bg-[#052217] border-2 border-dashed border-[#20b875]/40 hover:border-[#20b875] rounded-3xl overflow-hidden aspect-auto sm:aspect-video shadow-lg flex flex-col items-center justify-center p-5 sm:p-6 text-center cursor-pointer transition-all hover:bg-[#072b1e]"
               >
-                <div className="w-14 h-14 rounded-2xl bg-[#20b875]/20 text-[#4ade80] flex items-center justify-center font-bold text-2xl mb-3">
-                  <svg className="w-7 h-7 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#0a3a29] text-[#4ade80] flex items-center justify-center font-bold text-xl sm:text-2xl mb-3">
+                  <svg className="w-6 h-6 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
                 </div>
-                <h4 className="text-sm font-extrabold text-white">Invite Colleagues to Join</h4>
-                <p className="text-xs text-gray-300 font-medium mt-1 max-w-xs">
+                <h4 className="text-sm sm:text-base font-black text-white">Invite Colleagues to Join</h4>
+                <p className="text-xs text-gray-300 font-medium mt-1 max-w-xs leading-relaxed">
                   Share the live room link with your team members to start instant WebRTC video stream.
                 </p>
-                <span className="mt-4 px-4 py-2 bg-[#20b875] text-white font-extrabold text-xs rounded-xl shadow-md">
+                <span className="mt-4 px-6 py-2.5 bg-[#20b875] hover:bg-[#25d386] text-[#072b1e] font-black text-xs rounded-xl shadow-md transition-all">
                   {copiedLink ? 'Link Copied!' : 'Copy Room Link'}
                 </span>
               </div>
@@ -1149,95 +1153,96 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       </div>
 
       {/* Control Toolbar */}
-      <footer className="bg-[#072b1e] border-t border-[#0e4733] px-4 py-3 flex items-center justify-center gap-3 sm:gap-4 shrink-0 shadow-2xl">
+      <footer className="bg-[#041a12] border-t border-[#0e4733] px-2 xs:px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-4 shrink-0 shadow-2xl overflow-x-auto">
         {/* Mic Button */}
         <button
           type="button"
           onClick={toggleMic}
-          className={`flex flex-col items-center gap-1 p-3 sm:px-4 sm:py-2.5 rounded-2xl border text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer ${
+          className={`w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             micOn
-              ? 'bg-[#0b3828] border-[#166046] text-white hover:bg-[#13523c]'
+              ? 'bg-[#0b3828] border-[#166046] text-[#4ade80] hover:bg-[#13523c]'
               : 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
           }`}
+          title={micOn ? 'Mute Microphone' : 'Unmute Microphone'}
         >
           {micOn ? (
-            <svg className="w-5 h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
             </svg>
           ) : (
-            <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
           )}
-          <span className="hidden sm:inline">{micOn ? 'Mute' : 'Unmute'}</span>
         </button>
 
         {/* Camera Button */}
         <button
           type="button"
           onClick={toggleCamera}
-          className={`flex flex-col items-center gap-1 p-3 sm:px-4 sm:py-2.5 rounded-2xl border text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer ${
+          className={`w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             videoOn
-              ? 'bg-[#0b3828] border-[#166046] text-white hover:bg-[#13523c]'
+              ? 'bg-[#0b3828] border-[#166046] text-[#4ade80] hover:bg-[#13523c]'
               : 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
           }`}
+          title={videoOn ? 'Stop Camera' : 'Start Camera'}
         >
           {videoOn ? (
-            <svg className="w-5 h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           ) : (
-            <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
             </svg>
           )}
-          <span className="hidden sm:inline">{videoOn ? 'Stop Video' : 'Start Video'}</span>
         </button>
 
         {/* Native Screen Share Button */}
         <button
           type="button"
           onClick={toggleScreenShare}
-          className={`flex flex-col items-center gap-1 p-3 sm:px-4 sm:py-2.5 rounded-2xl border text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer ${
+          className={`w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             screenSharing
               ? 'bg-[#20b875] border-[#4ade80] text-white animate-pulse'
-              : 'bg-[#0b3828] border-[#166046] text-white hover:bg-[#13523c]'
+              : 'bg-[#0b3828] border-[#166046] text-[#4ade80] hover:bg-[#13523c]'
           }`}
+          title="Share Screen"
         >
-          <svg className="w-5 h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
-          <span className="hidden sm:inline">{screenSharing ? 'Stop Share' : 'Share Screen'}</span>
         </button>
 
         {/* Raise Hand Button */}
         <button
           type="button"
           onClick={toggleHand}
-          className={`flex flex-col items-center gap-1 p-3 sm:px-4 sm:py-2.5 rounded-2xl border text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer ${
+          className={`w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             handRaised
               ? 'bg-amber-500 border-amber-400 text-white'
-              : 'bg-[#0b3828] border-[#166046] text-white hover:bg-[#13523c]'
+              : 'bg-[#0b3828] border-[#166046] text-amber-400 hover:bg-[#13523c]'
           }`}
+          title="Raise Hand"
         >
-          <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
           </svg>
-          <span className="hidden sm:inline">{handRaised ? 'Hand Raised' : 'Raise Hand'}</span>
         </button>
 
         {/* Leave Call Button */}
         <button
           type="button"
           onClick={handleLeaveCall}
-          className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-extrabold px-5 py-3 rounded-2xl shadow-lg transition-all active:scale-95 ml-2 cursor-pointer"
+          className="bg-[#ff0055] hover:bg-[#e0004c] text-white font-extrabold text-[11px] xs:text-xs px-2.5 xs:px-3.5 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 shadow-lg tracking-wider shrink-0 cursor-pointer"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8l2-2m0 0l2-2m-2 2l-2 2m2-2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h6" />
           </svg>
-          <span className="text-xs uppercase tracking-wider">Leave Call</span>
+          <span className="uppercase font-black tracking-wider">LEAVE CALL</span>
         </button>
       </footer>
-    </div>
+    </div>,
+    document.body
   );
 }
