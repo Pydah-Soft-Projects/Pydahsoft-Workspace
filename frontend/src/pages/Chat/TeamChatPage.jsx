@@ -15,6 +15,8 @@ export default function TeamChatPage({ currentUser }) {
 
   const messagesEndRef = useRef(null);
   const chatStreamRef = useRef(null);
+  const previousMessageCountRef = useRef(0);
+  const previousRecipientKeyRef = useRef('');
   const [viewportHeight, setViewportHeight] = useState(null);
 
   // Dynamic visualViewport listener for mobile keyboard resizing
@@ -22,7 +24,6 @@ export default function TeamChatPage({ currentUser }) {
     if (typeof window === 'undefined' || !window.visualViewport) return;
     const updateHeight = () => {
       setViewportHeight(window.visualViewport.height);
-      window.scrollTo(0, 0);
     };
     window.visualViewport.addEventListener('resize', updateHeight);
     window.visualViewport.addEventListener('scroll', updateHeight);
@@ -67,9 +68,22 @@ export default function TeamChatPage({ currentUser }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to bottom of chat
+  // Keep the message body at the bottom without interrupting an active scroll.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const stream = chatStreamRef.current;
+    if (!stream) return;
+
+    const recipientKey = `${selectedRecipient.type}:${selectedRecipient.data?._id || 'all'}`;
+    const conversationChanged = previousRecipientKeyRef.current !== recipientKey;
+    const newMessagesArrived = messages.length > previousMessageCountRef.current;
+    const isNearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 80;
+
+    if (conversationChanged || (newMessagesArrived && isNearBottom)) {
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    previousMessageCountRef.current = messages.length;
+    previousRecipientKeyRef.current = recipientKey;
   }, [messages, selectedRecipient]);
 
   // Filter messages for active selection
