@@ -19,6 +19,20 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [creating, setCreating] = useState(false);
 
+  // Helper to persist active meeting room ID in localStorage across F5 page refreshes
+  const enterMeetingRoom = (meetingData) => {
+    setActiveMeeting(meetingData);
+    if (meetingData?.meetingId) {
+      localStorage.setItem('pydahsoft_active_meeting_id', meetingData.meetingId);
+    }
+  };
+
+  const leaveMeetingRoom = () => {
+    setActiveMeeting(null);
+    localStorage.removeItem('pydahsoft_active_meeting_id');
+    loadMeetings();
+  };
+
   const loadMeetings = async () => {
     try {
       setLoading(true);
@@ -37,19 +51,23 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
       .then((res) => setEmployeeList(res.data || []))
       .catch(() => {});
 
-    if (directMeetingId) {
-      fetchApi(`/meetings/${directMeetingId}/join`, { method: 'POST' })
+    // Restore active meeting session on F5 refresh or direct URL navigation
+    const savedMeetingId = directMeetingId || localStorage.getItem('pydahsoft_active_meeting_id');
+    if (savedMeetingId) {
+      fetchApi(`/meetings/${savedMeetingId}/join`, { method: 'POST' })
         .then((res) => {
           if (res.data) {
-            setActiveMeeting(res.data);
+            enterMeetingRoom(res.data);
           }
         })
         .catch(() => {
-          fetchApi(`/meetings/${directMeetingId}`)
+          fetchApi(`/meetings/${savedMeetingId}`)
             .then((res) => {
-              if (res.data) setActiveMeeting(res.data);
+              if (res.data) enterMeetingRoom(res.data);
             })
-            .catch(() => {});
+            .catch(() => {
+              localStorage.removeItem('pydahsoft_active_meeting_id');
+            });
         });
     }
   }, [directMeetingId]);
@@ -66,7 +84,7 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
       });
 
       if (res.data) {
-        setActiveMeeting(res.data);
+        enterMeetingRoom(res.data);
         loadMeetings();
       }
     } catch (err) {
@@ -101,7 +119,7 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
         setSelectedUserIds([]);
         loadMeetings();
         if (meetingType === 'instant') {
-          setActiveMeeting(res.data);
+          enterMeetingRoom(res.data);
         }
       }
     } catch (err) {
@@ -123,7 +141,7 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
     fetchApi(`/meetings/${code}/join`, { method: 'POST' })
       .then((res) => {
         if (res.data) {
-          setActiveMeeting(res.data);
+          enterMeetingRoom(res.data);
         }
       })
       .catch((err) => {
@@ -131,10 +149,10 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
       });
   };
 
-  const handleCopyLink = (meeting) => {
-    const link = `${window.location.origin}/meetings/${meeting.meetingId}`;
+  const handleCopyLink = (meetingItem) => {
+    const link = `${window.location.origin}/meetings/${meetingItem.meetingId}`;
     navigator.clipboard.writeText(link);
-    setCopiedId(meeting._id);
+    setCopiedId(meetingItem._id);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -144,17 +162,13 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
       <MeetingRoom
         meeting={activeMeeting}
         currentUser={currentUser}
-        onLeave={() => {
-          setActiveMeeting(null);
-          loadMeetings();
-        }}
+        onLeave={leaveMeetingRoom}
       />
     );
   }
 
   const activeCalls = meetings.filter((m) => m.status === 'active');
   const upcomingCalls = meetings.filter((m) => m.status === 'scheduled');
-  const endedCalls = meetings.filter((m) => m.status === 'ended');
 
   return (
     <div className="meetings-container max-w-7xl mx-auto space-y-6">
@@ -180,7 +194,7 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
               disabled={creating}
               className="bg-[#20b875] hover:bg-[#189b62] text-white font-extrabold px-5 py-3 rounded-2xl text-xs sm:text-sm flex items-center gap-2.5 shadow-lg shadow-[#20b875]/30 transition-all active:scale-95 cursor-pointer"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
               <span>{creating ? 'Starting Room...' : 'Start Instant Meeting'}</span>
@@ -273,9 +287,9 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {activeCalls.map((meeting) => (
+            {activeCalls.map((meetingItem) => (
               <div
-                key={meeting._id}
+                key={meetingItem._id}
                 className="bg-white rounded-2xl border border-emerald-200/80 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div>
@@ -285,33 +299,33 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
                         Active Call
                       </span>
                       <h3 className="text-sm font-black text-[#09233d] mt-2 leading-tight">
-                        {meeting.title}
+                        {meetingItem.title}
                       </h3>
                       <p className="text-[11px] text-gray-500 font-medium mt-1">
-                        Hosted by: <span className="text-gray-900 font-bold">{meeting.hostName}</span>
+                        Hosted by: <span className="text-gray-900 font-bold">{meetingItem.hostName}</span>
                       </p>
                     </div>
 
                     <span className="text-[10px] text-gray-400 font-mono bg-slate-100 px-2 py-1 rounded-lg">
-                      {meeting.meetingId}
+                      {meetingItem.meetingId}
                     </span>
                   </div>
 
                   {/* Active Participants counter */}
                   <div className="mt-4 flex items-center gap-2 pt-3 border-t border-gray-100">
                     <div className="flex -space-x-2 overflow-hidden">
-                      {meeting.activeParticipants?.map((p, idx) => (
+                      {meetingItem.activeParticipants?.map((p, idx) => (
                         <div
                           key={idx}
                           className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-[#20b875] text-white font-bold text-[10px] flex items-center justify-center"
                           title={p.name}
                         >
-                          {p.name.charAt(0)}
+                          {p.name.charAt(0).toUpperCase()}
                         </div>
                       ))}
                     </div>
                     <span className="text-[11px] text-gray-500 font-medium">
-                      {meeting.activeParticipants?.length || 1} participant(s) inside
+                      {meetingItem.activeParticipants?.length || 1} participant(s) inside
                     </span>
                   </div>
                 </div>
@@ -319,7 +333,7 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
                 <div className="mt-5 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setActiveMeeting(meeting)}
+                    onClick={() => enterMeetingRoom(meetingItem)}
                     className="flex-1 bg-[#20b875] hover:bg-[#179c62] text-white font-extrabold text-xs py-2.5 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span>Join Meeting Room</span>
@@ -330,11 +344,11 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
 
                   <button
                     type="button"
-                    onClick={() => handleCopyLink(meeting)}
+                    onClick={() => handleCopyLink(meetingItem)}
                     className="bg-slate-100 hover:bg-slate-200 text-gray-700 font-bold text-xs px-3 py-2.5 rounded-xl transition-colors cursor-pointer border border-gray-200"
                     title="Copy Shareable Link"
                   >
-                    {copiedId === meeting._id ? 'Copied!' : 'Copy Link'}
+                    {copiedId === meetingItem._id ? 'Copied!' : 'Copy Link'}
                   </button>
                 </div>
               </div>
@@ -351,29 +365,29 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
           <p className="text-xs text-gray-400 font-medium">No upcoming scheduled meetings.</p>
         ) : (
           <div className="divide-y divide-gray-100">
-            {upcomingCalls.map((meeting) => (
-              <div key={meeting._id} className="py-3 flex items-center justify-between flex-wrap gap-3">
+            {upcomingCalls.map((meetingItem) => (
+              <div key={meetingItem._id} className="py-3 flex items-center justify-between flex-wrap gap-3">
                 <div>
-                  <h4 className="text-xs font-extrabold text-[#09233d]">{meeting.title}</h4>
+                  <h4 className="text-xs font-extrabold text-[#09233d]">{meetingItem.title}</h4>
                   <p className="text-[11px] text-gray-500 font-medium mt-0.5">
-                    Scheduled for: {new Date(meeting.scheduledAt).toLocaleString()}
+                    Scheduled for: {new Date(meetingItem.scheduledAt).toLocaleString()}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setActiveMeeting(meeting)}
+                    onClick={() => enterMeetingRoom(meetingItem)}
                     className="bg-[#20b875] text-white font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-[#189960]"
                   >
                     Start Call Now
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleCopyLink(meeting)}
+                    onClick={() => handleCopyLink(meetingItem)}
                     className="bg-slate-100 text-gray-700 font-bold text-xs px-3 py-1.5 rounded-lg border border-gray-200"
                   >
-                    {copiedId === meeting._id ? 'Copied' : 'Share Link'}
+                    {copiedId === meetingItem._id ? 'Copied' : 'Share Link'}
                   </button>
                 </div>
               </div>

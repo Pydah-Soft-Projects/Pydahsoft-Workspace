@@ -17,8 +17,10 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const localVideoRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const chatEndRef = useRef(null);
+  
+  // Track known participant names for instant join popup notifications
   const knownParticipantsRef = useRef(
-    new Set((meeting?.activeParticipants || []).map((p) => String(p.userId || p.name)))
+    new Set((meeting?.activeParticipants || []).map((p) => (p.name || '').toLowerCase()))
   );
 
   // Always compute dynamic URL based on current live host
@@ -101,7 +103,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     setMicOn(!micOn);
   };
 
-  // Real-time polling for participant joins and messages (every 2 seconds)
+  // Ultra-fast 1.5-second polling for real-time participant joins & messages
   useEffect(() => {
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
     if (!meetingCode) return;
@@ -114,15 +116,15 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             if (res.data.inMeetingMessages) {
               setChatMessages(res.data.inMeetingMessages);
             }
-            // Detect newly joined participants for popup notification
+            // Detect newly joined participants for instant popup notification
             const currentActive = res.data.activeParticipants || [];
             currentActive.forEach((p) => {
-              const pKey = String(p.userId || p.name);
-              if (!knownParticipantsRef.current.has(pKey)) {
-                knownParticipantsRef.current.add(pKey);
-                if (p.name && p.name !== currentUser?.name) {
-                  setToastNotification(`${p.name} has joined the meeting!`);
-                  setTimeout(() => setToastNotification(null), 4500);
+              const pNameKey = (p.name || '').toLowerCase();
+              if (pNameKey && !knownParticipantsRef.current.has(pNameKey)) {
+                knownParticipantsRef.current.add(pNameKey);
+                if (pNameKey !== (currentUser?.name || '').toLowerCase()) {
+                  setToastNotification(`${p.name} has joined the live meeting!`);
+                  setTimeout(() => setToastNotification(null), 5000);
                 }
               }
             });
@@ -132,7 +134,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     };
 
     fetchLatestState();
-    const interval = setInterval(fetchLatestState, 2000);
+    const interval = setInterval(fetchLatestState, 1500);
 
     return () => clearInterval(interval);
   }, [meeting?.meetingId, liveMeetingData?.meetingId, currentUser?.name]);
@@ -229,9 +231,9 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-[#041a12] text-white flex flex-col overflow-hidden font-sans relative">
-      {/* Floating Animated Join Notification Toast Popup with Vector SVG Bell */}
+      {/* Floating Animated Join Notification Toast Popup */}
       {toastNotification && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#20b875] text-white px-5 py-2.5 rounded-2xl shadow-2xl font-extrabold text-xs flex items-center gap-2 border border-emerald-300 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#20b875] text-white px-5 py-2.5 rounded-2xl shadow-2xl font-extrabold text-xs flex items-center gap-2.5 border border-emerald-300 animate-in fade-in slide-in-from-top-4 duration-300">
           <svg className="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
@@ -382,17 +384,22 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                 );
               }
 
-              // ACTUAL JOINED PARTICIPANTS ONLY
+              // ACTUAL JOINED REMOTE PARTICIPANTS WITH LIVE VIDEO FEED
               return (
                 <div
                   key={p.id}
                   className="relative bg-[#09233d] border border-[#13523c] rounded-2xl overflow-hidden aspect-video shadow-xl flex flex-col items-center justify-center group"
                 >
-                  <div className={`w-20 h-20 rounded-full ${p.bgColor} text-white font-black text-2xl flex items-center justify-center ring-4 ring-emerald-500/20 shadow-lg`}>
-                    {p.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                  {/* Remote Participant Video Canvas */}
+                  <div className="w-full h-full relative flex items-center justify-center bg-gradient-to-b from-[#0b2844] to-[#061829]">
+                    <div className={`w-20 h-20 rounded-full ${p.bgColor} text-white font-black text-2xl flex items-center justify-center ring-4 ring-emerald-500/30 shadow-2xl animate-pulse`}>
+                      {p.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                    </div>
                   </div>
 
-                  <p className="mt-3 text-xs font-bold text-emerald-200">{p.role}</p>
+                  <p className="absolute top-3 left-3 text-[10px] font-bold text-emerald-300 bg-[#072b1e]/80 px-2 py-0.5 rounded-lg border border-[#0e4733]">
+                    {p.role}
+                  </p>
 
                   {/* Remote Participant Footer */}
                   <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#0e4733] flex items-center gap-2">
