@@ -212,7 +212,9 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
       <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#20b875] flex items-center justify-center font-bold shrink-0">
-            🔗
+            <svg className="w-5 h-5 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
           </div>
           <div>
             <h3 className="text-xs sm:text-sm font-extrabold text-[#09233d]">Have a Meeting Link or Code?</h3>
@@ -259,8 +261,10 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
           </div>
         ) : activeCalls.length === 0 ? (
           <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center font-bold mx-auto text-xl">
-              📹
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-[#20b875] flex items-center justify-center font-bold mx-auto text-xl">
+              <svg className="w-6 h-6 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
             </div>
             <h4 className="text-xs sm:text-sm font-bold text-gray-700">No active meetings right now</h4>
             <p className="text-[11px] text-gray-400 max-w-sm mx-auto">

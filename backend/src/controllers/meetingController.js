@@ -111,6 +111,23 @@ const getMeetingById = async (req, res) => {
         ]
       });
       await meeting.save();
+    } else {
+      // Ensure currentUser is registered in activeParticipants so all connected participants see each other
+      const currentUser = req.user;
+      const isAlreadyActive = meeting.activeParticipants.some(
+        (p) => String(p.userId) === String(currentUser._id) || (p.name || '').toLowerCase() === (currentUser.name || '').toLowerCase()
+      );
+      if (!isAlreadyActive) {
+        meeting.activeParticipants.push({
+          userId: currentUser._id,
+          name: currentUser.name,
+          joinedAt: new Date()
+        });
+        if (meeting.status === 'scheduled') {
+          meeting.status = 'active';
+        }
+        await meeting.save();
+      }
     }
 
     res.status(200).json({

@@ -58,24 +58,55 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     };
   }, []);
 
-  // Sync video/mic tracks with state
-  useEffect(() => {
+  // Hardware Camera Toggle Handler (completely stops/starts camera hardware stream)
+  const toggleCamera = async () => {
+    if (videoOn) {
+      // Turn Off: Stop media tracks & release camera hardware
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getVideoTracks().forEach((track) => {
+          track.enabled = false;
+          track.stop();
+        });
+      }
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = null;
+      }
+      setVideoOn(false);
+    } else {
+      // Turn On: Re-acquire camera stream
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: micOn
+        });
+        mediaStreamRef.current = stream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+        setVideoOn(true);
+      } catch (err) {
+        console.warn('Unable to restart hardware camera stream:', err);
+        setVideoOn(false);
+      }
+    }
+  };
+
+  // Microphone Toggle Handler
+  const toggleMic = () => {
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getVideoTracks().forEach((track) => {
-        track.enabled = videoOn;
-      });
       mediaStreamRef.current.getAudioTracks().forEach((track) => {
-        track.enabled = micOn;
+        track.enabled = !micOn;
       });
     }
-  }, [videoOn, micOn]);
+    setMicOn(!micOn);
+  };
 
-  // Real-time polling for participant joins and messages
+  // Real-time polling for participant joins and messages (every 2 seconds)
   useEffect(() => {
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
     if (!meetingCode) return;
 
-    const interval = setInterval(() => {
+    const fetchLatestState = () => {
       fetchApi(`/meetings/${meetingCode}`)
         .then((res) => {
           if (res.data) {
@@ -83,14 +114,14 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             if (res.data.inMeetingMessages) {
               setChatMessages(res.data.inMeetingMessages);
             }
-            // Detect newly joined participants for popup
+            // Detect newly joined participants for popup notification
             const currentActive = res.data.activeParticipants || [];
             currentActive.forEach((p) => {
               const pKey = String(p.userId || p.name);
               if (!knownParticipantsRef.current.has(pKey)) {
                 knownParticipantsRef.current.add(pKey);
                 if (p.name && p.name !== currentUser?.name) {
-                  setToastNotification(`🔔 ${p.name} has joined the meeting!`);
+                  setToastNotification(`${p.name} has joined the meeting!`);
                   setTimeout(() => setToastNotification(null), 4500);
                 }
               }
@@ -98,7 +129,10 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           }
         })
         .catch(() => {});
-    }, 3000);
+    };
+
+    fetchLatestState();
+    const interval = setInterval(fetchLatestState, 2000);
 
     return () => clearInterval(interval);
   }, [meeting?.meetingId, liveMeetingData?.meetingId, currentUser?.name]);
@@ -137,75 +171,70 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     }
   };
 
-  // Build Real Participants array based ONLY on host + selected/invited members
-  const currentUserId = String(currentUser?._id || '');
+  // Build Real Participants array for VIDEO GRID: Synchronized across ALL connected devices
+  const myName = currentUser?.name || 'You';
+  const myId = String(currentUser?._id || 'me');
 
-  const hostTile = {
-    id: currentUserId || 'host-me',
-    name: `${currentUser?.name || liveMeetingData?.hostName || 'Host'} (You)`,
-    role: currentUser?.role || liveMeetingData?.hostRole || 'Meeting Host',
-    isMe: true,
-    micOn: micOn,
-    videoOn: videoOn,
-    handRaised: handRaised,
-    bgColor: 'bg-[#20b875]'
-  };
+  const allParticipants = [];
+  const seenKeys = new Set();
 
-  const otherTiles = [];
-  const seenUserIds = new Set([currentUserId, (currentUser?.name || '').toLowerCase()]);
-
-  // Add Invited Members selected by user
-  if (liveMeetingData?.invitedUsers && Array.isArray(liveMeetingData.invitedUsers)) {
-    liveMeetingData.invitedUsers.forEach((u, i) => {
-      const uNameKey = (u.name || '').toLowerCase();
-      const uIdKey = String(u.userId || u._id || `inv-${i}`);
-      if (!seenUserIds.has(uIdKey) && !seenUserIds.has(uNameKey)) {
-        seenUserIds.add(uIdKey);
-        seenUserIds.add(uNameKey);
-        otherTiles.push({
-          id: uIdKey,
-          name: u.name,
-          role: 'Invited Staff',
-          isMe: false,
-          micOn: true,
-          videoOn: false,
-          handRaised: false,
-          bgColor: ['bg-[#09233d]', 'bg-[#0d3b2b]', 'bg-[#13523c]'][i % 3]
-        });
-      }
-    });
-  }
-
-  // Add Active Participants from DB
   if (liveMeetingData?.activeParticipants && Array.isArray(liveMeetingData.activeParticipants)) {
-    liveMeetingData.activeParticipants.forEach((u, i) => {
-      const uNameKey = (u.name || '').toLowerCase();
-      const uIdKey = String(u.userId || u._id || `act-${i}`);
-      if (!seenUserIds.has(uIdKey) && !seenUserIds.has(uNameKey)) {
-        seenUserIds.add(uIdKey);
-        seenUserIds.add(uNameKey);
-        otherTiles.push({
-          id: uIdKey,
-          name: u.name,
-          role: 'Participant',
-          isMe: false,
-          micOn: true,
-          videoOn: true,
-          handRaised: false,
-          bgColor: 'bg-[#09233d]'
+    liveMeetingData.activeParticipants.forEach((p, idx) => {
+      const pName = p.name || 'Participant';
+      const pKey = String(p.userId || pName).toLowerCase();
+
+      if (!seenKeys.has(pKey)) {
+        seenKeys.add(pKey);
+        const isMe = String(p.userId) === myId || pName.toLowerCase() === myName.toLowerCase();
+        allParticipants.push({
+          id: String(p.userId || `p-${idx}`),
+          name: isMe ? `${pName} (You)` : pName,
+          role: isMe ? 'Meeting Host / You' : 'Live Participant',
+          isMe: isMe,
+          micOn: isMe ? micOn : true,
+          videoOn: isMe ? videoOn : true,
+          handRaised: isMe ? handRaised : false,
+          bgColor: isMe ? 'bg-[#20b875]' : ['bg-[#09233d]', 'bg-[#0d3b2b]', 'bg-[#13523c]'][idx % 3]
         });
       }
     });
   }
 
-  const allParticipants = [hostTile, ...otherTiles];
+  // Ensure current user is present if activeParticipants hasn't polled yet
+  if (!seenKeys.has(myId.toLowerCase()) && !seenKeys.has(myName.toLowerCase())) {
+    allParticipants.unshift({
+      id: myId,
+      name: `${myName} (You)`,
+      role: 'Meeting Host',
+      isMe: true,
+      micOn: micOn,
+      videoOn: videoOn,
+      handRaised: handRaised,
+      bgColor: 'bg-[#20b875]'
+    });
+  }
+
+  // List pending invited members for sidebar
+  const pendingInvitedList = [];
+  if (liveMeetingData?.invitedUsers && Array.isArray(liveMeetingData.invitedUsers)) {
+    liveMeetingData.invitedUsers.forEach((u) => {
+      const isJoined = (liveMeetingData.activeParticipants || []).some(
+        (p) => (p.name || '').toLowerCase() === (u.name || '').toLowerCase()
+      );
+      if (!isJoined && (u.name || '').toLowerCase() !== myName.toLowerCase()) {
+        pendingInvitedList.push(u);
+      }
+    });
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-[#041a12] text-white flex flex-col overflow-hidden font-sans relative">
-      {/* Floating Animated Join Notification Toast Popup */}
+      {/* Floating Animated Join Notification Toast Popup with Vector SVG Bell */}
       {toastNotification && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#20b875] text-white px-5 py-2.5 rounded-2xl shadow-2xl font-extrabold text-xs flex items-center gap-2 border border-emerald-300 animate-in fade-in slide-in-from-top-4 duration-300">
-          <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping shrink-0" />
+          <svg className="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
           <span>{toastNotification}</span>
         </div>
       )}
@@ -214,7 +243,9 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       <header className="bg-[#072b1e] border-b border-[#0e4733] px-4 py-3 flex items-center justify-between shadow-lg shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-[#20b875] text-white font-extrabold flex items-center justify-center text-sm shadow-md shadow-[#20b875]/20">
-            📹
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -225,7 +256,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                 <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]"></span> LIVE SESSION
               </span>
             </div>
-            <p className="text-[11px] text-emerald-300/80 font-mono">
+            <p className="text-[11px] text-emerald-300/80 font-mono truncate max-w-md">
               Room Link: <span className="text-[#4ade80] font-bold">{getLiveMeetingUrl()}</span>
             </p>
           </div>
@@ -241,7 +272,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
             </svg>
-            <span>{copiedLink ? 'Live Link Copied!' : 'Copy Live Link'}</span>
+            <span className="hidden sm:inline">{copiedLink ? 'Live Link Copied!' : 'Copy Live Link'}</span>
           </button>
 
           <button
@@ -319,7 +350,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                         <div className="w-20 h-20 rounded-full bg-[#20b875] text-white font-black text-2xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-lg">
                           {p.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="text-xs font-semibold text-emerald-200">Camera Off</span>
+                        <span className="text-xs font-semibold text-emerald-200">Camera Stopped</span>
                       </div>
                     )}
 
@@ -327,7 +358,11 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                     <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#0e4733] flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[#4ade80]"></span>
                       <span className="text-xs font-extrabold text-white">{p.name}</span>
-                      {p.handRaised && <span className="text-xs">✋</span>}
+                      {p.handRaised && (
+                        <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
+                        </svg>
+                      )}
                     </div>
 
                     {/* Mic Indicator Icon */}
@@ -347,7 +382,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                 );
               }
 
-              // Selected Participant Tiles ONLY
+              // ACTUAL JOINED PARTICIPANTS ONLY
               return (
                 <div
                   key={p.id}
@@ -363,7 +398,11 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                   <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#0e4733] flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#4ade80]"></span>
                     <span className="text-xs font-extrabold text-white">{p.name}</span>
-                    {p.handRaised && <span className="text-xs animate-bounce">✋</span>}
+                    {p.handRaised && (
+                      <svg className="w-3.5 h-3.5 text-amber-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
+                      </svg>
+                    )}
                   </div>
 
                   {/* Mic Indicator Icon */}
@@ -382,14 +421,16 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               );
             })}
 
-            {/* Quick Copy Link Card if only host is in call */}
+            {/* Quick Copy Link Card if only 1 participant is in call */}
             {allParticipants.length === 1 && (
               <div
                 onClick={handleCopyLink}
                 className="relative bg-[#072b1e]/60 border-2 border-dashed border-[#20b875]/40 hover:border-[#20b875] rounded-2xl overflow-hidden aspect-video shadow-lg flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all hover:bg-[#072b1e]"
               >
                 <div className="w-14 h-14 rounded-2xl bg-[#20b875]/20 text-[#4ade80] flex items-center justify-center font-bold text-2xl mb-3">
-                  🔗
+                  <svg className="w-7 h-7 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
                 </div>
                 <h4 className="text-sm font-extrabold text-white">Invite Colleagues to Join</h4>
                 <p className="text-xs text-gray-300 font-medium mt-1 max-w-xs">
@@ -424,7 +465,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                     activeTab === 'people' ? 'bg-[#20b875] text-white' : 'text-gray-300 hover:text-white'
                   }`}
                 >
-                  People
+                  People ({allParticipants.length})
                 </button>
               </div>
               <button
@@ -480,30 +521,64 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
             {/* People Tab Content */}
             {activeTab === 'people' && (
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-3.5 space-y-2">
-                <div className="text-[11px] font-bold text-[#4ade80] uppercase tracking-wider mb-2">
-                  Call Members ({allParticipants.length})
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-3.5 space-y-4">
+                {/* Joined Live Members Section */}
+                <div>
+                  <div className="text-[11px] font-bold text-[#4ade80] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#4ade80]"></span>
+                    <span>Joined Live Members ({allParticipants.length})</span>
+                  </div>
+                  <div className="space-y-2">
+                    {allParticipants.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#0b3828] border border-[#13523c]">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-[#20b875] text-white font-bold text-xs flex items-center justify-center">
+                            {p.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-white block leading-tight">{p.name}</span>
+                            <span className="text-[10px] text-emerald-300 font-medium">{p.role}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {p.micOn ? (
+                            <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                {allParticipants.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#0b3828] border border-[#13523c]">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-[#20b875] text-white font-bold text-xs flex items-center justify-center">
-                        {p.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <span className="text-xs font-bold text-white block leading-tight">{p.name}</span>
-                        <span className="text-[10px] text-emerald-300 font-medium">{p.role}</span>
-                      </div>
+
+                {/* Pending Invited Members Section */}
+                {pendingInvitedList.length > 0 && (
+                  <div className="pt-2 border-t border-[#0e4733]">
+                    <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider mb-2">
+                      Pending Invites ({pendingInvitedList.length})
                     </div>
-                    <div className="flex items-center gap-1">
-                      {p.micOn ? (
-                        <span className="text-[#4ade80] text-xs">🎙️</span>
-                      ) : (
-                        <span className="text-rose-400 text-xs">🔇</span>
-                      )}
+                    <div className="space-y-2">
+                      {pendingInvitedList.map((u, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-[#09233d]/60 border border-slate-700/50">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full bg-slate-700 text-gray-300 font-bold text-xs flex items-center justify-center">
+                              {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <div>
+                              <span className="text-xs font-bold text-gray-300 block leading-tight">{u.name}</span>
+                              <span className="text-[10px] text-amber-400 font-medium">Waiting to Join...</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </aside>
@@ -515,7 +590,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         {/* Mic Button */}
         <button
           type="button"
-          onClick={() => setMicOn(!micOn)}
+          onClick={toggleMic}
           className={`flex flex-col items-center gap-1 p-3 sm:px-4 sm:py-2.5 rounded-2xl border text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer ${
             micOn
               ? 'bg-[#0b3828] border-[#166046] text-white hover:bg-[#13523c]'
@@ -534,10 +609,10 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           <span className="hidden sm:inline">{micOn ? 'Mute' : 'Unmute'}</span>
         </button>
 
-        {/* Camera Button */}
+        {/* Camera Button (Complete Hardware Release Toggle) */}
         <button
           type="button"
-          onClick={() => setVideoOn(!videoOn)}
+          onClick={toggleCamera}
           className={`flex flex-col items-center gap-1 p-3 sm:px-4 sm:py-2.5 rounded-2xl border text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer ${
             videoOn
               ? 'bg-[#0b3828] border-[#166046] text-white hover:bg-[#13523c]'
@@ -582,14 +657,21 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               : 'bg-[#0b3828] border-[#166046] text-white hover:bg-[#13523c]'
           }`}
         >
-          <span className="text-base leading-none">✋</span>
+          <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
+          </svg>
           <span className="hidden sm:inline">{handRaised ? 'Hand Raised' : 'Raise Hand'}</span>
         </button>
 
         {/* Leave / End Call Button */}
         <button
           type="button"
-          onClick={onLeave}
+          onClick={() => {
+            if (mediaStreamRef.current) {
+              mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+            }
+            onLeave();
+          }}
           className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-extrabold px-5 py-3 rounded-2xl shadow-lg transition-all active:scale-95 ml-2 cursor-pointer"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
