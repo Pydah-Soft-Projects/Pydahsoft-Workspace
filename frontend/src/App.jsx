@@ -585,11 +585,16 @@ function DashboardLayout({ user, onLogout, initialMeetingId }) {
 }
 
 function DirectMeetingHandler({ user, onLogout }) {
-  const { meetingId } = useParams();
+  const { meetingId: paramMeetingId } = useParams();
   const location = useLocation();
 
+  // Robust meetingId extraction from params, pathname, or hash
+  const pathMatch = window.location.pathname.match(/\/meetings\/([^\/#?]+)/);
+  const hashMatch = window.location.hash.match(/meetings\/([^\/#?]+)/);
+  const meetingId = paramMeetingId || (pathMatch && pathMatch[1]) || (hashMatch && hashMatch[1]);
+
   if (!user) {
-    localStorage.setItem('pydahsoft_redirect_after_login', location.pathname);
+    localStorage.setItem('pydahsoft_redirect_after_login', `/meetings/${meetingId || ''}`);
     return <Navigate to="/login" replace />;
   }
 
@@ -617,6 +622,15 @@ function App() {
     localStorage.removeItem('pydahsoft_active_tab');
     setUser(null);
   };
+
+  // Auto-normalize pathname direct links (e.g. /meetings/meet-xxx) to HashRouter format (/#/meetings/meet-xxx)
+  useEffect(() => {
+    const pathMatch = window.location.pathname.match(/\/meetings\/([^\/#?]+)/);
+    if (pathMatch && pathMatch[1] && !window.location.hash.includes('/meetings/')) {
+      const code = pathMatch[1];
+      window.history.replaceState(null, '', `/#/meetings/${code}`);
+    }
+  }, []);
 
   useEffect(() => {
     const handleSessionExpired = () => setUser(null);
@@ -651,3 +665,4 @@ function App() {
 }
 
 export default App;
+

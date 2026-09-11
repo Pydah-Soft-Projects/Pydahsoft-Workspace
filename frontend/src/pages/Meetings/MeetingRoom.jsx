@@ -5,9 +5,84 @@ import { getSocket } from '../../config/socket';
 const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' }
   ]
 };
+
+// Helper to generate a virtual test stream when hardware camera is locked by another browser window on the same machine
+function createSyntheticMediaStream(userName) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 640;
+  canvas.height = 480;
+  const ctx = canvas.getContext('2d');
+  let angle = 0;
+
+  function draw() {
+    angle = (angle + 0.03) % (Math.PI * 2);
+    // Background gradient
+    const gradient = ctx.createLinearGradient(0, 0, 640, 480);
+    gradient.addColorStop(0, '#09233d');
+    gradient.addColorStop(1, '#072b1e');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 640, 480);
+
+    // Animated Ring
+    ctx.strokeStyle = '#20b875';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(320, 200, 70 + Math.sin(angle) * 5, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // User Avatar Circle
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.arc(320, 200, 60, 0, Math.PI * 2);
+    ctx.fill();
+
+    // User Initials
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText((userName || 'User').substring(0, 2).toUpperCase(), 320, 200);
+
+    // Live Tag Text
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillStyle = '#4ade80';
+    ctx.fillText(userName || 'Live Participant', 320, 310);
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#9ca3af';
+    ctx.fillText('Live WebRTC Video Stream', 320, 335);
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  const stream = canvas.captureStream(30);
+
+  // Add silent audio track using AudioContext oscillator
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      const audioCtx = new AudioCtx();
+      const osc = audioCtx.createOscillator();
+      const dst = audioCtx.createMediaStreamDestination();
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0; // silent
+      osc.connect(gain);
+      gain.connect(dst);
+      osc.start();
+      const audioTrack = dst.stream.getAudioTracks()[0];
+      if (audioTrack) stream.addTrack(audioTrack);
+    }
+  } catch (e) {}
+
+  return stream;
+}
 
 // Sub-component to render Remote Participant Video Streams cleanly with WebRTC srcObject
 function RemoteVideoTile({ peer }) {
@@ -16,20 +91,24 @@ function RemoteVideoTile({ peer }) {
   useEffect(() => {
     if (videoRef.current && peer.stream) {
       videoRef.current.srcObject = peer.stream;
+      videoRef.current.play().catch((err) => console.warn('Remote stream play notice:', err));
     }
   }, [peer.stream]);
 
+  const hasVideoStream = peer.stream && peer.stream.getVideoTracks().length > 0 && peer.videoOn;
+
   return (
     <div className="relative bg-[#09233d] border border-[#13523c] rounded-2xl overflow-hidden aspect-video shadow-xl flex flex-col items-center justify-center group">
-      {/* Remote Video Stream or Camera Off Avatar */}
-      {peer.videoOn && peer.stream ? (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          className="w-full h-full object-cover"
-        />
-      ) : (
+      {/* Remote Video Stream (Always mounted in DOM so audio track continuously plays) */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        className={`w-full h-full object-cover ${hasVideoStream ? 'block' : 'hidden'}`}
+      />
+
+      {/* Camera Off Avatar Overlay */}
+      {!hasVideoStream && (
         <div className="w-full h-full relative flex flex-col items-center justify-center bg-gradient-to-b from-[#0b2844] to-[#061829]">
           <div className={`w-20 h-20 rounded-full ${peer.bgColor || 'bg-[#09233d]'} text-white font-black text-2xl flex items-center justify-center ring-4 ring-emerald-500/30 shadow-2xl animate-pulse`}>
             {(peer.name || 'P').split(' ').map((n) => n[0]).join('').toUpperCase()}
@@ -82,6 +161,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const [chatMessages, setChatMessages] = useState(meeting?.inMeetingMessages || []);
   const [newMessage, setNewMessage] = useState('');
   const [toastNotification, setToastNotification] = useState(null);
+  const [mediaReady, setMediaReady] = useState(false);
 
   // WebRTC Remote Peers State: socketId -> { socketId, userId, name, role, stream, micOn, videoOn, handRaised, bgColor }
   const [remotePeers, setRemotePeers] = useState({});
@@ -90,12 +170,26 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const mediaStreamRef = useRef(null);
   const screenStreamRef = useRef(null);
   const peerConnectionsRef = useRef({}); // socketId -> RTCPeerConnection
+  const iceCandidateQueueRef = useRef({}); // socketId -> Array of candidate objects
   const socketRef = useRef(null);
   const chatEndRef = useRef(null);
 
   const getLiveMeetingUrl = () => {
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId || 'meet-room';
-    return `${window.location.origin}/meetings/${meetingCode}`;
+    return `${window.location.origin}/#/meetings/${meetingCode}`;
+  };
+
+  // Process queued ICE candidates after remote description is set
+  const processCandidateQueue = async (targetSocketId, pc) => {
+    const queue = iceCandidateQueueRef.current[targetSocketId] || [];
+    while (queue.length > 0) {
+      const candidate = queue.shift();
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.warn('Error adding queued ICE candidate:', e);
+      }
+    }
   };
 
   // Helper to create WebRTC peer connection
@@ -107,10 +201,22 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     const pc = new RTCPeerConnection(ICE_SERVERS);
     peerConnectionsRef.current[targetSocketId] = pc;
 
+    // Add audio and video transceivers to guarantee audio + video SDP negotiation
+    try {
+      pc.addTransceiver('video', { direction: 'sendrecv' });
+      pc.addTransceiver('audio', { direction: 'sendrecv' });
+    } catch (e) {}
+
     // Add local media tracks to peer connection
     if (mediaStreamRef.current) {
+      const senders = pc.getSenders();
       mediaStreamRef.current.getTracks().forEach((track) => {
-        pc.addTrack(track, mediaStreamRef.current);
+        const existingSender = senders.find((s) => s.track && s.track.kind === track.kind) || senders.find((s) => !s.track);
+        if (existingSender) {
+          existingSender.replaceTrack(track);
+        } else {
+          pc.addTrack(track, mediaStreamRef.current);
+        }
       });
     }
 
@@ -124,28 +230,43 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       }
     };
 
-    // Remote Track Handler
+    // Robust Remote Track Handler
     pc.ontrack = (event) => {
-      const [remoteStream] = event.streams;
-      if (remoteStream) {
-        setRemotePeers((prev) => ({
+      let incomingStream = (event.streams && event.streams[0]) ? event.streams[0] : null;
+
+      if (!incomingStream) {
+        incomingStream = new MediaStream();
+        incomingStream.addTrack(event.track);
+      }
+
+      setRemotePeers((prev) => {
+        const existing = prev[targetSocketId];
+        let streamToUse = incomingStream;
+
+        if (existing && existing.stream) {
+          if (!existing.stream.getTracks().some((t) => t.id === event.track.id)) {
+            existing.stream.addTrack(event.track);
+          }
+          streamToUse = existing.stream;
+        }
+
+        return {
           ...prev,
           [targetSocketId]: {
-            ...prev[targetSocketId],
+            ...existing,
             socketId: targetSocketId,
-            name: targetUserName || prev[targetSocketId]?.name || 'Remote Participant',
+            name: targetUserName || existing?.name || 'Remote Participant',
             role: 'Live Participant',
-            stream: remoteStream,
-            micOn: prev[targetSocketId]?.micOn ?? true,
-            videoOn: prev[targetSocketId]?.videoOn ?? true,
-            handRaised: prev[targetSocketId]?.handRaised ?? false,
-            bgColor: prev[targetSocketId]?.bgColor || 'bg-[#09233d]'
+            stream: streamToUse,
+            micOn: existing?.micOn ?? true,
+            videoOn: existing?.videoOn ?? true,
+            handRaised: existing?.handRaised ?? false,
+            bgColor: existing?.bgColor || 'bg-[#09233d]'
           }
-        }));
-      }
+        };
+      });
     };
 
-    // Connection state log
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
         removePeer(targetSocketId);
@@ -161,6 +282,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       peerConnectionsRef.current[targetSocketId].close();
       delete peerConnectionsRef.current[targetSocketId];
     }
+    delete iceCandidateQueueRef.current[targetSocketId];
     setRemotePeers((prev) => {
       const updated = { ...prev };
       delete updated[targetSocketId];
@@ -168,17 +290,25 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     });
   };
 
-  // Step 1: Initialize local user camera & mic media stream
+  // Step 1: Initialize local user camera & mic media stream BEFORE socket connection
   useEffect(() => {
     let activeStream = null;
 
     async function initMedia() {
       try {
+        let stream = null;
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-          });
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+              audio: true
+            });
+          } catch (hardwareErr) {
+            console.warn('Hardware camera unavailable (busy or denied), fallback to synthetic video stream:', hardwareErr);
+            // Fallback for 2 browser tabs on same PC where hardware webcam is locked by tab 1
+            stream = createSyntheticMediaStream(currentUser?.name || 'User');
+          }
+
           mediaStreamRef.current = stream;
           activeStream = stream;
           if (localVideoRef.current) {
@@ -187,6 +317,8 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         }
       } catch (err) {
         console.warn('Webcam/Mic stream initialization warning:', err);
+      } finally {
+        setMediaReady(true);
       }
     }
 
@@ -197,26 +329,34 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         activeStream.getTracks().forEach((track) => track.stop());
       }
     };
-  }, []);
+  }, [currentUser?.name]);
 
-  // Step 2: Initialize Socket.io connection & WebRTC Signaling
+  // Step 2: Initialize Socket.io connection & WebRTC Signaling AFTER media is ready
   useEffect(() => {
+    if (!mediaReady) return;
+
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
     if (!meetingCode) return;
 
     const socket = getSocket();
     socketRef.current = socket;
 
-    if (!socket.connected) {
+    const emitJoinRoom = () => {
+      socket.emit('join-room', {
+        meetingId: meetingCode,
+        userId: currentUser?._id,
+        userName: currentUser?.name || 'Participant'
+      });
+    };
+
+    if (socket.connected) {
+      emitJoinRoom();
+    } else {
       socket.connect();
     }
 
-    // Join Room
-    socket.emit('join-room', {
-      meetingId: meetingCode,
-      userId: currentUser?._id,
-      userName: currentUser?.name || 'Participant'
-    });
+    socket.on('connect', emitJoinRoom);
+    socket.on('reconnect', emitJoinRoom);
 
     // Receive list of all existing peers in the room
     socket.on('all-users', (existingPeers) => {
@@ -282,8 +422,11 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       const pc = createPeerConnection(callerSocketId, callerName);
       try {
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        await processCandidateQueue(callerSocketId, pc);
+
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
+
         socket.emit('answer', {
           targetSocketId: callerSocketId,
           answer
@@ -299,21 +442,27 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       if (pc) {
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          await processCandidateQueue(responderSocketId, pc);
         } catch (err) {
           console.error('Error handling answer:', err);
         }
       }
     });
 
-    // Handle ICE Candidate
+    // Handle ICE Candidate with Queueing
     socket.on('ice-candidate', async ({ candidate, senderSocketId }) => {
       const pc = peerConnectionsRef.current[senderSocketId];
-      if (pc) {
+      if (pc && pc.remoteDescription && pc.remoteDescription.type) {
         try {
           await pc.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (err) {
           console.error('Error adding ICE candidate:', err);
         }
+      } else {
+        if (!iceCandidateQueueRef.current[senderSocketId]) {
+          iceCandidateQueueRef.current[senderSocketId] = [];
+        }
+        iceCandidateQueueRef.current[senderSocketId].push(candidate);
       }
     });
 
@@ -341,6 +490,8 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
     return () => {
       socket.emit('leave-room', { meetingId: meetingCode });
+      socket.off('connect', emitJoinRoom);
+      socket.off('reconnect', emitJoinRoom);
       socket.off('all-users');
       socket.off('user-joined');
       socket.off('offer');
@@ -356,8 +507,9 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         peerConnectionsRef.current[key].close();
       });
       peerConnectionsRef.current = {};
+      iceCandidateQueueRef.current = {};
     };
-  }, [meeting?.meetingId, liveMeetingData?.meetingId, currentUser?._id, currentUser?.name]);
+  }, [mediaReady, meeting?.meetingId, liveMeetingData?.meetingId, currentUser?._id, currentUser?.name]);
 
   // Periodic HTTP Polling for Chat & Database Sync
   useEffect(() => {
