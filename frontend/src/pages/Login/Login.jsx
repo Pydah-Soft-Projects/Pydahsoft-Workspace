@@ -8,10 +8,29 @@ export default function Login({ onLoginSuccess }) {
 
   useEffect(() => {
     document.title = 'PydahSoft | Login';
+    const root = document.documentElement;
+    const body = document.body;
+    const previousRootOverflow = root.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+    const previousRootOverflowX = root.style.overflowX;
+    const previousBodyOverflowX = body.style.overflowX;
+
+    root.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    root.style.overflowX = 'hidden';
+    body.style.overflowX = 'hidden';
+
     // Preload dashboard overview module in background for zero-delay login transition
     try {
       import('../Dashboard/DashboardOverview');
     } catch (e) {}
+
+    return () => {
+      root.style.overflow = previousRootOverflow;
+      body.style.overflow = previousBodyOverflow;
+      root.style.overflowX = previousRootOverflowX;
+      body.style.overflowX = previousBodyOverflowX;
+    };
   }, []);
 
   const [username, setUsername] = useState('');
