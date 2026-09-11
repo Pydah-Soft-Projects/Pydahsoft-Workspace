@@ -16,7 +16,8 @@ const createMeeting = async (req, res) => {
     const currentUser = req.user;
 
     const meetingId = generateMeetingId();
-    const meetingLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/meetings/${meetingId}`;
+    const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : null) || process.env.FRONTEND_URL || 'http://localhost:5173';
+    const meetingLink = `${origin}/meetings/${meetingId}`;
 
     let invitedUsers = [];
     if (invitedUserIds && Array.isArray(invitedUserIds) && invitedUserIds.length > 0) {
@@ -99,7 +100,7 @@ const getMeetingById = async (req, res) => {
         host: currentUser._id,
         hostName: currentUser.name,
         hostRole: currentUser.role || 'Member',
-        meetingLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/meetings/${meetingId}`,
+        meetingLink: `${req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : null) || process.env.FRONTEND_URL || 'http://localhost:5173'}/meetings/${meetingId}`,
         status: 'active',
         activeParticipants: [
           {

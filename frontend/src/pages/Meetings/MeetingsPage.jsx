@@ -116,7 +116,7 @@ export default function MeetingsPage({ currentUser }) {
   };
 
   const handleCopyLink = (meeting) => {
-    const link = meeting.meetingLink || `${window.location.origin}/meetings/${meeting.meetingId}`;
+    const link = `${window.location.origin}/meetings/${meeting.meetingId}`;
     navigator.clipboard.writeText(link);
     setCopiedId(meeting._id);
     setTimeout(() => setCopiedId(null), 2000);
