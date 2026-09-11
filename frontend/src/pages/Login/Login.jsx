@@ -15,6 +15,8 @@ export default function Login({ onLoginSuccess }) {
     const previousRootOverflowX = root.style.overflowX;
     const previousBodyOverflowX = body.style.overflowX;
 
+    root.classList.add('login-page-open');
+    body.classList.add('login-page-open');
     root.style.overflow = 'hidden';
     body.style.overflow = 'hidden';
     root.style.overflowX = 'hidden';
@@ -26,6 +28,8 @@ export default function Login({ onLoginSuccess }) {
     } catch (e) {}
 
     return () => {
+      root.classList.remove('login-page-open');
+      body.classList.remove('login-page-open');
       root.style.overflow = previousRootOverflow;
       body.style.overflow = previousBodyOverflow;
       root.style.overflowX = previousRootOverflowX;

@@ -31,6 +31,23 @@ html {
   overscroll-behavior: none;
 }
 
+html.login-page-open,
+body.login-page-open {
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html.login-page-open::-webkit-scrollbar,
+body.login-page-open::-webkit-scrollbar,
+.login-page::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 .dashboard-main {
   min-width: 0;
 }
