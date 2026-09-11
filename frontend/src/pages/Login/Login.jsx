@@ -63,7 +63,7 @@ export default function Login({ onLoginSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 sm:static sm:min-h-screen bg-[#f7fcf9] text-[#09233d] flex flex-col justify-between overflow-hidden font-sans touch-none select-none">
+    <div className="login-page fixed inset-0 sm:static sm:min-h-screen bg-[#f7fcf9] text-[#09233d] flex flex-col justify-between overflow-hidden font-sans touch-none select-none">
       <div className="login-background" aria-hidden="true">
         <div className="login-background__grid" />
         <div className="login-background__ring login-background__ring--one" />
