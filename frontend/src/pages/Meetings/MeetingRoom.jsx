@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchApi } from '../../config/api';
 import { getSocket } from '../../config/socket';
 
@@ -330,6 +331,15 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const iceCandidateQueueRef = useRef({}); // socketId -> Array of candidate objects
   const socketRef = useRef(null);
   const chatEndRef = useRef(null);
+
+  // Lock body scroll so outer application headers/sidebar are completely hidden under portal overlay
+  useEffect(() => {
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
 
   const getLiveMeetingUrl = () => {
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId || 'meet-room';
@@ -831,11 +841,11 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const remotePeerList = Object.values(remotePeers);
   const totalParticipantsCount = remotePeerList.length + 1; // Remote peers + Local user
 
-  return (
-    <div className="fixed inset-0 z-50 bg-[#041a12] text-white flex flex-col overflow-hidden font-sans relative">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] bg-[#041a12] text-white flex flex-col overflow-hidden font-sans">
       {/* Toast Notification */}
       {toastNotification && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#20b875] text-white px-5 py-2.5 rounded-2xl shadow-2xl font-extrabold text-xs flex items-center gap-2.5 border border-emerald-300 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[100000] bg-[#20b875] text-white px-5 py-2.5 rounded-2xl shadow-2xl font-extrabold text-xs flex items-center gap-2.5 border border-emerald-300 animate-in fade-in slide-in-from-top-4 duration-300">
           <svg className="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
@@ -1143,12 +1153,12 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       </div>
 
       {/* Control Toolbar */}
-      <footer className="bg-[#041a12] border-t border-[#0e4733] px-3 sm:px-6 py-3 flex items-center justify-between sm:justify-center gap-2 sm:gap-4 shrink-0 shadow-2xl">
+      <footer className="bg-[#041a12] border-t border-[#0e4733] px-2 xs:px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-4 shrink-0 shadow-2xl overflow-x-auto">
         {/* Mic Button */}
         <button
           type="button"
           onClick={toggleMic}
-          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+          className={`w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             micOn
               ? 'bg-[#0b3828] border-[#166046] text-[#4ade80] hover:bg-[#13523c]'
               : 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
@@ -1156,11 +1166,11 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           title={micOn ? 'Mute Microphone' : 'Unmute Microphone'}
         >
           {micOn ? (
-            <svg className="w-5 h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
             </svg>
           ) : (
-            <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
           )}
@@ -1170,7 +1180,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         <button
           type="button"
           onClick={toggleCamera}
-          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+          className={`w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             videoOn
               ? 'bg-[#0b3828] border-[#166046] text-[#4ade80] hover:bg-[#13523c]'
               : 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
@@ -1178,11 +1188,11 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           title={videoOn ? 'Stop Camera' : 'Start Camera'}
         >
           {videoOn ? (
-            <svg className="w-5 h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           ) : (
-            <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
             </svg>
           )}
@@ -1192,14 +1202,14 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         <button
           type="button"
           onClick={toggleScreenShare}
-          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+          className={`w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             screenSharing
               ? 'bg-[#20b875] border-[#4ade80] text-white animate-pulse'
               : 'bg-[#0b3828] border-[#166046] text-[#4ade80] hover:bg-[#13523c]'
           }`}
           title="Share Screen"
         >
-          <svg className="w-5 h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
         </button>
@@ -1208,14 +1218,14 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         <button
           type="button"
           onClick={toggleHand}
-          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+          className={`w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             handRaised
               ? 'bg-amber-500 border-amber-400 text-white'
               : 'bg-[#0b3828] border-[#166046] text-amber-400 hover:bg-[#13523c]'
           }`}
           title="Raise Hand"
         >
-          <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
           </svg>
         </button>
@@ -1224,14 +1234,15 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         <button
           type="button"
           onClick={handleLeaveCall}
-          className="bg-[#ff0055] hover:bg-[#e0004c] text-white font-extrabold text-xs px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-2 shadow-lg tracking-wider shrink-0 cursor-pointer"
+          className="bg-[#ff0055] hover:bg-[#e0004c] text-white font-extrabold text-[11px] xs:text-xs px-2.5 xs:px-3.5 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 shadow-lg tracking-wider shrink-0 cursor-pointer"
         >
-          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8l2-2m0 0l2-2m-2 2l-2 2m2-2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h6" />
           </svg>
-          <span className="uppercase font-black text-xs tracking-wider">LEAVE CALL</span>
+          <span className="uppercase font-black tracking-wider">LEAVE CALL</span>
         </button>
       </footer>
-    </div>
+    </div>,
+    document.body
   );
 }
