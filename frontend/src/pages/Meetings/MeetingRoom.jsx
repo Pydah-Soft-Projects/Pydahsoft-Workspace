@@ -9,60 +9,214 @@ const ICE_SERVERS = {
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
     { urls: 'stun:stun4.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478' }
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    {
+      urls: [
+        'stun:openrelay.metered.ca:80',
+        'stun:openrelay.metered.ca:443'
+      ]
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelay',
+      credential: 'openrelay'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelay',
+      credential: 'openrelay'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelay',
+      credential: 'openrelay'
+    }
   ]
 };
 
-// Helper to generate a virtual test stream when hardware camera is locked by another browser window on the same machine
+// Helper to generate a dynamic, high-motion virtual video stream when hardware camera is locked by another browser window on the same machine
 function createSyntheticMediaStream(userName) {
   const canvas = document.createElement('canvas');
   canvas.width = 640;
   canvas.height = 480;
   const ctx = canvas.getContext('2d');
-  let angle = 0;
+  let frame = 0;
+
+  // Initialize random particle positions for dynamic background motion
+  const particles = Array.from({ length: 25 }, () => ({
+    x: Math.random() * 640,
+    y: Math.random() * 480,
+    vx: (Math.random() - 0.5) * 2,
+    vy: (Math.random() - 0.5) * 2,
+    radius: Math.random() * 4 + 2,
+    color: ['#4ade80', '#20b875', '#38bdf8', '#a855f7'][Math.floor(Math.random() * 4)]
+  }));
 
   function draw() {
-    angle = (angle + 0.03) % (Math.PI * 2);
-    // Background gradient
-    const gradient = ctx.createLinearGradient(0, 0, 640, 480);
-    gradient.addColorStop(0, '#09233d');
-    gradient.addColorStop(1, '#072b1e');
-    ctx.fillStyle = gradient;
+    frame++;
+    const time = frame * 0.04;
+
+    // Dynamic Shifting Plasma Background
+    const g1X = 320 + Math.sin(time * 0.7) * 200;
+    const g1Y = 240 + Math.cos(time * 0.5) * 150;
+    const bgGradient = ctx.createRadialGradient(g1X, g1Y, 30, 320, 240, 400);
+    bgGradient.addColorStop(0, '#0c382e');
+    bgGradient.addColorStop(0.5, '#072035');
+    bgGradient.addColorStop(1, '#04101d');
+    ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, 640, 480);
 
-    // Animated Ring
+    // Grid Overlay
+    ctx.strokeStyle = 'rgba(32, 184, 117, 0.08)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < 640; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 480);
+      ctx.stroke();
+    }
+    for (let y = 0; y < 480; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(640, y);
+      ctx.stroke();
+    }
+
+    // Moving Particles
+    particles.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > 640) p.vx *= -1;
+      if (p.y < 0 || p.y > 480) p.vy *= -1;
+
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1.0;
+
+    // Orbiting Glowing Rings & Central Orb
+    const centerX = 320;
+    const centerY = 210;
+
+    // Pulsing Outer Ring
     ctx.strokeStyle = '#20b875';
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(320, 200, 70 + Math.sin(angle) * 5, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, 80 + Math.sin(time * 2) * 8, 0, Math.PI * 2);
     ctx.stroke();
 
-    // User Avatar Circle
-    ctx.fillStyle = '#10b981';
+    // Secondary Spinning Arc
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(320, 200, 60, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, 95, time * 1.5, time * 1.5 + Math.PI * 1.2);
+    ctx.stroke();
+
+    // Central Avatar Node
+    const orbGradient = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, 65);
+    orbGradient.addColorStop(0, '#34d399');
+    orbGradient.addColorStop(1, '#059669');
+    ctx.fillStyle = orbGradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 65, 0, Math.PI * 2);
     ctx.fill();
 
-    // User Initials
+    // User Initials inside Central Orb
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 36px sans-serif';
+    ctx.font = 'black 38px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText((userName || 'User').substring(0, 2).toUpperCase(), 320, 200);
+    ctx.fillText((userName || 'User').substring(0, 2).toUpperCase(), centerX, centerY - 2);
 
-    // Live Tag Text
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillStyle = '#4ade80';
-    ctx.fillText(userName || 'Live Participant', 320, 310);
-    ctx.font = '12px sans-serif';
+    // Live Camera Viewfinder Corner Crosshairs
+    ctx.strokeStyle = '#4ade80';
+    ctx.lineWidth = 3;
+    const margin = 30;
+    const lineLen = 20;
+
+    // Top-Left Corner
+    ctx.beginPath();
+    ctx.moveTo(margin, margin + lineLen);
+    ctx.lineTo(margin, margin);
+    ctx.lineTo(margin + lineLen, margin);
+    ctx.stroke();
+
+    // Top-Right Corner
+    ctx.beginPath();
+    ctx.moveTo(640 - margin - lineLen, margin);
+    ctx.lineTo(640 - margin, margin);
+    ctx.lineTo(640 - margin, margin + lineLen);
+    ctx.stroke();
+
+    // Bottom-Left Corner
+    ctx.beginPath();
+    ctx.moveTo(margin, 480 - margin - lineLen);
+    ctx.lineTo(margin, 480 - margin);
+    ctx.lineTo(margin + lineLen, 480 - margin);
+    ctx.stroke();
+
+    // Bottom-Right Corner
+    ctx.beginPath();
+    ctx.moveTo(640 - margin - lineLen, 480 - margin);
+    ctx.lineTo(640 - margin, 480 - margin);
+    ctx.lineTo(640 - margin, 480 - margin - lineLen);
+    ctx.stroke();
+
+    // Top Header HUD Tag: Red REC dot & LIVE Timestamp
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${Math.floor(now.getMilliseconds() / 100)}`;
+
+    // Red Recording Dot
+    ctx.fillStyle = Math.floor(frame / 15) % 2 === 0 ? '#ef4444' : '#991b1b';
+    ctx.beginPath();
+    ctx.arc(margin + 15, margin + 15, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 13px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`REC LIVE WEBRTC STREAM | ${timeStr}`, margin + 30, margin + 15);
+
+    // Bottom Audio Equalizer Waveform Bars
+    const barCount = 20;
+    const barWidth = 12;
+    const barGap = 6;
+    const startX = 320 - (barCount * (barWidth + barGap)) / 2;
+    const baseBarY = 380;
+
+    for (let i = 0; i < barCount; i++) {
+      const height = Math.abs(Math.sin(time * 3 + i * 0.4)) * 35 + 8;
+      const x = startX + i * (barWidth + barGap);
+
+      const barGrad = ctx.createLinearGradient(0, baseBarY - height, 0, baseBarY);
+      barGrad.addColorStop(0, '#4ade80');
+      barGrad.addColorStop(1, '#059669');
+
+      ctx.fillStyle = barGrad;
+      ctx.fillRect(x, baseBarY - height, barWidth, height);
+    }
+
+    // Participant Name Banner Below Audio Spectrum
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(userName || 'Live Participant', 320, 415);
+
     ctx.fillStyle = '#9ca3af';
-    ctx.fillText('Live WebRTC Video Stream', 320, 335);
-
-    requestAnimationFrame(draw);
+    ctx.font = '12px sans-serif';
+    ctx.fillText('Single-PC Virtual Multi-Window Stream', 320, 438);
   }
+
+  // Use setInterval so canvas continues 30fps rendering even when browser window is unfocused
+  const intervalId = setInterval(draw, 1000 / 30);
   draw();
 
   const stream = canvas.captureStream(30);
+  stream.canvasIntervalId = intervalId;
 
   // Add silent audio track using AudioContext oscillator
   try {
@@ -91,11 +245,14 @@ function RemoteVideoTile({ peer }) {
   useEffect(() => {
     if (videoRef.current && peer.stream) {
       videoRef.current.srcObject = peer.stream;
-      videoRef.current.play().catch((err) => console.warn('Remote stream play notice:', err));
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => console.warn('Remote stream play notice:', err));
+      }
     }
   }, [peer.stream]);
 
-  const hasVideoStream = peer.stream && peer.stream.getVideoTracks().length > 0 && peer.videoOn;
+  const hasVideoStream = peer.stream && peer.stream.getVideoTracks().length > 0 && peer.videoOn !== false;
 
   return (
     <div className="relative bg-[#09233d] border border-[#13523c] rounded-2xl overflow-hidden aspect-video shadow-xl flex flex-col items-center justify-center group">
@@ -104,12 +261,12 @@ function RemoteVideoTile({ peer }) {
         ref={videoRef}
         autoPlay
         playsInline
-        className={`w-full h-full object-cover ${hasVideoStream ? 'block' : 'hidden'}`}
+        className="w-full h-full object-cover"
       />
 
-      {/* Camera Off Avatar Overlay */}
+      {/* Camera Off / Waiting Avatar Overlay */}
       {!hasVideoStream && (
-        <div className="w-full h-full relative flex flex-col items-center justify-center bg-gradient-to-b from-[#0b2844] to-[#061829]">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gradient-to-b from-[#0b2844] to-[#061829]">
           <div className={`w-20 h-20 rounded-full ${peer.bgColor || 'bg-[#09233d]'} text-white font-black text-2xl flex items-center justify-center ring-4 ring-emerald-500/30 shadow-2xl animate-pulse`}>
             {(peer.name || 'P').split(' ').map((n) => n[0]).join('').toUpperCase()}
           </div>
@@ -118,12 +275,12 @@ function RemoteVideoTile({ peer }) {
       )}
 
       {/* Role Badge */}
-      <p className="absolute top-3 left-3 text-[10px] font-bold text-emerald-300 bg-[#072b1e]/80 px-2 py-0.5 rounded-lg border border-[#0e4733]">
+      <p className="absolute top-3 left-3 z-20 text-[10px] font-bold text-emerald-300 bg-[#072b1e]/80 px-2 py-0.5 rounded-lg border border-[#0e4733]">
         {peer.role || 'Live Participant'}
       </p>
 
       {/* Participant Footer Info */}
-      <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#0e4733] flex items-center gap-2">
+      <div className="absolute bottom-3 left-3 z-20 bg-[#072b1e]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#0e4733] flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-[#4ade80]"></span>
         <span className="text-xs font-extrabold text-white">{peer.name}</span>
         {peer.handRaised && (
@@ -134,7 +291,7 @@ function RemoteVideoTile({ peer }) {
       </div>
 
       {/* Mic Status Indicator Icon */}
-      <div className="absolute top-3 right-3 bg-[#072b1e]/90 backdrop-blur-md p-1.5 rounded-lg border border-[#0e4733]">
+      <div className="absolute top-3 right-3 z-20 bg-[#072b1e]/90 backdrop-blur-md p-1.5 rounded-lg border border-[#0e4733]">
         {peer.micOn ? (
           <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
@@ -201,22 +358,10 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     const pc = new RTCPeerConnection(ICE_SERVERS);
     peerConnectionsRef.current[targetSocketId] = pc;
 
-    // Add audio and video transceivers to guarantee audio + video SDP negotiation
-    try {
-      pc.addTransceiver('video', { direction: 'sendrecv' });
-      pc.addTransceiver('audio', { direction: 'sendrecv' });
-    } catch (e) {}
-
-    // Add local media tracks to peer connection
+    // Add local media tracks directly to peer connection with mediaStreamRef.current
     if (mediaStreamRef.current) {
-      const senders = pc.getSenders();
       mediaStreamRef.current.getTracks().forEach((track) => {
-        const existingSender = senders.find((s) => s.track && s.track.kind === track.kind) || senders.find((s) => !s.track);
-        if (existingSender) {
-          existingSender.replaceTrack(track);
-        } else {
-          pc.addTrack(track, mediaStreamRef.current);
-        }
+        pc.addTrack(track, mediaStreamRef.current);
       });
     }
 
@@ -230,25 +375,15 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       }
     };
 
-    // Robust Remote Track Handler
+    // Robust Remote Track Handler - Gather receivers and create fresh MediaStream object for React state
     pc.ontrack = (event) => {
-      let incomingStream = (event.streams && event.streams[0]) ? event.streams[0] : null;
-
-      if (!incomingStream) {
-        incomingStream = new MediaStream();
-        incomingStream.addTrack(event.track);
-      }
-
       setRemotePeers((prev) => {
         const existing = prev[targetSocketId];
-        let streamToUse = incomingStream;
 
-        if (existing && existing.stream) {
-          if (!existing.stream.getTracks().some((t) => t.id === event.track.id)) {
-            existing.stream.addTrack(event.track);
-          }
-          streamToUse = existing.stream;
-        }
+        // Gather all active tracks from receivers
+        const receivers = pc.getReceivers();
+        const activeTracks = receivers.map((r) => r.track).filter(Boolean);
+        const freshStream = new MediaStream(activeTracks.length > 0 ? activeTracks : [event.track]);
 
         return {
           ...prev,
@@ -257,9 +392,9 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             socketId: targetSocketId,
             name: targetUserName || existing?.name || 'Remote Participant',
             role: 'Live Participant',
-            stream: streamToUse,
+            stream: freshStream,
             micOn: existing?.micOn ?? true,
-            videoOn: existing?.videoOn ?? true,
+            videoOn: freshStream.getVideoTracks().length > 0,
             handRaised: existing?.handRaised ?? false,
             bgColor: existing?.bgColor || 'bg-[#09233d]'
           }
@@ -268,7 +403,8 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     };
 
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+      console.log(`[WebRTC] Connection state with ${targetSocketId}:`, pc.connectionState);
+      if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
         removePeer(targetSocketId);
       }
     };
@@ -326,6 +462,9 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
     return () => {
       if (activeStream) {
+        if (activeStream.canvasIntervalId) {
+          clearInterval(activeStream.canvasIntervalId);
+        }
         activeStream.getTracks().forEach((track) => track.stop());
       }
     };
