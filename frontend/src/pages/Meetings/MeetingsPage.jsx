@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
 import MeetingRoom from './MeetingRoom';
 
-export default function MeetingsPage({ currentUser }) {
+export default function MeetingsPage({ currentUser, directMeetingId }) {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeMeeting, setActiveMeeting] = useState(null);
@@ -36,7 +36,23 @@ export default function MeetingsPage({ currentUser }) {
     fetchApi('/employees')
       .then((res) => setEmployeeList(res.data || []))
       .catch(() => {});
-  }, []);
+
+    if (directMeetingId) {
+      fetchApi(`/meetings/${directMeetingId}/join`, { method: 'POST' })
+        .then((res) => {
+          if (res.data) {
+            setActiveMeeting(res.data);
+          }
+        })
+        .catch(() => {
+          fetchApi(`/meetings/${directMeetingId}`)
+            .then((res) => {
+              if (res.data) setActiveMeeting(res.data);
+            })
+            .catch(() => {});
+        });
+    }
+  }, [directMeetingId]);
 
   const handleStartInstantMeeting = async () => {
     try {

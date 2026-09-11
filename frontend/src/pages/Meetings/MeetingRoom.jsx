@@ -9,16 +9,21 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const [activeTab, setActiveTab] = useState('chat'); // 'chat' | 'people'
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [liveMeetingData, setLiveMeetingData] = useState(meeting);
   const [chatMessages, setChatMessages] = useState(meeting?.inMeetingMessages || []);
   const [newMessage, setNewMessage] = useState('');
+  const [toastNotification, setToastNotification] = useState(null);
 
   const localVideoRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const chatEndRef = useRef(null);
+  const knownParticipantsRef = useRef(
+    new Set((meeting?.activeParticipants || []).map((p) => String(p.userId || p.name)))
+  );
 
   // Always compute dynamic URL based on current live host
   const getLiveMeetingUrl = () => {
-    const meetingCode = meeting?.meetingId || 'meet-room';
+    const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId || 'meet-room';
     return `${window.location.origin}/meetings/${meetingCode}`;
   };
 
@@ -65,6 +70,39 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     }
   }, [videoOn, micOn]);
 
+  // Real-time polling for participant joins and messages
+  useEffect(() => {
+    const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
+    if (!meetingCode) return;
+
+    const interval = setInterval(() => {
+      fetchApi(`/meetings/${meetingCode}`)
+        .then((res) => {
+          if (res.data) {
+            setLiveMeetingData(res.data);
+            if (res.data.inMeetingMessages) {
+              setChatMessages(res.data.inMeetingMessages);
+            }
+            // Detect newly joined participants for popup
+            const currentActive = res.data.activeParticipants || [];
+            currentActive.forEach((p) => {
+              const pKey = String(p.userId || p.name);
+              if (!knownParticipantsRef.current.has(pKey)) {
+                knownParticipantsRef.current.add(pKey);
+                if (p.name && p.name !== currentUser?.name) {
+                  setToastNotification(`🔔 ${p.name} has joined the meeting!`);
+                  setTimeout(() => setToastNotification(null), 4500);
+                }
+              }
+            });
+          }
+        })
+        .catch(() => {});
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [meeting?.meetingId, liveMeetingData?.meetingId, currentUser?.name]);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
@@ -90,21 +128,22 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     setChatMessages((prev) => [...prev, item]);
     setNewMessage('');
 
-    if (meeting?.meetingId) {
-      fetchApi(`/meetings/${meeting.meetingId}/chat`, {
+    const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
+    if (meetingCode) {
+      fetchApi(`/meetings/${meetingCode}/chat`, {
         method: 'POST',
         body: JSON.stringify({ message: item.message })
       }).catch(() => {});
     }
   };
 
-  // Build Real Participants array based ONLY on host + selected/invited members (NO sample names)
+  // Build Real Participants array based ONLY on host + selected/invited members
   const currentUserId = String(currentUser?._id || '');
 
   const hostTile = {
     id: currentUserId || 'host-me',
-    name: `${currentUser?.name || meeting?.hostName || 'Host'} (You)`,
-    role: currentUser?.role || meeting?.hostRole || 'Meeting Host',
+    name: `${currentUser?.name || liveMeetingData?.hostName || 'Host'} (You)`,
+    role: currentUser?.role || liveMeetingData?.hostRole || 'Meeting Host',
     isMe: true,
     micOn: micOn,
     videoOn: videoOn,
@@ -116,8 +155,8 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const seenUserIds = new Set([currentUserId, (currentUser?.name || '').toLowerCase()]);
 
   // Add Invited Members selected by user
-  if (meeting?.invitedUsers && Array.isArray(meeting.invitedUsers)) {
-    meeting.invitedUsers.forEach((u, i) => {
+  if (liveMeetingData?.invitedUsers && Array.isArray(liveMeetingData.invitedUsers)) {
+    liveMeetingData.invitedUsers.forEach((u, i) => {
       const uNameKey = (u.name || '').toLowerCase();
       const uIdKey = String(u.userId || u._id || `inv-${i}`);
       if (!seenUserIds.has(uIdKey) && !seenUserIds.has(uNameKey)) {
@@ -138,8 +177,8 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   }
 
   // Add Active Participants from DB
-  if (meeting?.activeParticipants && Array.isArray(meeting.activeParticipants)) {
-    meeting.activeParticipants.forEach((u, i) => {
+  if (liveMeetingData?.activeParticipants && Array.isArray(liveMeetingData.activeParticipants)) {
+    liveMeetingData.activeParticipants.forEach((u, i) => {
       const uNameKey = (u.name || '').toLowerCase();
       const uIdKey = String(u.userId || u._id || `act-${i}`);
       if (!seenUserIds.has(uIdKey) && !seenUserIds.has(uNameKey)) {
@@ -162,7 +201,15 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const allParticipants = [hostTile, ...otherTiles];
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#041a12] text-white flex flex-col overflow-hidden font-sans">
+    <div className="fixed inset-0 z-50 bg-[#041a12] text-white flex flex-col overflow-hidden font-sans relative">
+      {/* Floating Animated Join Notification Toast Popup */}
+      {toastNotification && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#20b875] text-white px-5 py-2.5 rounded-2xl shadow-2xl font-extrabold text-xs flex items-center gap-2 border border-emerald-300 animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping shrink-0" />
+          <span>{toastNotification}</span>
+        </div>
+      )}
+
       {/* Top PydahSoft Teams Bar */}
       <header className="bg-[#072b1e] border-b border-[#0e4733] px-4 py-3 flex items-center justify-between shadow-lg shrink-0">
         <div className="flex items-center gap-3">
@@ -172,7 +219,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-extrabold text-sm sm:text-base text-white tracking-tight">
-                {meeting?.title || 'Live Video Conference'}
+                {liveMeetingData?.title || 'Live Video Conference'}
               </h1>
               <span className="bg-[#20b875]/20 text-[#4ade80] border border-[#20b875]/40 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1.5 animate-pulse">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]"></span> LIVE SESSION

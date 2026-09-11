@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, Link, useParams, useLocation } from 'react-router-dom';
 import Landing from './pages/Landing/Landing';
 import Login from './pages/Login/Login';
 import Sidebar from './components/Sidebar/Sidebar';
@@ -173,11 +173,12 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
   );
 }
 
-function DashboardLayout({ user, onLogout }) {
+function DashboardLayout({ user, onLogout, initialMeetingId }) {
   const navigate = useNavigate();
 
   // Determine initial tab from localStorage for perfect refresh persistence
   const getInitialTab = () => {
+    if (initialMeetingId) return 'meetings';
     const stored = localStorage.getItem('pydahsoft_active_tab');
     if (stored) return stored;
     return 'overview';
@@ -518,7 +519,7 @@ function DashboardLayout({ user, onLogout }) {
             )}
             {visitedTabs.has('meetings') && (
               <div style={{ display: activeTab === 'meetings' ? 'block' : 'none' }}>
-                <MeetingsPage currentUser={user} />
+                <MeetingsPage currentUser={user} directMeetingId={initialMeetingId} />
               </div>
             )}
             {visitedTabs.has('chat') && (
@@ -583,6 +584,18 @@ function DashboardLayout({ user, onLogout }) {
   );
 }
 
+function DirectMeetingHandler({ user, onLogout }) {
+  const { meetingId } = useParams();
+  const location = useLocation();
+
+  if (!user) {
+    localStorage.setItem('pydahsoft_redirect_after_login', location.pathname);
+    return <Navigate to="/login" replace />;
+  }
+
+  return <DashboardLayout user={user} onLogout={onLogout} initialMeetingId={meetingId} />;
+}
+
 function App() {
   const [user, setUser] = useState(() => {
     const storedUser = sessionStorage.getItem('pydahsoft_user') || localStorage.getItem('pydahsoft_user');
@@ -617,6 +630,10 @@ function App() {
       <Route
         path="/login"
         element={<Login onLoginSuccess={(loggedInUser) => setUser(loggedInUser)} />}
+      />
+      <Route
+        path="/meetings/:meetingId"
+        element={<DirectMeetingHandler user={user} onLogout={handleLogout} />}
       />
       <Route
         path="/dashboard/*"
