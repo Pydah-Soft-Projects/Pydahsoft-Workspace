@@ -24,6 +24,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const meetingRoutes = require('./routes/meetingRoutes');
 
 const app = express();
 
@@ -77,6 +78,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/meetings', meetingRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {

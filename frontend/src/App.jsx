@@ -19,6 +19,7 @@ const DailyWorkPlans = lazy(() => import('./pages/DailyPlans/DailyWorkPlans'));
 const PerformanceAndReports = lazy(() => import('./pages/Analytics/PerformanceAndReports'));
 const AuditLogsView = lazy(() => import('./pages/AuditLogs/AuditLogsView'));
 const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
+const MeetingsPage = lazy(() => import('./pages/Meetings/MeetingsPage'));
 
 import LoadingSpinner from './components/Loader/LoadingSpinner';
 
@@ -223,6 +224,7 @@ function DashboardLayout({ user, onLogout }) {
 
     const tabDocumentTitles = {
       overview: 'PydahSoft | Dashboard Overview',
+      meetings: 'PydahSoft | Video Meetings',
       chat: 'PydahSoft | Team Chat Box',
       users: 'PydahSoft | User Accounts',
       employees: 'PydahSoft | Employee Directory',
@@ -241,6 +243,7 @@ function DashboardLayout({ user, onLogout }) {
   const getMobileTabTitle = (tab) => {
     switch (tab) {
       case 'overview': return 'Overview';
+      case 'meetings': return 'Meetings';
       case 'chat': return 'Team Chat';
       case 'users': return 'Users';
       case 'employees': return 'Employees';
@@ -259,6 +262,7 @@ function DashboardLayout({ user, onLogout }) {
   const getTabTitle = (tab) => {
     switch (tab) {
       case 'overview': return 'Dashboard Overview';
+      case 'meetings': return 'Video Meetings & Teams Virtual Conference Rooms';
       case 'chat': return 'Team Chat Box & Direct Messaging Hub';
       case 'users': return 'User Accounts & Credentials Management';
       case 'employees': return 'Employee Directory & Staff Profiles';
@@ -510,6 +514,11 @@ function DashboardLayout({ user, onLogout }) {
                   setViewAsEmployeeId={setViewAsEmployeeId}
                   employeeList={employeeList}
                 />
+              </div>
+            )}
+            {visitedTabs.has('meetings') && (
+              <div style={{ display: activeTab === 'meetings' ? 'block' : 'none' }}>
+                <MeetingsPage currentUser={user} />
               </div>
             )}
             {visitedTabs.has('chat') && (
