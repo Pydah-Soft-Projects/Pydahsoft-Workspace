@@ -139,6 +139,37 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     return () => clearInterval(interval);
   }, [meeting?.meetingId, liveMeetingData?.meetingId, currentUser?.name]);
 
+  // Handle graceful exit and release camera media tracks
+  const handleLeaveCall = async () => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+    }
+    const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
+    if (meetingCode) {
+      try {
+        await fetchApi(`/meetings/${meetingCode}/leave`, { method: 'POST' });
+      } catch (e) {}
+    }
+    onLeave();
+  };
+
+  // Window unload listener to inform server when participant closes window or tab
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
+      if (meetingCode) {
+        const token = localStorage.getItem('pydahsoft_token');
+        if (navigator.sendBeacon) {
+          const blob = new Blob([JSON.stringify({})], { type: 'application/json' });
+          navigator.sendBeacon(`/api/meetings/${meetingCode}/leave`, blob);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [meeting?.meetingId, liveMeetingData?.meetingId]);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
@@ -673,12 +704,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         {/* Leave / End Call Button */}
         <button
           type="button"
-          onClick={() => {
-            if (mediaStreamRef.current) {
-              mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-            }
-            onLeave();
-          }}
+          onClick={handleLeaveCall}
           className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-extrabold px-5 py-3 rounded-2xl shadow-lg transition-all active:scale-95 ml-2 cursor-pointer"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -5,6 +5,7 @@ const {
   getMeetings,
   getMeetingById,
   joinMeeting,
+  leaveMeeting,
   endMeeting,
   sendInMeetingMessage
 } = require('../controllers/meetingController');
@@ -16,6 +17,7 @@ router.post('/', createMeeting);
 router.get('/', getMeetings);
 router.get('/:meetingId', getMeetingById);
 router.post('/:meetingId/join', joinMeeting);
+router.post('/:meetingId/leave', leaveMeeting);
 router.post('/:meetingId/end', endMeeting);
 router.post('/:meetingId/chat', sendInMeetingMessage);
 

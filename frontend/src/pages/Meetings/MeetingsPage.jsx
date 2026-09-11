@@ -5,7 +5,14 @@ import MeetingRoom from './MeetingRoom';
 export default function MeetingsPage({ currentUser, directMeetingId }) {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeMeeting, setActiveMeeting] = useState(null);
+  const [activeMeeting, setActiveMeeting] = useState(() => {
+    try {
+      const cached = localStorage.getItem('pydahsoft_active_meeting_data');
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [copiedId, setCopiedId] = useState(null);
 
@@ -19,17 +26,27 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [creating, setCreating] = useState(false);
 
-  // Helper to persist active meeting room ID in localStorage across F5 page refreshes
+  // Helper to persist active meeting room state & object in localStorage across F5 page refreshes for 0ms load speed
   const enterMeetingRoom = (meetingData) => {
     setActiveMeeting(meetingData);
     if (meetingData?.meetingId) {
       localStorage.setItem('pydahsoft_active_meeting_id', meetingData.meetingId);
+      localStorage.setItem('pydahsoft_active_meeting_data', JSON.stringify(meetingData));
     }
   };
 
-  const leaveMeetingRoom = () => {
+  const leaveMeetingRoom = async () => {
+    const currentMeetingId = activeMeeting?.meetingId || localStorage.getItem('pydahsoft_active_meeting_id');
+    if (currentMeetingId) {
+      try {
+        await fetchApi(`/meetings/${currentMeetingId}/leave`, { method: 'POST' });
+      } catch (err) {
+        console.warn('Error sending leave meeting notification:', err);
+      }
+    }
     setActiveMeeting(null);
     localStorage.removeItem('pydahsoft_active_meeting_id');
+    localStorage.removeItem('pydahsoft_active_meeting_data');
     loadMeetings();
   };
 
@@ -67,6 +84,7 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
             })
             .catch(() => {
               localStorage.removeItem('pydahsoft_active_meeting_id');
+              localStorage.removeItem('pydahsoft_active_meeting_data');
             });
         });
     }

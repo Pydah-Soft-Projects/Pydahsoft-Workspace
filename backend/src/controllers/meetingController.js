@@ -254,11 +254,39 @@ const sendInMeetingMessage = async (req, res) => {
   }
 };
 
+// Leave meeting (remove participant from activeParticipants)
+const leaveMeeting = async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+    const currentUser = req.user;
+
+    const meeting = await Meeting.findOne({ meetingId });
+    if (meeting) {
+      meeting.activeParticipants = meeting.activeParticipants.filter(
+        (p) => String(p.userId) !== String(currentUser._id) && (p.name || '').toLowerCase() !== (currentUser.name || '').toLowerCase()
+      );
+      await meeting.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Left meeting successfully',
+      data: meeting
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: { message: error.message || 'Error leaving meeting' }
+    });
+  }
+};
+
 module.exports = {
   createMeeting,
   getMeetings,
   getMeetingById,
   joinMeeting,
+  leaveMeeting,
   endMeeting,
   sendInMeetingMessage
 };
