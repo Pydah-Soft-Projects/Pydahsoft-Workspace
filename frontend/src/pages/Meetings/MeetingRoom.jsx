@@ -320,6 +320,9 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const [newMessage, setNewMessage] = useState('');
   const [toastNotification, setToastNotification] = useState(null);
   const [mediaReady, setMediaReady] = useState(false);
+  const [layout, setLayout] = useState('gallery');
+  const [layoutMenuOpen, setLayoutMenuOpen] = useState(false);
+  const [chatNotification, setChatNotification] = useState(null);
 
   // WebRTC Remote Peers State: socketId -> { socketId, userId, name, role, stream, micOn, videoOn, handRaised, bgColor }
   const [remotePeers, setRemotePeers] = useState({});
@@ -331,6 +334,8 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const iceCandidateQueueRef = useRef({}); // socketId -> Array of candidate objects
   const socketRef = useRef(null);
   const chatEndRef = useRef(null);
+  const lastChatMessageRef = useRef(null);
+  const chatNotificationTimerRef = useRef(null);
 
   // Lock body scroll so outer application headers/sidebar are completely hidden under portal overlay
   useEffect(() => {
@@ -345,6 +350,8 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId || 'meet-room';
     return `${window.location.origin}/#/meetings/${meetingCode}`;
   };
+
+  const isHost = String(liveMeetingData?.host) === String(currentUser?._id);
 
   // Process queued ICE candidates after remote description is set
   const processCandidateQueue = async (targetSocketId, pc) => {
@@ -669,10 +676,28 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       fetchApi(`/meetings/${meetingCode}`)
         .then((res) => {
           if (res.data) {
-            setLiveMeetingData(res.data);
-            if (res.data.inMeetingMessages) {
-              setChatMessages(res.data.inMeetingMessages);
+            const latestMessages = res.data.inMeetingMessages || [];
+            const latestMessage = latestMessages[latestMessages.length - 1];
+            const latestMessageKey = latestMessage
+              ? String(latestMessage._id || `${latestMessage.sentAt}-${latestMessage.message}`)
+              : null;
+
+            if (
+              latestMessageKey &&
+              lastChatMessageRef.current &&
+              latestMessageKey !== lastChatMessageRef.current &&
+              String(latestMessage.senderId) !== String(currentUser?._id)
+            ) {
+              setChatNotification(latestMessage);
+              if (chatNotificationTimerRef.current) {
+                clearTimeout(chatNotificationTimerRef.current);
+              }
+              chatNotificationTimerRef.current = setTimeout(() => setChatNotification(null), 5000);
             }
+
+            lastChatMessageRef.current = latestMessageKey;
+            setLiveMeetingData(res.data);
+            setChatMessages(latestMessages);
           }
         })
         .catch(() => {});
@@ -681,7 +706,13 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     fetchLatestState();
     const interval = setInterval(fetchLatestState, 3000);
     return () => clearInterval(interval);
-  }, [meeting?.meetingId, liveMeetingData?.meetingId]);
+  }, [meeting?.meetingId, currentUser?._id]);
+
+  useEffect(() => () => {
+    if (chatNotificationTimerRef.current) {
+      clearTimeout(chatNotificationTimerRef.current);
+    }
+  }, []);
 
   // Microphone Toggle Handler
   const toggleMic = () => {
@@ -786,6 +817,10 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
   // Graceful Leave Call
   const handleLeaveCall = async () => {
+    if (isHost && !window.confirm('End this meeting for everyone? The room and its chat will no longer be joinable.')) {
+      return;
+    }
+
     if (screenStreamRef.current) {
       screenStreamRef.current.getTracks().forEach((t) => t.stop());
     }
@@ -840,9 +875,18 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
   const remotePeerList = Object.values(remotePeers);
   const totalParticipantsCount = remotePeerList.length + 1; // Remote peers + Local user
+  const videoGridClass = layout === 'focus'
+    ? 'grid-cols-1 sm:grid-cols-3'
+    : layout === 'compact'
+    ? 'grid-cols-2 sm:grid-cols-3'
+    : totalParticipantsCount === 1
+    ? 'grid-cols-1 max-w-xl'
+    : totalParticipantsCount === 2
+    ? 'grid-cols-1 sm:grid-cols-2'
+    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2';
 
   return createPortal(
-    <div className="fixed inset-0 z-[99999] bg-[#041a12] text-white flex flex-col overflow-hidden font-sans">
+    <div className="fixed inset-0 z-[99999] bg-slate-50 text-slate-900 flex flex-col overflow-hidden font-sans">
       {/* Toast Notification */}
       {toastNotification && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[100000] bg-[#20b875] text-white px-5 py-2.5 rounded-2xl shadow-2xl font-extrabold text-xs flex items-center gap-2.5 border border-emerald-300 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -852,9 +896,24 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           <span>{toastNotification}</span>
         </div>
       )}
+      {chatNotification && (
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('chat');
+            setSidebarOpen(true);
+            setChatNotification(null);
+          }}
+          className="fixed top-28 left-1/2 z-[100000] w-[min(92vw,24rem)] -translate-x-1/2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-left shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300"
+        >
+          <span className="block text-[10px] font-black uppercase tracking-wider text-emerald-700">New meeting chat</span>
+          <span className="mt-1 block truncate text-xs font-extrabold text-slate-900">{chatNotification.senderName}</span>
+          <span className="mt-0.5 block truncate text-xs text-slate-600">{chatNotification.message}</span>
+        </button>
+      )}
 
       {/* Top Header */}
-      <header className="bg-[#072b1e] border-b border-[#0e4733] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between shadow-lg shrink-0">
+      <header className="bg-white border-b border-slate-200 px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between shadow-sm shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#20b875] text-white font-extrabold flex items-center justify-center text-sm shadow-md shadow-[#20b875]/20 shrink-0">
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -862,10 +921,10 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             </svg>
           </div>
           <div className="min-w-0 flex items-center gap-2">
-            <h1 className="font-black text-sm sm:text-base text-white tracking-tight truncate max-w-[110px] xs:max-w-[170px] sm:max-w-md">
+            <h1 className="font-black text-sm sm:text-base text-slate-900 tracking-tight truncate max-w-[110px] xs:max-w-[170px] sm:max-w-md">
               {liveMeetingData?.title || 'Live Video Conference'}
             </h1>
-            <span className="bg-[#0c3b29] border border-[#20b875]/50 text-[#4ade80] text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+            <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse"></span> LIVE
             </span>
           </div>
@@ -876,9 +935,9 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           <button
             type="button"
             onClick={handleCopyLink}
-            className="flex items-center gap-1.5 bg-[#093526] hover:bg-[#114533] border border-[#20b875]/50 text-[#4ade80] text-xs font-extrabold px-3 py-1.5 rounded-full transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-emerald-700 text-xs font-extrabold px-3 py-1.5 rounded-full transition-all shadow-xs cursor-pointer"
           >
-            <svg className="w-3.5 h-3.5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002-2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
             </svg>
             <span>{copiedLink ? 'Copied' : 'Link'}</span>
@@ -893,7 +952,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             className={`w-9 h-9 rounded-full border text-xs font-bold flex items-center justify-center transition-all cursor-pointer ${
               sidebarOpen && activeTab === 'chat'
                 ? 'bg-[#20b875] text-white border-[#20b875] shadow-md'
-                : 'bg-[#093526] text-gray-200 hover:text-white border-[#20b875]/40'
+                : 'bg-slate-100 text-slate-600 hover:text-slate-900 border-slate-200'
             }`}
             title="In-Meeting Chat"
           >
@@ -911,7 +970,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             className={`px-2.5 py-1.5 rounded-full border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
               sidebarOpen && activeTab === 'people'
                 ? 'bg-[#20b875] text-white border-[#20b875] shadow-md'
-                : 'bg-[#093526] text-gray-200 hover:text-white border-[#20b875]/40'
+                : 'bg-slate-100 text-slate-600 hover:text-slate-900 border-slate-200'
             }`}
             title="Participants List"
           >
@@ -926,15 +985,11 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       {/* Main Video Call View Grid */}
       <div className="flex-1 flex overflow-hidden relative">
         <div className="flex-1 p-3 sm:p-4 overflow-y-auto custom-scrollbar flex flex-col justify-start sm:justify-center items-center">
-          <div className={`w-full max-w-5xl grid gap-3 sm:gap-4 ${
-            totalParticipantsCount === 1
-              ? 'grid-cols-1 max-w-xl'
-              : totalParticipantsCount === 2
-              ? 'grid-cols-1 sm:grid-cols-2'
-              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2'
-          }`}>
+          <div className={`w-full max-w-5xl grid gap-3 sm:gap-4 ${videoGridClass}`}>
             {/* LOCAL USER VIDEO TILE */}
-            <div className="relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-video shadow-2xl flex items-center justify-center group">
+            <div className={`relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-video shadow-2xl flex items-center justify-center group ${
+              layout === 'focus' && totalParticipantsCount > 1 ? 'sm:col-span-2 sm:row-span-2' : ''
+            }`}>
               <video
                 ref={localVideoRef}
                 autoPlay
@@ -990,18 +1045,18 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             {totalParticipantsCount === 1 && (
               <div
                 onClick={handleCopyLink}
-                className="relative bg-[#052217] border-2 border-dashed border-[#20b875]/40 hover:border-[#20b875] rounded-3xl overflow-hidden aspect-auto sm:aspect-video shadow-lg flex flex-col items-center justify-center p-5 sm:p-6 text-center cursor-pointer transition-all hover:bg-[#072b1e]"
+                className="relative bg-white border-2 border-dashed border-emerald-200 hover:border-emerald-400 rounded-3xl overflow-hidden aspect-auto sm:aspect-video shadow-lg flex flex-col items-center justify-center p-5 sm:p-6 text-center cursor-pointer transition-all hover:bg-emerald-50"
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#0a3a29] text-[#4ade80] flex items-center justify-center font-bold text-xl sm:text-2xl mb-3">
-                  <svg className="w-6 h-6 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xl sm:text-2xl mb-3">
+                  <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
                 </div>
-                <h4 className="text-sm sm:text-base font-black text-white">Invite Colleagues to Join</h4>
-                <p className="text-xs text-gray-300 font-medium mt-1 max-w-xs leading-relaxed">
+                <h4 className="text-sm sm:text-base font-black text-slate-900">Invite Colleagues to Join</h4>
+                <p className="text-xs text-slate-500 font-medium mt-1 max-w-xs leading-relaxed">
                   Share the live room link with your team members to start instant WebRTC video stream.
                 </p>
-                <span className="mt-4 px-6 py-2.5 bg-[#20b875] hover:bg-[#25d386] text-[#072b1e] font-black text-xs rounded-xl shadow-md transition-all">
+                  <span className="mt-4 px-6 py-2.5 bg-[#20b875] hover:bg-[#25d386] text-white font-black text-xs rounded-xl shadow-md transition-all">
                   {copiedLink ? 'Link Copied!' : 'Copy Room Link'}
                 </span>
               </div>
@@ -1017,14 +1072,14 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               className="fixed inset-0 z-[110] bg-black/60 sm:hidden"
               onClick={() => setSidebarOpen(false)}
             />
-          <aside className="fixed top-0 left-0 w-screen h-dvh z-[120] sm:static sm:z-auto sm:w-80 sm:h-auto bg-[#072b1e] sm:border-l border-[#0e4733] flex flex-col shrink-0 animate-in slide-in-from-right duration-200">
-            <div className="p-3.5 border-b border-[#0e4733] flex items-center justify-between bg-[#0b3828]">
+          <aside className="fixed top-0 left-0 w-screen h-dvh z-[120] sm:static sm:z-auto sm:w-80 sm:h-auto bg-white sm:border-l border-slate-200 flex flex-col shrink-0 animate-in slide-in-from-right duration-200">
+            <div className="p-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setActiveTab('chat')}
                   className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                    activeTab === 'chat' ? 'bg-[#20b875] text-white' : 'text-gray-300 hover:text-white'
+                    activeTab === 'chat' ? 'bg-[#20b875] text-white' : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
                   Meeting Chat
@@ -1033,7 +1088,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                   type="button"
                   onClick={() => setActiveTab('people')}
                   className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                    activeTab === 'people' ? 'bg-[#20b875] text-white' : 'text-gray-300 hover:text-white'
+                    activeTab === 'people' ? 'bg-[#20b875] text-white' : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
                   People ({totalParticipantsCount})
@@ -1042,7 +1097,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               <button
                 type="button"
                 onClick={() => setSidebarOpen(false)}
-                className="text-gray-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                className="text-slate-400 hover:text-slate-900 p-1 rounded-lg cursor-pointer"
               >
                 ✕
               </button>
@@ -1058,27 +1113,27 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                     </div>
                   ) : (
                     chatMessages.map((msg, idx) => (
-                      <div key={idx} className="bg-[#0b3828] p-3 rounded-xl border border-[#13523c]">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-[#4ade80]">
+                      <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-emerald-700">
                           <span>{msg.senderName}</span>
                           <span className="text-[9px] text-gray-400 font-mono">
                             {new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
-                        <p className="text-xs text-white mt-1 leading-relaxed">{msg.message}</p>
+                        <p className="text-xs text-slate-700 mt-1 leading-relaxed">{msg.message}</p>
                       </div>
                     ))
                   )}
                   <div ref={chatEndRef} />
                 </div>
 
-                <form onSubmit={handleSendMessage} className="shrink-0 flex items-center gap-2 px-3.5 py-3 border-t border-[#0e4733] bg-[#072b1e]">
+                <form onSubmit={handleSendMessage} className="shrink-0 flex items-center gap-2 px-3.5 py-3 border-t border-slate-200 bg-white">
                   <input
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type meeting message..."
-                    className="flex-1 bg-[#0b3828] border border-[#166046] rounded-xl px-3 py-2.5 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-[#20b875]"
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#20b875]"
                   />
                   <button
                     type="submit"
@@ -1100,13 +1155,13 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                   </div>
                   <div className="space-y-2">
                     {/* Local User */}
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#0b3828] border border-[#13523c]">
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200">
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-full bg-[#20b875] text-white font-bold text-xs flex items-center justify-center">
                           {(currentUser?.name || 'Y').charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <span className="text-xs font-bold text-white block leading-tight">
+                            <span className="text-xs font-bold text-slate-900 block leading-tight">
                             {currentUser?.name || 'You'} (You)
                           </span>
                           <span className="text-[10px] text-emerald-300 font-medium">Host / Local</span>
@@ -1127,13 +1182,13 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
                     {/* Remote Peers */}
                     {remotePeerList.map((p) => (
-                      <div key={p.socketId} className="flex items-center justify-between p-2.5 rounded-xl bg-[#0b3828] border border-[#13523c]">
+                      <div key={p.socketId} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center">
                             {(p.name || 'P').charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <span className="text-xs font-bold text-white block leading-tight">{p.name}</span>
+                            <span className="text-xs font-bold text-slate-900 block leading-tight">{p.name}</span>
                             <span className="text-[10px] text-emerald-300 font-medium">{p.role}</span>
                           </div>
                         </div>
@@ -1160,14 +1215,56 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       </div>
 
       {/* Control Toolbar */}
-      <footer className="bg-[#041a12] border-t border-[#0e4733] px-4 sm:px-6 py-3 flex items-center justify-evenly sm:justify-center sm:gap-4 w-full shrink-0 shadow-2xl">
+      <footer className="relative bg-white border-t border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-evenly sm:justify-center sm:gap-4 w-full shrink-0 shadow-lg">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setLayoutMenuOpen((open) => !open)}
+            className={`w-9 h-9 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+              layoutMenuOpen ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
+            }`}
+            title="Choose meeting layout"
+            aria-label="Choose meeting layout"
+            aria-expanded={layoutMenuOpen}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="2" />
+              <rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="2" />
+              <rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="2" />
+              <rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="2" />
+            </svg>
+          </button>
+          {layoutMenuOpen && (
+            <div className="absolute bottom-12 sm:bottom-14 left-1/2 z-30 w-36 -translate-x-1/2 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+              {[
+                { value: 'gallery', label: 'Gallery view' },
+                { value: 'focus', label: 'Focus view' },
+                { value: 'compact', label: 'Compact view' }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setLayout(option.value);
+                    setLayoutMenuOpen(false);
+                  }}
+                  className={`w-full rounded-lg px-3 py-2 text-left text-xs font-bold transition-colors ${
+                    layout === option.value ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         {/* Mic Button */}
         <button
           type="button"
           onClick={toggleMic}
           className={`w-9 h-9 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             micOn
-              ? 'bg-[#0b3828] border-[#166046] text-[#4ade80] hover:bg-[#13523c]'
+              ? 'bg-slate-100 border-slate-200 text-emerald-600 hover:bg-slate-200'
               : 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
           }`}
           title={micOn ? 'Mute Microphone' : 'Unmute Microphone'}
@@ -1189,7 +1286,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           onClick={toggleCamera}
           className={`w-9 h-9 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             videoOn
-              ? 'bg-[#0b3828] border-[#166046] text-[#4ade80] hover:bg-[#13523c]'
+              ? 'bg-slate-100 border-slate-200 text-emerald-600 hover:bg-slate-200'
               : 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
           }`}
           title={videoOn ? 'Stop Camera' : 'Start Camera'}
@@ -1212,7 +1309,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           className={`w-9 h-9 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             screenSharing
               ? 'bg-[#20b875] border-[#4ade80] text-white animate-pulse'
-              : 'bg-[#0b3828] border-[#166046] text-[#4ade80] hover:bg-[#13523c]'
+              : 'bg-slate-100 border-slate-200 text-emerald-600 hover:bg-slate-200'
           }`}
           title="Share Screen"
         >
@@ -1228,7 +1325,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           className={`w-9 h-9 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             handRaised
               ? 'bg-amber-500 border-amber-400 text-white'
-              : 'bg-[#0b3828] border-[#166046] text-amber-400 hover:bg-[#13523c]'
+              : 'bg-slate-100 border-slate-200 text-amber-500 hover:bg-slate-200'
           }`}
           title="Raise Hand"
         >
@@ -1242,11 +1339,12 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           type="button"
           onClick={handleLeaveCall}
           className="bg-[#ff0055] hover:bg-[#e0004c] text-white font-extrabold text-xs px-5 sm:px-6 py-3 sm:py-3 rounded-2xl flex items-center gap-2 shadow-lg tracking-wider shrink-0 cursor-pointer"
+          title={isHost ? 'End Meeting for Everyone' : 'Leave Meeting'}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8l2-2m0 0l2-2m-2 2l-2 2m2-2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h6" />
           </svg>
-          <span className="uppercase font-black tracking-wider">LEAVE CALL</span>
+          <span className="uppercase font-black tracking-wider">{isHost ? 'END MEETING' : 'LEAVE CALL'}</span>
         </button>
       </footer>
     </div>,

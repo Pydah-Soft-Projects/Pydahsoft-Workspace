@@ -112,6 +112,13 @@ const getMeetingById = async (req, res) => {
       });
       await meeting.save();
     } else {
+      if (meeting.status === 'ended') {
+        return res.status(410).json({
+          success: false,
+          error: { message: 'This meeting has ended' }
+        });
+      }
+
       // Ensure currentUser is registered in activeParticipants so all connected participants see each other
       const currentUser = req.user;
       const isAlreadyActive = meeting.activeParticipants.some(
@@ -153,6 +160,13 @@ const joinMeeting = async (req, res) => {
       return res.status(404).json({
         success: false,
         error: { message: 'Meeting not found' }
+      });
+    }
+
+    if (meeting.status === 'ended') {
+      return res.status(410).json({
+        success: false,
+        error: { message: 'This meeting has ended' }
       });
     }
 
@@ -265,6 +279,10 @@ const leaveMeeting = async (req, res) => {
       meeting.activeParticipants = meeting.activeParticipants.filter(
         (p) => String(p.userId) !== String(currentUser._id) && (p.name || '').toLowerCase() !== (currentUser.name || '').toLowerCase()
       );
+      if (String(meeting.host) === String(currentUser._id)) {
+        meeting.status = 'ended';
+        meeting.activeParticipants = [];
+      }
       await meeting.save();
     }
 

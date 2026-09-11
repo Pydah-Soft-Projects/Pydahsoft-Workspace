@@ -8,7 +8,8 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
   const [activeMeeting, setActiveMeeting] = useState(() => {
     try {
       const cached = localStorage.getItem('pydahsoft_active_meeting_data');
-      return cached ? JSON.parse(cached) : null;
+      const parsed = cached ? JSON.parse(cached) : null;
+      return parsed?.status === 'ended' ? null : parsed;
     } catch (e) {
       return null;
     }
@@ -83,14 +84,20 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
     if (savedMeetingId) {
       fetchApi(`/meetings/${savedMeetingId}/join`, { method: 'POST' })
         .then((res) => {
-          if (res.data) {
+          if (res.data && res.data.status !== 'ended') {
             enterMeetingRoom(res.data);
+          } else {
+            throw new Error('This meeting has ended');
           }
         })
         .catch(() => {
           fetchApi(`/meetings/${savedMeetingId}`)
             .then((res) => {
-              if (res.data) enterMeetingRoom(res.data);
+              if (res.data && res.data.status !== 'ended') {
+                enterMeetingRoom(res.data);
+              } else {
+                throw new Error('This meeting has ended');
+              }
             })
             .catch(() => {
               localStorage.removeItem('pydahsoft_active_meeting_id');
