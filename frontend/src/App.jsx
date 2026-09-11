@@ -225,7 +225,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId }) {
 
     const tabDocumentTitles = {
       overview: 'PydahSoft | Dashboard Overview',
-      meetings: 'PydahSoft | Video Meetings',
+      meetings: 'PydahSoft | MEETINGS & TEAM CONFERENCE',
       chat: 'PydahSoft | Team Chat Box',
       users: 'PydahSoft | User Accounts',
       employees: 'PydahSoft | Employee Directory',
@@ -244,7 +244,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId }) {
   const getMobileTabTitle = (tab) => {
     switch (tab) {
       case 'overview': return 'Overview';
-      case 'meetings': return 'Meetings';
+      case 'meetings': return 'MEETINGS & TEAM CONFERENCE';
       case 'chat': return 'Team Chat';
       case 'users': return 'Users';
       case 'employees': return 'Employees';
@@ -263,7 +263,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId }) {
   const getTabTitle = (tab) => {
     switch (tab) {
       case 'overview': return 'Dashboard Overview';
-      case 'meetings': return 'Video Meetings & Teams Virtual Conference Rooms';
+      case 'meetings': return 'MEETINGS & TEAM CONFERENCE';
       case 'chat': return 'Team Chat Box & Direct Messaging Hub';
       case 'users': return 'User Accounts & Credentials Management';
       case 'employees': return 'Employee Directory & Staff Profiles';
