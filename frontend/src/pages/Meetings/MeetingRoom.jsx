@@ -1,5 +1,74 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchApi } from '../../config/api';
+import { getSocket } from '../../config/socket';
+
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ]
+};
+
+// Sub-component to render Remote Participant Video Streams cleanly with WebRTC srcObject
+function RemoteVideoTile({ peer }) {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current && peer.stream) {
+      videoRef.current.srcObject = peer.stream;
+    }
+  }, [peer.stream]);
+
+  return (
+    <div className="relative bg-[#09233d] border border-[#13523c] rounded-2xl overflow-hidden aspect-video shadow-xl flex flex-col items-center justify-center group">
+      {/* Remote Video Stream or Camera Off Avatar */}
+      {peer.videoOn && peer.stream ? (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full relative flex flex-col items-center justify-center bg-gradient-to-b from-[#0b2844] to-[#061829]">
+          <div className={`w-20 h-20 rounded-full ${peer.bgColor || 'bg-[#09233d]'} text-white font-black text-2xl flex items-center justify-center ring-4 ring-emerald-500/30 shadow-2xl animate-pulse`}>
+            {(peer.name || 'P').split(' ').map((n) => n[0]).join('').toUpperCase()}
+          </div>
+          <span className="text-xs font-semibold text-emerald-200 mt-3">Camera Disabled</span>
+        </div>
+      )}
+
+      {/* Role Badge */}
+      <p className="absolute top-3 left-3 text-[10px] font-bold text-emerald-300 bg-[#072b1e]/80 px-2 py-0.5 rounded-lg border border-[#0e4733]">
+        {peer.role || 'Live Participant'}
+      </p>
+
+      {/* Participant Footer Info */}
+      <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#0e4733] flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-[#4ade80]"></span>
+        <span className="text-xs font-extrabold text-white">{peer.name}</span>
+        {peer.handRaised && (
+          <svg className="w-3.5 h-3.5 text-amber-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
+          </svg>
+        )}
+      </div>
+
+      {/* Mic Status Indicator Icon */}
+      <div className="absolute top-3 right-3 bg-[#072b1e]/90 backdrop-blur-md p-1.5 rounded-lg border border-[#0e4733]">
+        {peer.micOn ? (
+          <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
+          </svg>
+        ) : (
+          <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const [micOn, setMicOn] = useState(true);
@@ -14,22 +83,92 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const [newMessage, setNewMessage] = useState('');
   const [toastNotification, setToastNotification] = useState(null);
 
+  // WebRTC Remote Peers State: socketId -> { socketId, userId, name, role, stream, micOn, videoOn, handRaised, bgColor }
+  const [remotePeers, setRemotePeers] = useState({});
+
   const localVideoRef = useRef(null);
   const mediaStreamRef = useRef(null);
+  const screenStreamRef = useRef(null);
+  const peerConnectionsRef = useRef({}); // socketId -> RTCPeerConnection
+  const socketRef = useRef(null);
   const chatEndRef = useRef(null);
-  
-  // Track known participant names for instant join popup notifications
-  const knownParticipantsRef = useRef(
-    new Set((meeting?.activeParticipants || []).map((p) => (p.name || '').toLowerCase()))
-  );
 
-  // Always compute dynamic URL based on current live host
   const getLiveMeetingUrl = () => {
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId || 'meet-room';
     return `${window.location.origin}/meetings/${meetingCode}`;
   };
 
-  // Initialize webcam & mic stream if supported
+  // Helper to create WebRTC peer connection
+  const createPeerConnection = (targetSocketId, targetUserName) => {
+    if (peerConnectionsRef.current[targetSocketId]) {
+      return peerConnectionsRef.current[targetSocketId];
+    }
+
+    const pc = new RTCPeerConnection(ICE_SERVERS);
+    peerConnectionsRef.current[targetSocketId] = pc;
+
+    // Add local media tracks to peer connection
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => {
+        pc.addTrack(track, mediaStreamRef.current);
+      });
+    }
+
+    // ICE Candidates Handler
+    pc.onicecandidate = (event) => {
+      if (event.candidate && socketRef.current) {
+        socketRef.current.emit('ice-candidate', {
+          targetSocketId,
+          candidate: event.candidate
+        });
+      }
+    };
+
+    // Remote Track Handler
+    pc.ontrack = (event) => {
+      const [remoteStream] = event.streams;
+      if (remoteStream) {
+        setRemotePeers((prev) => ({
+          ...prev,
+          [targetSocketId]: {
+            ...prev[targetSocketId],
+            socketId: targetSocketId,
+            name: targetUserName || prev[targetSocketId]?.name || 'Remote Participant',
+            role: 'Live Participant',
+            stream: remoteStream,
+            micOn: prev[targetSocketId]?.micOn ?? true,
+            videoOn: prev[targetSocketId]?.videoOn ?? true,
+            handRaised: prev[targetSocketId]?.handRaised ?? false,
+            bgColor: prev[targetSocketId]?.bgColor || 'bg-[#09233d]'
+          }
+        }));
+      }
+    };
+
+    // Connection state log
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        removePeer(targetSocketId);
+      }
+    };
+
+    return pc;
+  };
+
+  // Remove peer connection
+  const removePeer = (targetSocketId) => {
+    if (peerConnectionsRef.current[targetSocketId]) {
+      peerConnectionsRef.current[targetSocketId].close();
+      delete peerConnectionsRef.current[targetSocketId];
+    }
+    setRemotePeers((prev) => {
+      const updated = { ...prev };
+      delete updated[targetSocketId];
+      return updated;
+    });
+  };
+
+  // Step 1: Initialize local user camera & mic media stream
   useEffect(() => {
     let activeStream = null;
 
@@ -47,7 +186,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           }
         }
       } catch (err) {
-        console.warn('Webcam/Mic stream notice:', err);
+        console.warn('Webcam/Mic stream initialization warning:', err);
       }
     }
 
@@ -60,50 +199,167 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     };
   }, []);
 
-  // Hardware Camera Toggle Handler (completely stops/starts camera hardware stream)
-  const toggleCamera = async () => {
-    if (videoOn) {
-      // Turn Off: Stop media tracks & release camera hardware
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getVideoTracks().forEach((track) => {
-          track.enabled = false;
-          track.stop();
-        });
-      }
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = null;
-      }
-      setVideoOn(false);
-    } else {
-      // Turn On: Re-acquire camera stream
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: micOn
-        });
-        mediaStreamRef.current = stream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
+  // Step 2: Initialize Socket.io connection & WebRTC Signaling
+  useEffect(() => {
+    const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
+    if (!meetingCode) return;
+
+    const socket = getSocket();
+    socketRef.current = socket;
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    // Join Room
+    socket.emit('join-room', {
+      meetingId: meetingCode,
+      userId: currentUser?._id,
+      userName: currentUser?.name || 'Participant'
+    });
+
+    // Receive list of all existing peers in the room
+    socket.on('all-users', (existingPeers) => {
+      existingPeers.forEach(async (peer) => {
+        if (peer.socketId === socket.id) return;
+
+        setRemotePeers((prev) => ({
+          ...prev,
+          [peer.socketId]: {
+            socketId: peer.socketId,
+            userId: peer.userId,
+            name: peer.userName,
+            role: 'Live Participant',
+            stream: null,
+            micOn: peer.micOn,
+            videoOn: peer.videoOn,
+            handRaised: peer.handRaised,
+            bgColor: 'bg-[#09233d]'
+          }
+        }));
+
+        // Initiate WebRTC call (Create Offer)
+        const pc = createPeerConnection(peer.socketId, peer.userName);
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          socket.emit('offer', {
+            targetSocketId: peer.socketId,
+            offer,
+            callerName: currentUser?.name || 'Participant'
+          });
+        } catch (err) {
+          console.error('Error creating offer:', err);
         }
-        setVideoOn(true);
-      } catch (err) {
-        console.warn('Unable to restart hardware camera stream:', err);
-        setVideoOn(false);
-      }
-    }
-  };
-
-  // Microphone Toggle Handler
-  const toggleMic = () => {
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getAudioTracks().forEach((track) => {
-        track.enabled = !micOn;
       });
-    }
-    setMicOn(!micOn);
-  };
+    });
 
-  // Ultra-fast 1.5-second polling for real-time participant joins & messages
+    // Handle New User Joined
+    socket.on('user-joined', (newPeer) => {
+      if (newPeer.socketId === socket.id) return;
+
+      setToastNotification(`${newPeer.userName} has joined the meeting!`);
+      setTimeout(() => setToastNotification(null), 4000);
+
+      setRemotePeers((prev) => ({
+        ...prev,
+        [newPeer.socketId]: {
+          socketId: newPeer.socketId,
+          userId: newPeer.userId,
+          name: newPeer.userName,
+          role: 'Live Participant',
+          stream: null,
+          micOn: newPeer.micOn,
+          videoOn: newPeer.videoOn,
+          handRaised: newPeer.handRaised,
+          bgColor: 'bg-[#09233d]'
+        }
+      }));
+    });
+
+    // Handle Incoming WebRTC Offer
+    socket.on('offer', async ({ offer, callerSocketId, callerName }) => {
+      const pc = createPeerConnection(callerSocketId, callerName);
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('answer', {
+          targetSocketId: callerSocketId,
+          answer
+        });
+      } catch (err) {
+        console.error('Error handling offer:', err);
+      }
+    });
+
+    // Handle Incoming WebRTC Answer
+    socket.on('answer', async ({ answer, responderSocketId }) => {
+      const pc = peerConnectionsRef.current[responderSocketId];
+      if (pc) {
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        } catch (err) {
+          console.error('Error handling answer:', err);
+        }
+      }
+    });
+
+    // Handle ICE Candidate
+    socket.on('ice-candidate', async ({ candidate, senderSocketId }) => {
+      const pc = peerConnectionsRef.current[senderSocketId];
+      if (pc) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          console.error('Error adding ICE candidate:', err);
+        }
+      }
+    });
+
+    // Handle Peer Toggles
+    socket.on('user-toggled-audio', ({ socketId, micOn }) => {
+      setRemotePeers((prev) => prev[socketId] ? { ...prev, [socketId]: { ...prev[socketId], micOn } } : prev);
+    });
+
+    socket.on('user-toggled-video', ({ socketId, videoOn }) => {
+      setRemotePeers((prev) => prev[socketId] ? { ...prev, [socketId]: { ...prev[socketId], videoOn } } : prev);
+    });
+
+    socket.on('user-toggled-hand', ({ socketId, handRaised }) => {
+      setRemotePeers((prev) => prev[socketId] ? { ...prev, [socketId]: { ...prev[socketId], handRaised } } : prev);
+    });
+
+    // Handle User Leaving
+    socket.on('user-left', ({ socketId, userName }) => {
+      if (userName) {
+        setToastNotification(`${userName} left the meeting`);
+        setTimeout(() => setToastNotification(null), 3000);
+      }
+      removePeer(socketId);
+    });
+
+    return () => {
+      socket.emit('leave-room', { meetingId: meetingCode });
+      socket.off('all-users');
+      socket.off('user-joined');
+      socket.off('offer');
+      socket.off('answer');
+      socket.off('ice-candidate');
+      socket.off('user-toggled-audio');
+      socket.off('user-toggled-video');
+      socket.off('user-toggled-hand');
+      socket.off('user-left');
+
+      // Close all WebRTC peer connections
+      Object.keys(peerConnectionsRef.current).forEach((key) => {
+        peerConnectionsRef.current[key].close();
+      });
+      peerConnectionsRef.current = {};
+    };
+  }, [meeting?.meetingId, liveMeetingData?.meetingId, currentUser?._id, currentUser?.name]);
+
+  // Periodic HTTP Polling for Chat & Database Sync
   useEffect(() => {
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
     if (!meetingCode) return;
@@ -116,35 +372,129 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             if (res.data.inMeetingMessages) {
               setChatMessages(res.data.inMeetingMessages);
             }
-            // Detect newly joined participants for instant popup notification
-            const currentActive = res.data.activeParticipants || [];
-            currentActive.forEach((p) => {
-              const pNameKey = (p.name || '').toLowerCase();
-              if (pNameKey && !knownParticipantsRef.current.has(pNameKey)) {
-                knownParticipantsRef.current.add(pNameKey);
-                if (pNameKey !== (currentUser?.name || '').toLowerCase()) {
-                  setToastNotification(`${p.name} has joined the live meeting!`);
-                  setTimeout(() => setToastNotification(null), 5000);
-                }
-              }
-            });
           }
         })
         .catch(() => {});
     };
 
     fetchLatestState();
-    const interval = setInterval(fetchLatestState, 1500);
-
+    const interval = setInterval(fetchLatestState, 3000);
     return () => clearInterval(interval);
-  }, [meeting?.meetingId, liveMeetingData?.meetingId, currentUser?.name]);
+  }, [meeting?.meetingId, liveMeetingData?.meetingId]);
 
-  // Handle graceful exit and release camera media tracks
-  const handleLeaveCall = async () => {
+  // Microphone Toggle Handler
+  const toggleMic = () => {
+    const nextState = !micOn;
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current.getAudioTracks().forEach((track) => {
+        track.enabled = nextState;
+      });
+    }
+    setMicOn(nextState);
+    const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
+    if (socketRef.current) {
+      socketRef.current.emit('toggle-audio', { meetingId: meetingCode, micOn: nextState });
+    }
+  };
+
+  // Camera Toggle Handler
+  const toggleCamera = () => {
+    const nextState = !videoOn;
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getVideoTracks().forEach((track) => {
+        track.enabled = nextState;
+      });
+    }
+    setVideoOn(nextState);
+    const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
+    if (socketRef.current) {
+      socketRef.current.emit('toggle-video', { meetingId: meetingCode, videoOn: nextState });
+    }
+  };
+
+  // Raise Hand Toggle Handler
+  const toggleHand = () => {
+    const nextState = !handRaised;
+    setHandRaised(nextState);
+    const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
+    if (socketRef.current) {
+      socketRef.current.emit('toggle-hand', { meetingId: meetingCode, handRaised: nextState });
+    }
+  };
+
+  // Native Screen Sharing Handler using getDisplayMedia
+  const toggleScreenShare = async () => {
+    if (!screenSharing) {
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true
+        });
+        screenStreamRef.current = screenStream;
+        const screenTrack = screenStream.getVideoTracks()[0];
+
+        // Replace camera video track with screen track in all peer connections
+        Object.values(peerConnectionsRef.current).forEach((pc) => {
+          const videoSender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+          if (videoSender) {
+            videoSender.replaceTrack(screenTrack);
+          }
+        });
+
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = screenStream;
+        }
+
+        screenTrack.onended = () => {
+          stopScreenSharing();
+        };
+
+        setScreenSharing(true);
+      } catch (err) {
+        console.warn('Screen share cancelled or failed:', err);
+        setScreenSharing(false);
+      }
+    } else {
+      stopScreenSharing();
+    }
+  };
+
+  const stopScreenSharing = () => {
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((t) => t.stop());
+      screenStreamRef.current = null;
+    }
+
+    // Revert video track in peer connections to camera track
+    const cameraVideoTrack = mediaStreamRef.current ? mediaStreamRef.current.getVideoTracks()[0] : null;
+    if (cameraVideoTrack) {
+      Object.values(peerConnectionsRef.current).forEach((pc) => {
+        const videoSender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+        if (videoSender) {
+          videoSender.replaceTrack(cameraVideoTrack);
+        }
+      });
+    }
+
+    if (localVideoRef.current && mediaStreamRef.current) {
+      localVideoRef.current.srcObject = mediaStreamRef.current;
+    }
+
+    setScreenSharing(false);
+  };
+
+  // Graceful Leave Call
+  const handleLeaveCall = async () => {
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((t) => t.stop());
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
     }
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
+    if (socketRef.current && meetingCode) {
+      socketRef.current.emit('leave-room', { meetingId: meetingCode });
+    }
     if (meetingCode) {
       try {
         await fetchApi(`/meetings/${meetingCode}/leave`, { method: 'POST' });
@@ -152,23 +502,6 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     }
     onLeave();
   };
-
-  // Window unload listener to inform server when participant closes window or tab
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
-      if (meetingCode) {
-        const token = localStorage.getItem('pydahsoft_token');
-        if (navigator.sendBeacon) {
-          const blob = new Blob([JSON.stringify({})], { type: 'application/json' });
-          navigator.sendBeacon(`/api/meetings/${meetingCode}/leave`, blob);
-        }
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [meeting?.meetingId, liveMeetingData?.meetingId]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -204,65 +537,12 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     }
   };
 
-  // Build Real Participants array for VIDEO GRID: Synchronized across ALL connected devices
-  const myName = currentUser?.name || 'You';
-  const myId = String(currentUser?._id || 'me');
-
-  const allParticipants = [];
-  const seenKeys = new Set();
-
-  if (liveMeetingData?.activeParticipants && Array.isArray(liveMeetingData.activeParticipants)) {
-    liveMeetingData.activeParticipants.forEach((p, idx) => {
-      const pName = p.name || 'Participant';
-      const pKey = String(p.userId || pName).toLowerCase();
-
-      if (!seenKeys.has(pKey)) {
-        seenKeys.add(pKey);
-        const isMe = String(p.userId) === myId || pName.toLowerCase() === myName.toLowerCase();
-        allParticipants.push({
-          id: String(p.userId || `p-${idx}`),
-          name: isMe ? `${pName} (You)` : pName,
-          role: isMe ? 'Meeting Host / You' : 'Live Participant',
-          isMe: isMe,
-          micOn: isMe ? micOn : true,
-          videoOn: isMe ? videoOn : true,
-          handRaised: isMe ? handRaised : false,
-          bgColor: isMe ? 'bg-[#20b875]' : ['bg-[#09233d]', 'bg-[#0d3b2b]', 'bg-[#13523c]'][idx % 3]
-        });
-      }
-    });
-  }
-
-  // Ensure current user is present if activeParticipants hasn't polled yet
-  if (!seenKeys.has(myId.toLowerCase()) && !seenKeys.has(myName.toLowerCase())) {
-    allParticipants.unshift({
-      id: myId,
-      name: `${myName} (You)`,
-      role: 'Meeting Host',
-      isMe: true,
-      micOn: micOn,
-      videoOn: videoOn,
-      handRaised: handRaised,
-      bgColor: 'bg-[#20b875]'
-    });
-  }
-
-  // List pending invited members for sidebar
-  const pendingInvitedList = [];
-  if (liveMeetingData?.invitedUsers && Array.isArray(liveMeetingData.invitedUsers)) {
-    liveMeetingData.invitedUsers.forEach((u) => {
-      const isJoined = (liveMeetingData.activeParticipants || []).some(
-        (p) => (p.name || '').toLowerCase() === (u.name || '').toLowerCase()
-      );
-      if (!isJoined && (u.name || '').toLowerCase() !== myName.toLowerCase()) {
-        pendingInvitedList.push(u);
-      }
-    });
-  }
+  const remotePeerList = Object.values(remotePeers);
+  const totalParticipantsCount = remotePeerList.length + 1; // Remote peers + Local user
 
   return (
     <div className="fixed inset-0 z-50 bg-[#041a12] text-white flex flex-col overflow-hidden font-sans relative">
-      {/* Floating Animated Join Notification Toast Popup */}
+      {/* Toast Notification */}
       {toastNotification && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#20b875] text-white px-5 py-2.5 rounded-2xl shadow-2xl font-extrabold text-xs flex items-center gap-2.5 border border-emerald-300 animate-in fade-in slide-in-from-top-4 duration-300">
           <svg className="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -272,7 +552,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         </div>
       )}
 
-      {/* Top PydahSoft Teams Bar */}
+      {/* Top Header */}
       <header className="bg-[#072b1e] border-b border-[#0e4733] px-4 py-3 flex items-center justify-between shadow-lg shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-[#20b875] text-white font-extrabold flex items-center justify-center text-sm shadow-md shadow-[#20b875]/20">
@@ -286,7 +566,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                 {liveMeetingData?.title || 'Live Video Conference'}
               </h1>
               <span className="bg-[#20b875]/20 text-[#4ade80] border border-[#20b875]/40 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1.5 animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]"></span> LIVE SESSION
+                <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]"></span> HD WEBRTC LIVE
               </span>
             </div>
             <p className="text-[11px] text-emerald-300/80 font-mono truncate max-w-md">
@@ -305,7 +585,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
             </svg>
-            <span className="hidden sm:inline">{copiedLink ? 'Live Link Copied!' : 'Copy Live Link'}</span>
+            <span className="hidden sm:inline">{copiedLink ? 'Link Copied!' : 'Copy Link'}</span>
           </button>
 
           <button
@@ -343,124 +623,76 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
-            <span className="hidden sm:inline">People ({allParticipants.length})</span>
+            <span className="hidden sm:inline">People ({totalParticipantsCount})</span>
           </button>
         </div>
       </header>
 
-      {/* Main Call View Container */}
+      {/* Main Video Call View Grid */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Video Tiles Canvas */}
         <div className="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col justify-center items-center">
           <div className={`w-full max-w-6xl grid gap-4 ${
-            allParticipants.length === 1
+            totalParticipantsCount === 1
               ? 'grid-cols-1 max-w-2xl'
-              : allParticipants.length === 2
+              : totalParticipantsCount === 2
               ? 'grid-cols-1 sm:grid-cols-2'
               : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2'
           }`}>
-            {allParticipants.map((p) => {
-              if (p.isMe) {
-                return (
-                  <div
-                    key={p.id}
-                    className="relative bg-[#09233d] border-2 border-[#20b875] rounded-2xl overflow-hidden aspect-video shadow-2xl flex items-center justify-center group"
-                  >
-                    {/* Real Video Stream if active */}
-                    <video
-                      ref={localVideoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className={`w-full h-full object-cover transform -scale-x-100 ${
-                        videoOn ? 'block' : 'hidden'
-                      }`}
-                    />
+            {/* LOCAL USER VIDEO TILE */}
+            <div className="relative bg-[#09233d] border-2 border-[#20b875] rounded-2xl overflow-hidden aspect-video shadow-2xl flex items-center justify-center group">
+              <video
+                ref={localVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`w-full h-full object-cover transform ${
+                  screenSharing ? 'scale-100' : '-scale-x-100'
+                } ${videoOn ? 'block' : 'hidden'}`}
+              />
 
-                    {/* Camera Off Avatar Screen */}
-                    {!videoOn && (
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-20 h-20 rounded-full bg-[#20b875] text-white font-black text-2xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-lg">
-                          {p.name.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="text-xs font-semibold text-emerald-200">Camera Stopped</span>
-                      </div>
-                    )}
-
-                    {/* Participant Info Overlay */}
-                    <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#0e4733] flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#4ade80]"></span>
-                      <span className="text-xs font-extrabold text-white">{p.name}</span>
-                      {p.handRaised && (
-                        <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
-                        </svg>
-                      )}
-                    </div>
-
-                    {/* Mic Indicator Icon */}
-                    <div className="absolute top-3 right-3 bg-[#072b1e]/90 backdrop-blur-md p-1.5 rounded-lg border border-[#0e4733]">
-                      {micOn ? (
-                        <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-                        </svg>
-                      )}
-                    </div>
+              {!videoOn && (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-20 h-20 rounded-full bg-[#20b875] text-white font-black text-2xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-lg">
+                    {(currentUser?.name || 'Y').charAt(0).toUpperCase()}
                   </div>
-                );
-              }
-
-              // ACTUAL JOINED REMOTE PARTICIPANTS WITH LIVE VIDEO FEED
-              return (
-                <div
-                  key={p.id}
-                  className="relative bg-[#09233d] border border-[#13523c] rounded-2xl overflow-hidden aspect-video shadow-xl flex flex-col items-center justify-center group"
-                >
-                  {/* Remote Participant Video Canvas */}
-                  <div className="w-full h-full relative flex items-center justify-center bg-gradient-to-b from-[#0b2844] to-[#061829]">
-                    <div className={`w-20 h-20 rounded-full ${p.bgColor} text-white font-black text-2xl flex items-center justify-center ring-4 ring-emerald-500/30 shadow-2xl animate-pulse`}>
-                      {p.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
-                    </div>
-                  </div>
-
-                  <p className="absolute top-3 left-3 text-[10px] font-bold text-emerald-300 bg-[#072b1e]/80 px-2 py-0.5 rounded-lg border border-[#0e4733]">
-                    {p.role}
-                  </p>
-
-                  {/* Remote Participant Footer */}
-                  <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#0e4733] flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#4ade80]"></span>
-                    <span className="text-xs font-extrabold text-white">{p.name}</span>
-                    {p.handRaised && (
-                      <svg className="w-3.5 h-3.5 text-amber-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
-                      </svg>
-                    )}
-                  </div>
-
-                  {/* Mic Indicator Icon */}
-                  <div className="absolute top-3 right-3 bg-[#072b1e]/90 backdrop-blur-md p-1.5 rounded-lg border border-[#0e4733]">
-                    {p.micOn ? (
-                      <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                      </svg>
-                    )}
-                  </div>
+                  <span className="text-xs font-semibold text-emerald-200">Camera Off</span>
                 </div>
-              );
-            })}
+              )}
 
-            {/* Quick Copy Link Card if only 1 participant is in call */}
-            {allParticipants.length === 1 && (
+              {/* Local Participant Info */}
+              <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#0e4733] flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#4ade80]"></span>
+                <span className="text-xs font-extrabold text-white">
+                  {currentUser?.name || 'You'} (You) {screenSharing ? '[Sharing Screen]' : ''}
+                </span>
+                {handRaised && (
+                  <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
+                  </svg>
+                )}
+              </div>
+
+              {/* Local Mic Status */}
+              <div className="absolute top-3 right-3 bg-[#072b1e]/90 backdrop-blur-md p-1.5 rounded-lg border border-[#0e4733]">
+                {micOn ? (
+                  <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                )}
+              </div>
+            </div>
+
+            {/* REMOTE PEERS WEBRTC LIVE VIDEO TILES */}
+            {remotePeerList.map((peer) => (
+              <RemoteVideoTile key={peer.socketId} peer={peer} />
+            ))}
+
+            {/* Quick Copy Link Card if only 1 participant */}
+            {totalParticipantsCount === 1 && (
               <div
                 onClick={handleCopyLink}
                 className="relative bg-[#072b1e]/60 border-2 border-dashed border-[#20b875]/40 hover:border-[#20b875] rounded-2xl overflow-hidden aspect-video shadow-lg flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all hover:bg-[#072b1e]"
@@ -472,10 +704,10 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                 </div>
                 <h4 className="text-sm font-extrabold text-white">Invite Colleagues to Join</h4>
                 <p className="text-xs text-gray-300 font-medium mt-1 max-w-xs">
-                  Click to copy the live meeting link and share it with your team members.
+                  Share the live room link with your team members to start instant WebRTC video stream.
                 </p>
                 <span className="mt-4 px-4 py-2 bg-[#20b875] text-white font-extrabold text-xs rounded-xl shadow-md">
-                  {copiedLink ? 'Link Copied to Clipboard!' : 'Copy Meeting Link'}
+                  {copiedLink ? 'Link Copied!' : 'Copy Room Link'}
                 </span>
               </div>
             )}
@@ -503,7 +735,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                     activeTab === 'people' ? 'bg-[#20b875] text-white' : 'text-gray-300 hover:text-white'
                   }`}
                 >
-                  People ({allParticipants.length})
+                  People ({totalParticipantsCount})
                 </button>
               </div>
               <button
@@ -515,7 +747,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               </button>
             </div>
 
-            {/* Chat Tab Content */}
+            {/* Chat Tab */}
             {activeTab === 'chat' && (
               <div className="flex-1 flex flex-col justify-between overflow-hidden p-3.5">
                 <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">
@@ -557,21 +789,47 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               </div>
             )}
 
-            {/* People Tab Content */}
+            {/* People Tab */}
             {activeTab === 'people' && (
               <div className="flex-1 overflow-y-auto custom-scrollbar p-3.5 space-y-4">
-                {/* Joined Live Members Section */}
                 <div>
                   <div className="text-[11px] font-bold text-[#4ade80] uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-[#4ade80]"></span>
-                    <span>Joined Live Members ({allParticipants.length})</span>
+                    <span>Joined Live Members ({totalParticipantsCount})</span>
                   </div>
                   <div className="space-y-2">
-                    {allParticipants.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#0b3828] border border-[#13523c]">
+                    {/* Local User */}
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#0b3828] border border-[#13523c]">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-[#20b875] text-white font-bold text-xs flex items-center justify-center">
+                          {(currentUser?.name || 'Y').charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-white block leading-tight">
+                            {currentUser?.name || 'You'} (You)
+                          </span>
+                          <span className="text-[10px] text-emerald-300 font-medium">Host / Local</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {micOn ? (
+                          <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Remote Peers */}
+                    {remotePeerList.map((p) => (
+                      <div key={p.socketId} className="flex items-center justify-between p-2.5 rounded-xl bg-[#0b3828] border border-[#13523c]">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-[#20b875] text-white font-bold text-xs flex items-center justify-center">
-                            {p.name.charAt(0).toUpperCase()}
+                          <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center">
+                            {(p.name || 'P').charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <span className="text-xs font-bold text-white block leading-tight">{p.name}</span>
@@ -593,37 +851,13 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                     ))}
                   </div>
                 </div>
-
-                {/* Pending Invited Members Section */}
-                {pendingInvitedList.length > 0 && (
-                  <div className="pt-2 border-t border-[#0e4733]">
-                    <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider mb-2">
-                      Pending Invites ({pendingInvitedList.length})
-                    </div>
-                    <div className="space-y-2">
-                      {pendingInvitedList.map((u, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-[#09233d]/60 border border-slate-700/50">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-slate-700 text-gray-300 font-bold text-xs flex items-center justify-center">
-                              {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
-                            </div>
-                            <div>
-                              <span className="text-xs font-bold text-gray-300 block leading-tight">{u.name}</span>
-                              <span className="text-[10px] text-amber-400 font-medium">Waiting to Join...</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </aside>
         )}
       </div>
 
-      {/* Bottom PydahSoft Control Toolbar */}
+      {/* Control Toolbar */}
       <footer className="bg-[#072b1e] border-t border-[#0e4733] px-4 py-3 flex items-center justify-center gap-3 sm:gap-4 shrink-0 shadow-2xl">
         {/* Mic Button */}
         <button
@@ -647,7 +881,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           <span className="hidden sm:inline">{micOn ? 'Mute' : 'Unmute'}</span>
         </button>
 
-        {/* Camera Button (Complete Hardware Release Toggle) */}
+        {/* Camera Button */}
         <button
           type="button"
           onClick={toggleCamera}
@@ -669,26 +903,26 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           <span className="hidden sm:inline">{videoOn ? 'Stop Video' : 'Start Video'}</span>
         </button>
 
-        {/* Screen Share Button */}
+        {/* Native Screen Share Button */}
         <button
           type="button"
-          onClick={() => setScreenSharing(!screenSharing)}
+          onClick={toggleScreenShare}
           className={`flex flex-col items-center gap-1 p-3 sm:px-4 sm:py-2.5 rounded-2xl border text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer ${
             screenSharing
-              ? 'bg-[#20b875] border-[#4ade80] text-white'
+              ? 'bg-[#20b875] border-[#4ade80] text-white animate-pulse'
               : 'bg-[#0b3828] border-[#166046] text-white hover:bg-[#13523c]'
           }`}
         >
           <svg className="w-5 h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
-          <span className="hidden sm:inline">{screenSharing ? 'Sharing Screen' : 'Share Screen'}</span>
+          <span className="hidden sm:inline">{screenSharing ? 'Stop Share' : 'Share Screen'}</span>
         </button>
 
         {/* Raise Hand Button */}
         <button
           type="button"
-          onClick={() => setHandRaised(!handRaised)}
+          onClick={toggleHand}
           className={`flex flex-col items-center gap-1 p-3 sm:px-4 sm:py-2.5 rounded-2xl border text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer ${
             handRaised
               ? 'bg-amber-500 border-amber-400 text-white'
@@ -701,7 +935,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           <span className="hidden sm:inline">{handRaised ? 'Hand Raised' : 'Raise Hand'}</span>
         </button>
 
-        {/* Leave / End Call Button */}
+        {/* Leave Call Button */}
         <button
           type="button"
           onClick={handleLeaveCall}
