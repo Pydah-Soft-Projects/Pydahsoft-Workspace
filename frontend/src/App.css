@@ -73,6 +73,10 @@ html {
     background: #ffffff;
   }
 
+  .chat-active .dashboard-main {
+    overflow: hidden;
+  }
+
   .chat-main .dashboard-content {
     padding: 0;
   }
