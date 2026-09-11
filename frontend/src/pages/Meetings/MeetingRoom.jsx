@@ -1011,7 +1011,13 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
         {/* Side Panel: In-Meeting Chat & Participants */}
         {sidebarOpen && (
-          <aside className="w-80 bg-[#072b1e] border-l border-[#0e4733] flex flex-col shrink-0 animate-in slide-in-from-right duration-200">
+          <>
+            {/* Mobile backdrop — tap to close */}
+            <div
+              className="fixed inset-0 z-[110] bg-black/60 sm:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          <aside className="fixed inset-0 z-[120] sm:static sm:z-auto w-full sm:w-80 bg-[#072b1e] sm:border-l border-[#0e4733] flex flex-col shrink-0 animate-in slide-in-from-right duration-200">
             <div className="p-3.5 border-b border-[#0e4733] flex items-center justify-between bg-[#0b3828]">
               <div className="flex items-center gap-2">
                 <button
@@ -1149,6 +1155,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               </div>
             )}
           </aside>
+          </>
         )}
       </div>
 
