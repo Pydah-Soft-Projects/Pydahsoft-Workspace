@@ -85,7 +85,17 @@ html {
   }
 
   .chat-page__contacts {
-    overflow-y: auto;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-page__contact-list {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-page__stream {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
@@ -109,6 +119,10 @@ html {
     max-height: 100dvh;
     border: 0;
     border-radius: 0;
+  }
+
+  .chat-page > [class*="fixed"] {
+    max-height: 100dvh;
   }
 }
 

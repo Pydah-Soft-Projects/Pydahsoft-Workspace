@@ -173,7 +173,7 @@ export default function TeamChatPage({ currentUser }) {
   return (
     <div className="chat-page h-[calc(100dvh-95px)] md:h-[calc(100vh-140px)] md:min-h-[550px] bg-white rounded-2xl border border-gray-200 shadow-lg flex flex-col md:flex-row overflow-hidden">
       {/* LEFT PANEL: Persons & Group Conversations List */}
-      <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} chat-page__contacts w-full md:w-96 bg-white border-r border-gray-200 flex-col shrink-0 h-full overflow-y-auto no-scrollbar md:scrollbar-thin`}>
+      <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} chat-page__contacts w-full md:w-96 bg-white border-r border-gray-200 flex-col shrink-0 h-full overflow-hidden`}>
         {/* Header (Desktop only) */}
         <div className="hidden md:block p-3 md:p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center justify-between">
@@ -355,7 +355,7 @@ export default function TeamChatPage({ currentUser }) {
         </div>
 
         {/* Individual Contact Directory List */}
-        <div className="p-2 md:p-3 space-y-1 md:space-y-1.5">
+        <div className="chat-page__contact-list p-2 md:p-3 space-y-1 md:space-y-1.5 min-h-0 overflow-y-auto no-scrollbar md:scrollbar-thin">
           <div className="px-1 py-0.5 md:py-1 text-xs font-extrabold text-gray-400 uppercase tracking-wider">
             Direct 1-on-1 Contacts ({filteredStaff.length})
           </div>
@@ -421,7 +421,7 @@ export default function TeamChatPage({ currentUser }) {
 
       {/* RIGHT PANEL: Chat Stream & Message Input - Fullscreen on Mobile with Virtual Keyboard Support */}
       <div
-        style={viewportHeight && mobileView === 'chat' && typeof window !== 'undefined' && window.innerWidth < 768 ? { height: `${viewportHeight}px`, top: `${window.visualViewport?.offsetTop || 0}px` } : {}}
+        style={viewportHeight && mobileView === 'chat' && typeof window !== 'undefined' && window.innerWidth < 768 ? { height: `${viewportHeight}px`, top: `${window.visualViewport?.offsetTop || 0}px`, bottom: 'auto' } : {}}
         className={`${mobileView === 'list' ? 'hidden md:flex md:flex-1' : 'fixed inset-0 z-50 bg-white flex flex-col h-full w-full md:static md:z-auto md:flex-1'} flex-col bg-white h-full overflow-hidden w-full`}
       >
         {/* 1. HEADER SECTION - Fixed at Top */}
