@@ -1017,7 +1017,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               className="fixed inset-0 z-[110] bg-black/60 sm:hidden"
               onClick={() => setSidebarOpen(false)}
             />
-          <aside className="fixed inset-0 z-[120] sm:static sm:z-auto w-full sm:w-80 bg-[#072b1e] sm:border-l border-[#0e4733] flex flex-col shrink-0 animate-in slide-in-from-right duration-200">
+          <aside className="fixed inset-0 z-[120] sm:static sm:z-auto w-full h-[100dvh] sm:h-auto sm:w-80 bg-[#072b1e] sm:border-l border-[#0e4733] flex flex-col shrink-0 animate-in slide-in-from-right duration-200">
             <div className="p-3.5 border-b border-[#0e4733] flex items-center justify-between bg-[#0b3828]">
               <div className="flex items-center gap-2">
                 <button
@@ -1050,8 +1050,8 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
             {/* Chat Tab */}
             {activeTab === 'chat' && (
-              <div className="flex-1 flex flex-col justify-between overflow-hidden p-3.5">
-                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">
+              <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 p-3.5 pb-2 min-h-0">
                   {chatMessages.length === 0 ? (
                     <div className="text-center py-8 text-emerald-200/60 text-xs font-medium">
                       No messages yet. Send a message to start meeting chat!
@@ -1072,17 +1072,17 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                   <div ref={chatEndRef} />
                 </div>
 
-                <form onSubmit={handleSendMessage} className="mt-3 flex items-center gap-2 pt-3 border-t border-[#0e4733]">
+                <form onSubmit={handleSendMessage} className="shrink-0 flex items-center gap-2 px-3.5 py-3 border-t border-[#0e4733] bg-[#072b1e]">
                   <input
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type meeting message..."
-                    className="flex-1 bg-[#0b3828] border border-[#166046] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-[#20b875]"
+                    className="flex-1 bg-[#0b3828] border border-[#166046] rounded-xl px-3 py-2.5 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-[#20b875]"
                   />
                   <button
                     type="submit"
-                    className="bg-[#20b875] hover:bg-[#189960] text-white font-bold px-3 py-2 rounded-xl text-xs transition-colors shrink-0 cursor-pointer"
+                    className="bg-[#20b875] hover:bg-[#189960] text-white font-bold px-3 py-2.5 rounded-xl text-xs transition-colors shrink-0 cursor-pointer"
                   >
                     Send
                   </button>
