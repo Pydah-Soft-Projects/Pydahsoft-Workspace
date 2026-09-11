@@ -156,6 +156,33 @@ export default function DashboardOverview({
 
     return (
       <div className="space-y-3 sm:space-y-6">
+        {/* Teams Video Meeting Banner */}
+        <div className="bg-gradient-to-r from-[#09233d] to-[#072b1e] p-4 sm:p-5 rounded-2xl border border-emerald-500/30 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white font-black flex items-center justify-center text-lg shadow-md shrink-0">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-xs sm:text-sm font-extrabold text-white">Need a Quick Video Conference?</h3>
+              <p className="text-[11px] text-gray-300 font-medium">
+                Launch instant video calls, share room links, and collaborate with your team like MS Teams.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('meetings')}
+            className="w-full sm:w-auto bg-[#20b875] hover:bg-[#189b62] text-white font-extrabold px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shrink-0 transition-all cursor-pointer"
+          >
+            <span>Open Meetings Hub</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </button>
+        </div>
+
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-4">
           {/* Active Projects Card */}

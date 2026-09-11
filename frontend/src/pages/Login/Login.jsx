@@ -40,9 +40,17 @@ export default function Login({ onLoginSuccess }) {
           sessionStorage.setItem('pydahsoft_token', data.data.token);
           sessionStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
         }
-        localStorage.setItem('pydahsoft_active_tab', 'overview');
-        if (onLoginSuccess) onLoginSuccess(data.data);
-        navigate('/dashboard', { replace: true });
+        const redirectTarget = localStorage.getItem('pydahsoft_redirect_after_login');
+        if (redirectTarget) {
+          localStorage.removeItem('pydahsoft_redirect_after_login');
+          localStorage.setItem('pydahsoft_active_tab', 'meetings');
+          if (onLoginSuccess) onLoginSuccess(data.data);
+          navigate(redirectTarget, { replace: true });
+        } else {
+          localStorage.setItem('pydahsoft_active_tab', 'overview');
+          if (onLoginSuccess) onLoginSuccess(data.data);
+          navigate('/dashboard', { replace: true });
+        }
       } else {
         const errorMsg = data.error?.message || data.message || 'Invalid username or password';
         setError(errorMsg);
