@@ -155,6 +155,16 @@ io.on('connection', (socket) => {
     }
   };
 
+  // Handle Host Ending Meeting For Everyone
+  socket.on('end-meeting', ({ meetingId }) => {
+    const targetRoom = meetingId || socket.meetingId;
+    if (targetRoom) {
+      io.to(targetRoom).emit('meeting-ended-by-host', { meetingId: targetRoom });
+      roomUsersMap.delete(targetRoom);
+      console.log(`[Socket.io] Meeting ${targetRoom} ended by host`);
+    }
+  });
+
   socket.on('leave-room', handleLeaveRoom);
   socket.on('disconnect', handleLeaveRoom);
 });

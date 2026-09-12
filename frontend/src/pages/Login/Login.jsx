@@ -63,12 +63,12 @@ export default function Login({ onLoginSuccess }) {
           sessionStorage.setItem('pydahsoft_token', data.data.token);
           sessionStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
         }
-        const redirectTarget = localStorage.getItem('pydahsoft_redirect_after_login');
-        if (redirectTarget) {
-          localStorage.removeItem('pydahsoft_redirect_after_login');
-          localStorage.setItem('pydahsoft_active_tab', 'meetings');
+        const pendingMeetingId = localStorage.getItem('pydahsoft_pending_meeting_id');
+        if (pendingMeetingId) {
+          localStorage.removeItem('pydahsoft_pending_meeting_id');
           if (onLoginSuccess) onLoginSuccess(data.data);
-          navigate(redirectTarget, { replace: true });
+          // Use window.location for hash-router-compatible redirect to the meeting
+          window.location.replace(`/#/meetings/${pendingMeetingId}`);
         } else {
           localStorage.setItem('pydahsoft_active_tab', 'overview');
           if (onLoginSuccess) onLoginSuccess(data.data);

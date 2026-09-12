@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { fetchApi } from '../../config/api';
 import { getSocket } from '../../config/socket';
@@ -240,12 +240,18 @@ function createSyntheticMediaStream(userName) {
 }
 
 // Sub-component to render Remote Participant Video Streams cleanly with WebRTC srcObject
-function RemoteVideoTile({ peer }) {
+// Wrapped in memo with custom comparator: only re-renders when peer props that AFFECT the visual change.
+// This prevents the video tile from being torn down & rebuilt every time any other peer updates,
+// which was the primary cause of frame lag / stutter in multi-participant meetings.
+const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
     if (videoRef.current && peer.stream) {
-      videoRef.current.srcObject = peer.stream;
+      // Only update srcObject if the stream reference actually changed
+      if (videoRef.current.srcObject !== peer.stream) {
+        videoRef.current.srcObject = peer.stream;
+      }
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => console.warn('Remote stream play notice:', err));
@@ -255,57 +261,82 @@ function RemoteVideoTile({ peer }) {
 
   const hasVideoStream = peer.stream && peer.stream.getVideoTracks().length > 0 && peer.videoOn !== false;
 
+  // In compact view: smaller avatar + text. In focus thumbnail: tiny avatar
+  const avatarSize = layout === 'compact' ? 'w-12 h-12 text-base' : isFeatured ? 'w-24 h-24 text-3xl' : 'w-16 h-16 text-xl';
+  const nameFontSize = layout === 'compact' ? 'text-[10px]' : 'text-xs';
+  const badgePadding = layout === 'compact' ? 'px-1.5 py-0.5' : 'px-3 py-1.5';
+
   return (
-    <div className="relative bg-[#09233d] border border-[#13523c] rounded-2xl overflow-hidden aspect-video shadow-xl flex flex-col items-center justify-center group">
-      {/* Remote Video Stream (Always mounted in DOM so audio track continuously plays) */}
+    <div className={`relative bg-[#09233d] border ${isFeatured ? 'border-2 border-[#20b875]' : 'border border-[#13523c]'} rounded-2xl overflow-hidden aspect-video shadow-xl flex flex-col items-center justify-center group w-full h-full`}>
+      {/* Remote Video Stream — always in DOM so audio track never drops */}
       <video
         ref={videoRef}
         autoPlay
         playsInline
-        className="w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover"
       />
 
       {/* Camera Off / Waiting Avatar Overlay */}
       {!hasVideoStream && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gradient-to-b from-[#0b2844] to-[#061829]">
-          <div className={`w-20 h-20 rounded-full ${peer.bgColor || 'bg-[#09233d]'} text-white font-black text-2xl flex items-center justify-center ring-4 ring-emerald-500/30 shadow-2xl animate-pulse`}>
+          <div className={`${avatarSize} rounded-full ${peer.bgColor || 'bg-[#09233d]'} text-white font-black flex items-center justify-center ring-4 ring-emerald-500/30 shadow-2xl animate-pulse`}>
             {(peer.name || 'P').split(' ').map((n) => n[0]).join('').toUpperCase()}
           </div>
-          <span className="text-xs font-semibold text-emerald-200 mt-3">Camera Disabled</span>
+          {layout !== 'compact' && (
+            <span className="text-xs font-semibold text-emerald-200 mt-3">Camera Disabled</span>
+          )}
         </div>
       )}
 
-      {/* Role Badge */}
-      <p className="absolute top-3 left-3 z-20 text-[10px] font-bold text-emerald-300 bg-[#072b1e]/80 px-2 py-0.5 rounded-lg border border-[#0e4733]">
-        {peer.role || 'Live Participant'}
-      </p>
+      {/* Role Badge — hidden in compact view to save space */}
+      {layout !== 'compact' && (
+        <p className="absolute top-3 left-3 z-20 text-[10px] font-bold text-emerald-300 bg-[#072b1e]/80 px-2 py-0.5 rounded-lg border border-[#0e4733]">
+          {peer.role || 'Live Participant'}
+        </p>
+      )}
 
       {/* Participant Footer Info */}
-      <div className="absolute bottom-3 left-3 z-20 bg-[#072b1e]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#0e4733] flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-[#4ade80]"></span>
-        <span className="text-xs font-extrabold text-white">{peer.name}</span>
+      <div className={`absolute bottom-2 left-2 z-20 bg-[#072b1e]/90 backdrop-blur-md ${badgePadding} rounded-xl border border-[#0e4733] flex items-center gap-1.5 max-w-[90%]`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] shrink-0"></span>
+        <span className={`${nameFontSize} font-extrabold text-white truncate`}>{peer.name}</span>
         {peer.handRaised && (
-          <svg className="w-3.5 h-3.5 text-amber-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 text-amber-400 animate-bounce shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
           </svg>
         )}
       </div>
 
       {/* Mic Status Indicator Icon */}
-      <div className="absolute top-3 right-3 z-20 bg-[#072b1e]/90 backdrop-blur-md p-1.5 rounded-lg border border-[#0e4733]">
+      <div className="absolute top-2 right-2 z-20 bg-[#072b1e]/90 backdrop-blur-md p-1 rounded-lg border border-[#0e4733]">
         {peer.micOn ? (
-          <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
           </svg>
         ) : (
-          <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
           </svg>
         )}
       </div>
     </div>
   );
-}
+},
+// Custom equality: only re-render when visible peer state changes
+(prevProps, nextProps) => {
+  const pp = prevProps.peer;
+  const np = nextProps.peer;
+  return (
+    pp.stream === np.stream &&
+    pp.micOn === np.micOn &&
+    pp.videoOn === np.videoOn &&
+    pp.handRaised === np.handRaised &&
+    pp.name === np.name &&
+    pp.bgColor === np.bgColor &&
+    prevProps.layout === nextProps.layout &&
+    prevProps.isFeatured === nextProps.isFeatured
+  );
+});
+
 
 export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const [micOn, setMicOn] = useState(true);
@@ -323,6 +354,8 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const [layout, setLayout] = useState('gallery');
   const [layoutMenuOpen, setLayoutMenuOpen] = useState(false);
   const [chatNotification, setChatNotification] = useState(null);
+  const [editingMsgId, setEditingMsgId] = useState(null);
+  const [editingText, setEditingText] = useState('');
 
   // WebRTC Remote Peers State: socketId -> { socketId, userId, name, role, stream, micOn, videoOn, handRaised, bgColor }
   const [remotePeers, setRemotePeers] = useState({});
@@ -829,11 +862,18 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     }
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
     if (socketRef.current && meetingCode) {
+      if (isHost) {
+        socketRef.current.emit('end-meeting', { meetingId: meetingCode });
+      }
       socketRef.current.emit('leave-room', { meetingId: meetingCode });
     }
     if (meetingCode) {
       try {
-        await fetchApi(`/meetings/${meetingCode}/leave`, { method: 'POST' });
+        if (isHost) {
+          await fetchApi(`/meetings/${meetingCode}/end`, { method: 'POST' });
+        } else {
+          await fetchApi(`/meetings/${meetingCode}/leave`, { method: 'POST' });
+        }
       } catch (e) {}
     }
     onLeave();
@@ -869,21 +909,76 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       fetchApi(`/meetings/${meetingCode}/chat`, {
         method: 'POST',
         body: JSON.stringify({ message: item.message })
+      }).then((res) => {
+        // Sync back real _id from server so edit/delete work on this message
+        if (res.data?._id) {
+          setChatMessages((prev) =>
+            prev.map((m) =>
+              m === item || (m.sentAt === item.sentAt && m.senderName === item.senderName)
+                ? { ...m, _id: res.data._id }
+                : m
+            )
+          );
+        }
       }).catch(() => {});
     }
   };
 
+  // Edit a chat message
+  const handleEditMessage = async (msg) => {
+    if (!editingText.trim() || editingText.trim() === msg.message) {
+      setEditingMsgId(null);
+      return;
+    }
+    const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
+    const msgId = msg._id;
+    if (!meetingCode || !msgId) { setEditingMsgId(null); return; }
+
+    const updated = editingText.trim();
+    // Optimistic update
+    setChatMessages((prev) =>
+      prev.map((m) => (String(m._id) === String(msgId) ? { ...m, message: updated, editedAt: new Date() } : m))
+    );
+    setEditingMsgId(null);
+
+    fetchApi(`/meetings/${meetingCode}/chat/${msgId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ message: updated })
+    }).catch(() => {});
+  };
+
+  // Delete a chat message
+  const handleDeleteMessage = (msg) => {
+    const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
+    const msgId = msg._id;
+    if (!meetingCode || !msgId) return;
+
+    // Optimistic removal
+    setChatMessages((prev) => prev.filter((m) => String(m._id) !== String(msgId)));
+
+    fetchApi(`/meetings/${meetingCode}/chat/${msgId}`, { method: 'DELETE' }).catch(() => {});
+  };
+
   const remotePeerList = Object.values(remotePeers);
   const totalParticipantsCount = remotePeerList.length + 1; // Remote peers + Local user
-  const videoGridClass = layout === 'focus'
-    ? 'grid-cols-1 sm:grid-cols-3'
-    : layout === 'compact'
-    ? 'grid-cols-2 sm:grid-cols-3'
-    : totalParticipantsCount === 1
-    ? 'grid-cols-1 max-w-xl'
-    : totalParticipantsCount === 2
-    ? 'grid-cols-1 sm:grid-cols-2'
-    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2';
+
+  // ── Gallery: equal-sized grid, responsive columns based on participant count
+  const galleryGridCols =
+    totalParticipantsCount === 1
+      ? 'grid-cols-1 max-w-2xl'
+      : totalParticipantsCount === 2
+      ? 'grid-cols-1 sm:grid-cols-2'
+      : totalParticipantsCount <= 4
+      ? 'grid-cols-2'
+      : 'grid-cols-2 sm:grid-cols-3';
+
+  // ── Compact: dense grid, smaller tiles
+  const compactGridCols =
+    totalParticipantsCount === 1
+      ? 'grid-cols-1 max-w-sm'
+      : totalParticipantsCount === 2
+      ? 'grid-cols-2 max-w-xl'
+      : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4';
 
   return createPortal(
     <div className="fixed inset-0 z-[99999] bg-slate-50 text-slate-900 flex flex-col overflow-hidden font-sans">
@@ -897,19 +992,64 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         </div>
       )}
       {chatNotification && (
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('chat');
-            setSidebarOpen(true);
-            setChatNotification(null);
-          }}
-          className="fixed top-28 left-1/2 z-[100000] w-[min(92vw,24rem)] -translate-x-1/2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-left shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300"
+        <div
+          className="fixed bottom-24 left-1/2 z-[100000] w-[min(92vw,22rem)] -translate-x-1/2 rounded-2xl border border-emerald-200/60 bg-white/95 backdrop-blur-md shadow-2xl overflow-hidden"
+          style={{ animation: 'slideUpFadeIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both' }}
         >
-          <span className="block text-[10px] font-black uppercase tracking-wider text-emerald-700">New meeting chat</span>
-          <span className="mt-1 block truncate text-xs font-extrabold text-slate-900">{chatNotification.senderName}</span>
-          <span className="mt-0.5 block truncate text-xs text-slate-600">{chatNotification.message}</span>
-        </button>
+          <style>{`
+            @keyframes slideUpFadeIn {
+              from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.95); }
+              to   { opacity: 1; transform: translateX(-50%) translateY(0)   scale(1);    }
+            }
+            @keyframes shrinkBar {
+              from { width: 100%; }
+              to   { width: 0%; }
+            }
+          `}</style>
+
+          {/* Progress bar — shrinks over 5 s to signal auto-dismiss */}
+          <div
+            className="h-0.5 bg-[#20b875] origin-left"
+            style={{ animation: 'shrinkBar 5s linear forwards' }}
+          />
+
+          <div className="px-4 py-3 flex items-start gap-3">
+            {/* Sender avatar */}
+            <div className="shrink-0 w-9 h-9 rounded-full bg-[#20b875] text-white font-black text-sm flex items-center justify-center shadow-md">
+              {(chatNotification.senderName || 'U').charAt(0).toUpperCase()}
+            </div>
+
+            {/* Text content — clicking opens chat sidebar */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('chat');
+                setSidebarOpen(true);
+                setChatNotification(null);
+              }}
+              className="flex-1 text-left min-w-0 cursor-pointer"
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#20b875]">Meeting Chat</span>
+                <span className="w-1 h-1 rounded-full bg-[#4ade80] animate-pulse"></span>
+              </div>
+              <p className="text-xs font-extrabold text-slate-900 truncate mt-0.5">{chatNotification.senderName}</p>
+              <p className="text-xs text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">{chatNotification.message}</p>
+            </button>
+
+            {/* Dismiss button */}
+            <button
+              type="button"
+              onClick={() => setChatNotification(null)}
+              className="shrink-0 w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer mt-0.5"
+              aria-label="Dismiss notification"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Top Header */}
@@ -985,83 +1125,210 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       {/* Main Video Call View Grid */}
       <div className="flex-1 flex overflow-hidden relative">
         <div className="flex-1 p-3 sm:p-4 overflow-y-auto custom-scrollbar flex flex-col justify-start sm:justify-center items-center">
-          <div className={`w-full max-w-5xl grid gap-3 sm:gap-4 ${videoGridClass}`}>
-            {/* LOCAL USER VIDEO TILE */}
-            <div className={`relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-video shadow-2xl flex items-center justify-center group ${
-              layout === 'focus' && totalParticipantsCount > 1 ? 'sm:col-span-2 sm:row-span-2' : ''
-            }`}>
-              <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className={`w-full h-full object-cover transform ${
-                  screenSharing ? 'scale-100' : '-scale-x-100'
-                } ${videoOn ? 'block' : 'hidden'}`}
-              />
 
-              {!videoOn && (
-                <div className="flex flex-col items-center gap-2 sm:gap-3">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#20b875] text-white font-black text-xl sm:text-2xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-lg">
-                    {(currentUser?.name || 'Y').charAt(0).toUpperCase()}
+          {/* ═══════════════════════════════════════════════
+              FOCUS VIEW — 1 featured speaker + sidebar thumbnails
+          ════════════════════════════════════════════════ */}
+          {layout === 'focus' && totalParticipantsCount > 1 ? (
+            <div className="w-full max-w-6xl flex gap-3 sm:gap-4 h-full" style={{ minHeight: 0 }}>
+              {/* Featured / Speaker Tile — Local User */}
+              <div className="flex-1 relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center" style={{ aspectRatio: '16/9', minHeight: 200 }}>
+                <video
+                  ref={localVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`absolute inset-0 w-full h-full object-cover transform ${
+                    screenSharing ? 'scale-100' : '-scale-x-100'
+                  } ${videoOn ? 'block' : 'hidden'}`}
+                />
+                {!videoOn && (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-24 h-24 rounded-full bg-[#20b875] text-white font-black text-3xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-lg">
+                      {(currentUser?.name || 'Y').charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm font-semibold text-emerald-200">Camera Off</span>
                   </div>
-                  <span className="text-[11px] sm:text-xs font-semibold text-emerald-200">Camera Off</span>
-                </div>
-              )}
-
-              {/* Local Participant Info */}
-              <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#166046] flex items-center gap-2 max-w-[88%] shadow-md">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#4ade80] shrink-0"></span>
-                <span className="text-xs font-extrabold text-white truncate">
-                  {currentUser?.name || 'You'} (You) {screenSharing ? '[Sharing]' : ''}
-                </span>
-                {handRaised && (
-                  <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
-                  </svg>
                 )}
+                {/* Featured badge */}
+                <span className="absolute top-3 left-3 z-20 bg-[#20b875] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> FEATURED
+                </span>
+                <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#166046] flex items-center gap-2 max-w-[88%] shadow-md">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#4ade80] shrink-0"></span>
+                  <span className="text-xs font-extrabold text-white truncate">
+                    {currentUser?.name || 'You'} (You) {screenSharing ? '[Sharing]' : ''}
+                  </span>
+                  {handRaised && (
+                    <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
+                    </svg>
+                  )}
+                </div>
+                <div className="absolute top-3 right-3 bg-[#072b1e]/90 backdrop-blur-md p-2 rounded-xl border border-[#166046] shadow-md">
+                  {micOn ? (
+                    <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    </svg>
+                  )}
+                </div>
               </div>
 
-              {/* Local Mic Status */}
-              <div className="absolute top-3 right-3 bg-[#072b1e]/90 backdrop-blur-md p-2 rounded-xl border border-[#166046] shadow-md">
-                {micOn ? (
-                  <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                  </svg>
-                )}
+              {/* Thumbnail Sidebar — Remote Peers */}
+              <div className="flex flex-col gap-2 sm:gap-3 overflow-y-auto custom-scrollbar shrink-0" style={{ width: '22%', minWidth: 120, maxWidth: 200 }}>
+                {remotePeerList.map((peer) => (
+                  <div key={peer.socketId} className="shrink-0" style={{ aspectRatio: '4/3' }}>
+                    <RemoteVideoTile peer={peer} layout="focus-thumbnail" isFeatured={false} />
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* REMOTE PEERS WEBRTC LIVE VIDEO TILES */}
-            {remotePeerList.map((peer) => (
-              <RemoteVideoTile key={peer.socketId} peer={peer} />
-            ))}
+          /* ═══════════════════════════════════════════════
+              COMPACT VIEW — dense small grid tiles
+          ════════════════════════════════════════════════ */
+          ) : layout === 'compact' ? (
+            <div className={`w-full max-w-6xl grid gap-2 ${compactGridCols}`}>
+              {/* LOCAL USER — Compact Tile */}
+              <div className="relative bg-[#09233d] border border-[#20b875] rounded-xl overflow-hidden aspect-video shadow-lg flex items-center justify-center">
+                <video
+                  ref={localVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`absolute inset-0 w-full h-full object-cover transform ${
+                    screenSharing ? 'scale-100' : '-scale-x-100'
+                  } ${videoOn ? 'block' : 'hidden'}`}
+                />
+                {!videoOn && (
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-10 h-10 rounded-full bg-[#20b875] text-white font-black text-sm flex items-center justify-center">
+                      {(currentUser?.name || 'Y').charAt(0).toUpperCase()}
+                    </div>
+                  </div>
+                )}
+                <div className="absolute bottom-1.5 left-1.5 bg-[#072b1e]/90 backdrop-blur-md px-2 py-0.5 rounded-lg border border-[#166046] flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] shrink-0"></span>
+                  <span className="text-[10px] font-extrabold text-white truncate max-w-[80px]">
+                    {currentUser?.name || 'You'}
+                  </span>
+                </div>
+                <div className="absolute top-1.5 right-1.5 bg-[#072b1e]/90 backdrop-blur-md p-1 rounded-lg border border-[#166046]">
+                  {micOn ? (
+                    <svg className="w-3 h-3 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-3 h-3 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    </svg>
+                  )}
+                </div>
+              </div>
 
-            {/* Quick Copy Link Card if only 1 participant */}
-            {totalParticipantsCount === 1 && (
-              <div
-                onClick={handleCopyLink}
-                className="relative bg-white border-2 border-dashed border-emerald-200 hover:border-emerald-400 rounded-3xl overflow-hidden aspect-auto sm:aspect-video shadow-lg flex flex-col items-center justify-center p-5 sm:p-6 text-center cursor-pointer transition-all hover:bg-emerald-50"
-              >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xl sm:text-2xl mb-3">
-                  <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {/* REMOTE PEERS — Compact Tiles */}
+              {remotePeerList.map((peer) => (
+                <RemoteVideoTile key={peer.socketId} peer={peer} layout="compact" isFeatured={false} />
+              ))}
+
+              {/* Invite card — only if alone */}
+              {totalParticipantsCount === 1 && (
+                <div
+                  onClick={handleCopyLink}
+                  className="relative bg-white border-2 border-dashed border-emerald-200 hover:border-emerald-400 rounded-xl overflow-hidden aspect-video shadow-md flex flex-col items-center justify-center p-3 text-center cursor-pointer transition-all hover:bg-emerald-50"
+                >
+                  <svg className="w-5 h-5 text-emerald-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
+                  <span className="text-[10px] font-black text-slate-700">{copiedLink ? 'Copied!' : 'Invite'}</span>
                 </div>
-                <h4 className="text-sm sm:text-base font-black text-slate-900">Invite Colleagues to Join</h4>
-                <p className="text-xs text-slate-500 font-medium mt-1 max-w-xs leading-relaxed">
-                  Share the live room link with your team members to start instant WebRTC video stream.
-                </p>
-                  <span className="mt-4 px-6 py-2.5 bg-[#20b875] hover:bg-[#25d386] text-white font-black text-xs rounded-xl shadow-md transition-all">
-                  {copiedLink ? 'Link Copied!' : 'Copy Room Link'}
-                </span>
+              )}
+            </div>
+
+          /* ═══════════════════════════════════════════════
+              GALLERY VIEW (default) — equal-sized tiles
+          ════════════════════════════════════════════════ */
+          ) : (
+            <div className={`w-full max-w-5xl grid gap-3 sm:gap-4 ${galleryGridCols}`}>
+              {/* LOCAL USER VIDEO TILE */}
+              <div className="relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden aspect-video shadow-2xl flex items-center justify-center group">
+                <video
+                  ref={localVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`absolute inset-0 w-full h-full object-cover transform ${
+                    screenSharing ? 'scale-100' : '-scale-x-100'
+                  } ${videoOn ? 'block' : 'hidden'}`}
+                />
+
+                {!videoOn && (
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#20b875] text-white font-black text-xl sm:text-2xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-lg">
+                      {(currentUser?.name || 'Y').charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-[11px] sm:text-xs font-semibold text-emerald-200">Camera Off</span>
+                  </div>
+                )}
+
+                {/* Local Participant Info */}
+                <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#166046] flex items-center gap-2 max-w-[88%] shadow-md">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#4ade80] shrink-0"></span>
+                  <span className="text-xs font-extrabold text-white truncate">
+                    {currentUser?.name || 'You'} (You) {screenSharing ? '[Sharing]' : ''}
+                  </span>
+                  {handRaised && (
+                    <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
+                    </svg>
+                  )}
+                </div>
+
+                {/* Local Mic Status */}
+                <div className="absolute top-3 right-3 bg-[#072b1e]/90 backdrop-blur-md p-2 rounded-xl border border-[#166046] shadow-md">
+                  {micOn ? (
+                    <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    </svg>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* REMOTE PEERS WEBRTC LIVE VIDEO TILES */}
+              {remotePeerList.map((peer) => (
+                <RemoteVideoTile key={peer.socketId} peer={peer} layout="gallery" isFeatured={false} />
+              ))}
+
+              {/* Quick Copy Link Card if only 1 participant */}
+              {totalParticipantsCount === 1 && (
+                <div
+                  onClick={handleCopyLink}
+                  className="relative bg-white border-2 border-dashed border-emerald-200 hover:border-emerald-400 rounded-3xl overflow-hidden aspect-video shadow-lg flex flex-col items-center justify-center p-5 sm:p-6 text-center cursor-pointer transition-all hover:bg-emerald-50"
+                >
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xl sm:text-2xl mb-3">
+                    <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                  </div>
+                  <h4 className="text-sm sm:text-base font-black text-slate-900">Invite Colleagues to Join</h4>
+                  <p className="text-xs text-slate-500 font-medium mt-1 max-w-xs leading-relaxed">
+                    Share the live room link with your team members to start instant WebRTC video stream.
+                  </p>
+                  <span className="mt-4 px-6 py-2.5 bg-[#20b875] hover:bg-[#25d386] text-white font-black text-xs rounded-xl shadow-md transition-all">
+                    {copiedLink ? 'Link Copied!' : 'Copy Room Link'}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Side Panel: In-Meeting Chat & Participants */}
@@ -1106,23 +1373,114 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             {/* Chat Tab */}
             {activeTab === 'chat' && (
               <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 p-3.5 pb-2 min-h-0">
+                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 p-3 pb-2 min-h-0">
                   {chatMessages.length === 0 ? (
-                    <div className="text-center py-8 text-emerald-200/60 text-xs font-medium">
+                    <div className="text-center py-8 text-slate-400 text-xs font-medium">
                       No messages yet. Send a message to start meeting chat!
                     </div>
                   ) : (
-                    chatMessages.map((msg, idx) => (
-                      <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-emerald-700">
-                          <span>{msg.senderName}</span>
-                          <span className="text-[9px] text-gray-400 font-mono">
-                            {new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                    chatMessages.map((msg, idx) => {
+                      const isOwn = String(msg.senderId) === String(currentUser?._id) ||
+                        msg.senderName === (currentUser?.name || 'You');
+                      const isEditing = editingMsgId && String(msg._id) === String(editingMsgId);
+
+                      return (
+                        <div
+                          key={msg._id || idx}
+                          className={`group relative rounded-2xl border transition-all ${
+                            isOwn
+                              ? 'bg-emerald-50 border-emerald-200/80 ml-4'
+                              : 'bg-slate-50 border-slate-200 mr-4'
+                          }`}
+                        >
+                          {/* Message header: sender + time */}
+                          <div className="flex items-center justify-between px-3 pt-2.5 pb-0.5">
+                            <span className={`text-[11px] font-extrabold ${
+                              isOwn ? 'text-emerald-700' : 'text-slate-600'
+                            }`}>
+                              {isOwn ? 'You' : msg.senderName}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[9px] text-gray-400 font-mono">
+                                {new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              {/* Edit & Delete buttons — own messages only */}
+                              {isOwn && !isEditing && (
+                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 sm:group-hover:opacity-100 transition-opacity"
+                                  style={{ opacity: window.innerWidth < 640 ? 1 : undefined }}
+                                >
+                                  {/* Edit button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingMsgId(msg._id);
+                                      setEditingText(msg.message);
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-white hover:bg-emerald-100 border border-emerald-200 text-emerald-600 flex items-center justify-center transition-colors cursor-pointer"
+                                    title="Edit message"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                  {/* Delete button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteMessage(msg)}
+                                    className="w-6 h-6 rounded-lg bg-white hover:bg-rose-100 border border-rose-200 text-rose-500 flex items-center justify-center transition-colors cursor-pointer"
+                                    title="Delete message"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Message body or inline edit input */}
+                          {isEditing ? (
+                            <div className="px-3 pb-2.5 pt-1">
+                              <input
+                                type="text"
+                                value={editingText}
+                                autoFocus
+                                onChange={(e) => setEditingText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleEditMessage(msg);
+                                  if (e.key === 'Escape') setEditingMsgId(null);
+                                }}
+                                className="w-full bg-white border border-emerald-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                              />
+                              <div className="flex items-center gap-1.5 mt-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditMessage(msg)}
+                                  className="text-[10px] font-bold text-white bg-[#20b875] px-2.5 py-1 rounded-lg cursor-pointer hover:bg-[#189960]"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingMsgId(null)}
+                                  className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg cursor-pointer hover:bg-slate-200"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="px-3 pb-2.5 pt-0.5">
+                              <p className="text-xs text-slate-700 leading-relaxed">{msg.message}</p>
+                              {msg.editedAt && (
+                                <span className="text-[9px] text-slate-400 italic">edited</span>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <p className="text-xs text-slate-700 mt-1 leading-relaxed">{msg.message}</p>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                   <div ref={chatEndRef} />
                 </div>
@@ -1235,11 +1593,53 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             </svg>
           </button>
           {layoutMenuOpen && (
-            <div className="absolute bottom-12 sm:bottom-14 left-1/2 z-30 w-36 -translate-x-1/2 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+            <div className="absolute bottom-12 sm:bottom-14 left-0 z-30 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-2 pt-1 pb-1.5">Meeting Layout</p>
               {[
-                { value: 'gallery', label: 'Gallery view' },
-                { value: 'focus', label: 'Focus view' },
-                { value: 'compact', label: 'Compact view' }
+                {
+                  value: 'gallery',
+                  label: 'Gallery View',
+                  desc: 'Equal tiles',
+                  icon: (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <rect x="3" y="3" width="8" height="8" rx="1" strokeWidth="2"/>
+                      <rect x="13" y="3" width="8" height="8" rx="1" strokeWidth="2"/>
+                      <rect x="3" y="13" width="8" height="8" rx="1" strokeWidth="2"/>
+                      <rect x="13" y="13" width="8" height="8" rx="1" strokeWidth="2"/>
+                    </svg>
+                  )
+                },
+                {
+                  value: 'focus',
+                  label: 'Focus View',
+                  desc: 'Featured speaker',
+                  icon: (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <rect x="3" y="3" width="14" height="18" rx="1" strokeWidth="2"/>
+                      <rect x="19" y="3" width="2" height="4" rx="0.5" strokeWidth="2"/>
+                      <rect x="19" y="10" width="2" height="4" rx="0.5" strokeWidth="2"/>
+                      <rect x="19" y="17" width="2" height="4" rx="0.5" strokeWidth="2"/>
+                    </svg>
+                  )
+                },
+                {
+                  value: 'compact',
+                  label: 'Compact View',
+                  desc: 'Dense grid',
+                  icon: (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <rect x="3" y="3" width="5" height="5" rx="0.5" strokeWidth="2"/>
+                      <rect x="10" y="3" width="5" height="5" rx="0.5" strokeWidth="2"/>
+                      <rect x="17" y="3" width="5" height="5" rx="0.5" strokeWidth="2"/>
+                      <rect x="3" y="10" width="5" height="5" rx="0.5" strokeWidth="2"/>
+                      <rect x="10" y="10" width="5" height="5" rx="0.5" strokeWidth="2"/>
+                      <rect x="17" y="10" width="5" height="5" rx="0.5" strokeWidth="2"/>
+                      <rect x="3" y="17" width="5" height="5" rx="0.5" strokeWidth="2"/>
+                      <rect x="10" y="17" width="5" height="5" rx="0.5" strokeWidth="2"/>
+                      <rect x="17" y="17" width="5" height="5" rx="0.5" strokeWidth="2"/>
+                    </svg>
+                  )
+                }
               ].map((option) => (
                 <button
                   key={option.value}
@@ -1248,11 +1648,20 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                     setLayout(option.value);
                     setLayoutMenuOpen(false);
                   }}
-                  className={`w-full rounded-lg px-3 py-2 text-left text-xs font-bold transition-colors ${
+                  className={`w-full rounded-lg px-2.5 py-2 text-left transition-colors flex items-center gap-2.5 ${
                     layout === option.value ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  {option.label}
+                  <span className={layout === option.value ? 'text-emerald-600' : 'text-slate-400'}>{option.icon}</span>
+                  <div>
+                    <div className="text-xs font-bold leading-tight">{option.label}</div>
+                    <div className="text-[9px] font-medium text-slate-400 leading-tight">{option.desc}</div>
+                  </div>
+                  {layout === option.value && (
+                    <svg className="w-3.5 h-3.5 text-emerald-500 ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  )}
                 </button>
               ))}
             </div>
