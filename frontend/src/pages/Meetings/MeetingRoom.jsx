@@ -339,8 +339,8 @@ const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured
 
 
 export default function MeetingRoom({ meeting, currentUser, onLeave }) {
-  const [micOn, setMicOn] = useState(true);
-  const [videoOn, setVideoOn] = useState(true);
+  const [micOn, setMicOn] = useState(false);
+  const [videoOn, setVideoOn] = useState(false);
   const [screenSharing, setScreenSharing] = useState(false);
   const [handRaised, setHandRaised] = useState(false);
   const [activeTab, setActiveTab] = useState('chat'); // 'chat' | 'people'
@@ -497,6 +497,13 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
           mediaStreamRef.current = stream;
           activeStream = stream;
+
+          if (stream) {
+            // Default audio & video to OFF upon joining room as requested
+            stream.getAudioTracks().forEach((track) => (track.enabled = false));
+            stream.getVideoTracks().forEach((track) => (track.enabled = false));
+          }
+
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = stream;
           }
@@ -790,11 +797,26 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   // Native Screen Sharing Handler using getDisplayMedia
   const toggleScreenShare = async () => {
     if (!screenSharing) {
+      // Check if getDisplayMedia is supported on mobile browser
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        setToastNotification('Screen sharing is not supported on this mobile browser. Please use Chrome or Edge on Desktop/Android.');
+        setTimeout(() => setToastNotification(null), 4000);
+        return;
+      }
+
       try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: true
-        });
+        let screenStream = null;
+        try {
+          // Mobile-friendly screen share constraints (audio: false prevents mobile OS error)
+          screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: { displaySurface: 'monitor' },
+            audio: false
+          });
+        } catch (err1) {
+          // Fallback to standard video constraint
+          screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        }
+
         screenStreamRef.current = screenStream;
         const screenTrack = screenStream.getVideoTracks()[0];
 
@@ -850,10 +872,6 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
   // Graceful Leave Call
   const handleLeaveCall = async () => {
-    if (isHost && !window.confirm('End this meeting for everyone? The room and its chat will no longer be joinable.')) {
-      return;
-    }
-
     if (screenStreamRef.current) {
       screenStreamRef.current.getTracks().forEach((t) => t.stop());
     }
@@ -862,18 +880,11 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     }
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
     if (socketRef.current && meetingCode) {
-      if (isHost) {
-        socketRef.current.emit('end-meeting', { meetingId: meetingCode });
-      }
       socketRef.current.emit('leave-room', { meetingId: meetingCode });
     }
     if (meetingCode) {
       try {
-        if (isHost) {
-          await fetchApi(`/meetings/${meetingCode}/end`, { method: 'POST' });
-        } else {
-          await fetchApi(`/meetings/${meetingCode}/leave`, { method: 'POST' });
-        }
+        await fetchApi(`/meetings/${meetingCode}/leave`, { method: 'POST' });
       } catch (e) {}
     }
     onLeave();
@@ -1187,10 +1198,6 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                 ))}
               </div>
             </div>
-
-          /* ═══════════════════════════════════════════════
-              COMPACT VIEW — dense small grid tiles
-          ════════════════════════════════════════════════ */
           ) : layout === 'compact' ? (
             <div className={`w-full max-w-6xl grid gap-2 ${compactGridCols}`}>
               {/* LOCAL USER — Compact Tile */}
@@ -1249,13 +1256,10 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               )}
             </div>
 
-          /* ═══════════════════════════════════════════════
-              GALLERY VIEW (default) — equal-sized tiles
-          ════════════════════════════════════════════════ */
           ) : (
-            <div className={`w-full max-w-5xl grid gap-3 sm:gap-4 ${galleryGridCols}`}>
+            <div className={`w-full ${totalParticipantsCount === 1 ? 'max-w-6xl h-full flex-1 flex flex-col justify-center items-center relative' : 'max-w-5xl grid gap-3 sm:gap-4 ' + galleryGridCols}`}>
               {/* LOCAL USER VIDEO TILE */}
-              <div className="relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden aspect-video shadow-2xl flex items-center justify-center group">
+              <div className={`relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center group ${totalParticipantsCount === 1 ? 'w-full h-full max-h-[80vh] min-h-[60vh]' : 'aspect-video'}`}>
                 <video
                   ref={localVideoRef}
                   autoPlay
@@ -1268,10 +1272,10 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
                 {!videoOn && (
                   <div className="flex flex-col items-center gap-2 sm:gap-3">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#20b875] text-white font-black text-xl sm:text-2xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-lg">
+                    <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-[#20b875] text-white font-black text-2xl sm:text-4xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-lg">
                       {(currentUser?.name || 'Y').charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-[11px] sm:text-xs font-semibold text-emerald-200">Camera Off</span>
+                    <span className="text-xs sm:text-sm font-semibold text-emerald-200">Camera Off</span>
                   </div>
                 )}
 
@@ -1307,23 +1311,15 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                 <RemoteVideoTile key={peer.socketId} peer={peer} layout="gallery" isFeatured={false} />
               ))}
 
-              {/* Quick Copy Link Card if only 1 participant */}
+              {/* Quick Copy Link Banner if only 1 participant */}
               {totalParticipantsCount === 1 && (
                 <div
                   onClick={handleCopyLink}
-                  className="relative bg-white border-2 border-dashed border-emerald-200 hover:border-emerald-400 rounded-3xl overflow-hidden aspect-video shadow-lg flex flex-col items-center justify-center p-5 sm:p-6 text-center cursor-pointer transition-all hover:bg-emerald-50"
+                  className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-white/95 backdrop-blur-md border border-emerald-300 hover:border-emerald-500 px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 cursor-pointer transition-all hover:scale-105"
                 >
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xl sm:text-2xl mb-3">
-                    <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                    </svg>
-                  </div>
-                  <h4 className="text-sm sm:text-base font-black text-slate-900">Invite Colleagues to Join</h4>
-                  <p className="text-xs text-slate-500 font-medium mt-1 max-w-xs leading-relaxed">
-                    Share the live room link with your team members to start instant WebRTC video stream.
-                  </p>
-                  <span className="mt-4 px-6 py-2.5 bg-[#20b875] hover:bg-[#25d386] text-white font-black text-xs rounded-xl shadow-md transition-all">
-                    {copiedLink ? 'Link Copied!' : 'Copy Room Link'}
+                  <span className="w-2 h-2 rounded-full bg-[#20b875] animate-pulse"></span>
+                  <span className="text-xs font-black text-slate-800">
+                    {copiedLink ? 'Link Copied to Clipboard!' : 'Click to Copy Meeting Room Link'}
                   </span>
                 </div>
               )}
