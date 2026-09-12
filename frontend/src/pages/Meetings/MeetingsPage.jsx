@@ -109,12 +109,14 @@ export default function MeetingsPage({ currentUser, directMeetingId, preJoinedMe
         });
     }
 
-    // Auto-poll meetings list every 4 seconds to instantly reflect ended/inactive meetings
+    // Auto-poll meetings list every 8 seconds when document is visible
     const pollInterval = setInterval(() => {
-      fetchApi('/meetings')
-        .then((res) => setMeetings(res.data || []))
-        .catch(() => {});
-    }, 4000);
+      if (document.visibilityState !== 'hidden') {
+        fetchApi('/meetings')
+          .then((res) => setMeetings(res.data || []))
+          .catch(() => {});
+      }
+    }, 8000);
 
     return () => {
       window.removeEventListener('start-instant-meeting', handleStartInstantEvent);
