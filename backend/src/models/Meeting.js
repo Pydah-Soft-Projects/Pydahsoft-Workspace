@@ -71,7 +71,8 @@ const meetingSchema = new mongoose.Schema(
         senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         senderName: String,
         message: String,
-        sentAt: { type: Date, default: Date.now }
+        sentAt: { type: Date, default: Date.now },
+        editedAt: { type: Date, default: null }
       }
     ]
   },

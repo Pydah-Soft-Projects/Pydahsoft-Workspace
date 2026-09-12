@@ -71,7 +71,45 @@ const getMeetings = async (req, res) => {
   try {
     const meetings = await Meeting.find({})
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(100);
+
+    // Auto-expire meetings from previous days or older than 1 hour
+    const now = new Date();
+    const todayStr = now.toDateString();
+    const staleIds = [];
+
+    for (const m of meetings) {
+      const createdDate = new Date(m.createdAt || m.scheduledAt || now);
+      const isPreviousDay = createdDate.toDateString() !== todayStr && createdDate < now;
+      const createdAgeMs = now - createdDate;
+
+      if (m.status === 'active') {
+        // Instant/Active meeting from a previous day OR created more than 1 hour ago -> auto end
+        if (isPreviousDay || createdAgeMs > 60 * 60 * 1000) {
+          staleIds.push(m._id);
+          m.status = 'ended';
+          m.activeParticipants = [];
+        }
+      }
+
+      if (m.status === 'scheduled') {
+        const scheduledDate = m.scheduledAt ? new Date(m.scheduledAt) : createdDate;
+        const schedAgeMs = now - scheduledDate;
+        // Scheduled meeting from previous day or scheduled > 1 hour ago -> auto end
+        if (isPreviousDay || schedAgeMs > 60 * 60 * 1000) {
+          staleIds.push(m._id);
+          m.status = 'ended';
+          m.activeParticipants = [];
+        }
+      }
+    }
+
+    if (staleIds.length > 0) {
+      await Meeting.updateMany(
+        { _id: { $in: staleIds } },
+        { $set: { status: 'ended', activeParticipants: [] } }
+      );
+    }
 
     res.status(200).json({
       success: true,
@@ -89,52 +127,56 @@ const getMeetings = async (req, res) => {
 const getMeetingById = async (req, res) => {
   try {
     const { meetingId } = req.params;
-    let meeting = await Meeting.findOne({ meetingId });
+    const meeting = await Meeting.findOne({ meetingId });
 
+    // If meeting does not exist at all, return 404 — do NOT auto-create
+    // (prevents old/ended meeting IDs from silently opening a fresh room)
     if (!meeting) {
-      // If it's a dynamic instant room code, auto-create room on the fly
-      const currentUser = req.user;
-      meeting = new Meeting({
-        meetingId,
-        title: `Team Meeting (${meetingId})`,
-        host: currentUser._id,
-        hostName: currentUser.name,
-        hostRole: currentUser.role || 'Member',
-        meetingLink: `${req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : null) || process.env.FRONTEND_URL || 'http://localhost:5173'}/#/meetings/${meetingId}`,
-        status: 'active',
-        activeParticipants: [
-          {
-            userId: currentUser._id,
-            name: currentUser.name,
-            joinedAt: new Date()
-          }
-        ]
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Meeting not found. The link may be invalid or expired.' }
       });
-      await meeting.save();
-    } else {
-      if (meeting.status === 'ended') {
-        return res.status(410).json({
-          success: false,
-          error: { message: 'This meeting has ended' }
-        });
-      }
+    }
 
-      // Ensure currentUser is registered in activeParticipants so all connected participants see each other
-      const currentUser = req.user;
-      const isAlreadyActive = meeting.activeParticipants.some(
-        (p) => String(p.userId) === String(currentUser._id) || (p.name || '').toLowerCase() === (currentUser.name || '').toLowerCase()
-      );
-      if (!isAlreadyActive) {
-        meeting.activeParticipants.push({
-          userId: currentUser._id,
-          name: currentUser.name,
-          joinedAt: new Date()
-        });
-        if (meeting.status === 'scheduled') {
-          meeting.status = 'active';
-        }
-        await meeting.save();
+    // Block access to ended meetings
+    if (meeting.status === 'ended') {
+      return res.status(410).json({
+        success: false,
+        error: { message: 'This meeting has ended and can no longer be joined.' }
+      });
+    }
+
+    // Auto-expire meetings from previous days or created more than 1 hour ago
+    const now = new Date();
+    const createdDate = new Date(meeting.createdAt || meeting.scheduledAt || now);
+    const isPreviousDay = createdDate.toDateString() !== now.toDateString() && createdDate < now;
+    const ageMs = now - createdDate;
+
+    if (isPreviousDay || ageMs > 60 * 60 * 1000) {
+      meeting.status = 'ended';
+      meeting.activeParticipants = [];
+      await meeting.save();
+      return res.status(410).json({
+        success: false,
+        error: { message: 'This meeting session has expired and is no longer active.' }
+      });
+    }
+
+    // Ensure currentUser is registered in activeParticipants
+    const currentUser = req.user;
+    const isAlreadyActive = meeting.activeParticipants.some(
+      (p) => String(p.userId) === String(currentUser._id) || (p.name || '').toLowerCase() === (currentUser.name || '').toLowerCase()
+    );
+    if (!isAlreadyActive) {
+      meeting.activeParticipants.push({
+        userId: currentUser._id,
+        name: currentUser.name,
+        joinedAt: new Date()
+      });
+      if (meeting.status === 'scheduled') {
+        meeting.status = 'active';
       }
+      await meeting.save();
     }
 
     res.status(200).json({
@@ -159,14 +201,30 @@ const joinMeeting = async (req, res) => {
     if (!meeting) {
       return res.status(404).json({
         success: false,
-        error: { message: 'Meeting not found' }
+        error: { message: 'Meeting not found. The link may be invalid or expired.' }
       });
     }
 
     if (meeting.status === 'ended') {
       return res.status(410).json({
         success: false,
-        error: { message: 'This meeting has ended' }
+        error: { message: 'This meeting has already ended and cannot be rejoined.' }
+      });
+    }
+
+    // Auto-expire meetings from previous days or created more than 1 hour ago
+    const now = new Date();
+    const createdDate = new Date(meeting.createdAt || meeting.scheduledAt || now);
+    const isPreviousDay = createdDate.toDateString() !== now.toDateString() && createdDate < now;
+    const ageMs = now - createdDate;
+
+    if (isPreviousDay || ageMs > 60 * 60 * 1000) {
+      meeting.status = 'ended';
+      meeting.activeParticipants = [];
+      await meeting.save();
+      return res.status(410).json({
+        success: false,
+        error: { message: 'This meeting session has expired and is no longer active.' }
       });
     }
 
@@ -256,14 +314,106 @@ const sendInMeetingMessage = async (req, res) => {
     meeting.inMeetingMessages.push(chatItem);
     await meeting.save();
 
+    // Return the saved message with its _id
+    const saved = meeting.inMeetingMessages[meeting.inMeetingMessages.length - 1];
     res.status(200).json({
       success: true,
-      data: chatItem
+      data: saved
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       error: { message: error.message || 'Failed to post message' }
+    });
+  }
+};
+
+// Edit an in-meeting chat message (only the sender can edit)
+const editInMeetingMessage = async (req, res) => {
+  try {
+    const { meetingId, msgId } = req.params;
+    const { message } = req.body;
+    const currentUser = req.user;
+
+    const meeting = await Meeting.findOne({ meetingId });
+    if (!meeting) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Meeting not found' }
+      });
+    }
+
+    const msg = meeting.inMeetingMessages.id(msgId);
+    if (!msg) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Message not found' }
+      });
+    }
+
+    if (String(msg.senderId) !== String(currentUser._id)) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'You can only edit your own messages' }
+      });
+    }
+
+    msg.message = message.trim();
+    msg.editedAt = new Date();
+    await meeting.save();
+
+    res.status(200).json({
+      success: true,
+      data: msg
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: { message: error.message || 'Failed to edit message' }
+    });
+  }
+};
+
+// Delete an in-meeting chat message (only the sender can delete)
+const deleteInMeetingMessage = async (req, res) => {
+  try {
+    const { meetingId, msgId } = req.params;
+    const currentUser = req.user;
+
+    const meeting = await Meeting.findOne({ meetingId });
+    if (!meeting) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Meeting not found' }
+      });
+    }
+
+    const msg = meeting.inMeetingMessages.id(msgId);
+    if (!msg) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Message not found' }
+      });
+    }
+
+    if (String(msg.senderId) !== String(currentUser._id)) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'You can only delete your own messages' }
+      });
+    }
+
+    meeting.inMeetingMessages.pull({ _id: msgId });
+    await meeting.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Message deleted'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: { message: error.message || 'Failed to delete message' }
     });
   }
 };
@@ -276,10 +426,10 @@ const leaveMeeting = async (req, res) => {
 
     const meeting = await Meeting.findOne({ meetingId });
     if (meeting) {
-      meeting.activeParticipants = meeting.activeParticipants.filter(
+      meeting.activeParticipants = (meeting.activeParticipants || []).filter(
         (p) => String(p.userId) !== String(currentUser._id) && (p.name || '').toLowerCase() !== (currentUser.name || '').toLowerCase()
       );
-      if (String(meeting.host) === String(currentUser._id)) {
+      if (String(meeting.host) === String(currentUser._id) || meeting.activeParticipants.length === 0) {
         meeting.status = 'ended';
         meeting.activeParticipants = [];
       }
@@ -334,5 +484,7 @@ module.exports = {
   leaveMeeting,
   endMeeting,
   sendInMeetingMessage,
+  editInMeetingMessage,
+  deleteInMeetingMessage,
   deleteMeeting
 };

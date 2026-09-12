@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
@@ -155,6 +154,16 @@ io.on('connection', (socket) => {
     }
   };
 
+  // Handle Host Ending Meeting For Everyone
+  socket.on('end-meeting', ({ meetingId }) => {
+    const targetRoom = meetingId || socket.meetingId;
+    if (targetRoom) {
+      io.to(targetRoom).emit('meeting-ended-by-host', { meetingId: targetRoom });
+      roomUsersMap.delete(targetRoom);
+      console.log(`[Socket.io] Meeting ${targetRoom} ended by host`);
+    }
+  });
+
   socket.on('leave-room', handleLeaveRoom);
   socket.on('disconnect', handleLeaveRoom);
 });
@@ -162,18 +171,6 @@ io.on('connection', (socket) => {
 // Security Middleware
 app.use(helmet());
 app.use(cors());
-
-// Rate limiting (Disabled in development mode, 5000 requests in production)
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 1000 : 10000,
-  skip: () => process.env.NODE_ENV !== 'production',
-  message: {
-    success: false,
-    error: { message: 'Too many requests from this IP, please try again after 15 minutes' }
-  }
-});
-app.use('/api', limiter);
 
 // Body parser
 app.use(express.json());

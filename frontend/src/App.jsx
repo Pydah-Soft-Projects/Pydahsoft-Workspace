@@ -173,7 +173,7 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
   );
 }
 
-function DashboardLayout({ user, onLogout, initialMeetingId }) {
+function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting }) {
   const navigate = useNavigate();
 
   // Determine initial tab from localStorage for perfect refresh persistence
@@ -543,7 +543,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId }) {
             )}
             {visitedTabs.has('meetings') && (
               <div style={{ display: activeTab === 'meetings' ? 'block' : 'none' }}>
-                <MeetingsPage currentUser={user} directMeetingId={initialMeetingId} />
+                <MeetingsPage currentUser={user} directMeetingId={initialMeetingId} preJoinedMeeting={preJoinedMeeting} />
               </div>
             )}
             {visitedTabs.has('chat') && (
@@ -610,19 +610,96 @@ function DashboardLayout({ user, onLogout, initialMeetingId }) {
 
 function DirectMeetingHandler({ user, onLogout }) {
   const { meetingId: paramMeetingId } = useParams();
-  const location = useLocation();
 
   // Robust meetingId extraction from params, pathname, or hash
   const pathMatch = window.location.pathname.match(/\/meetings\/([^\/#?]+)/);
   const hashMatch = window.location.hash.match(/meetings\/([^\/#?]+)/);
   const meetingId = paramMeetingId || (pathMatch && pathMatch[1]) || (hashMatch && hashMatch[1]);
 
+  const [joinState, setJoinState] = React.useState('idle'); // 'idle' | 'joining' | 'joined' | 'error'
+  const [joinedMeeting, setJoinedMeeting] = React.useState(null);
+  const [joinError, setJoinError] = React.useState('');
+
+  // Not logged in → save meeting ID and redirect to login
   if (!user) {
-    localStorage.setItem('pydahsoft_redirect_after_login', `/meetings/${meetingId || ''}`);
+    if (meetingId) {
+      localStorage.setItem('pydahsoft_pending_meeting_id', meetingId);
+    }
     return <Navigate to="/login" replace />;
   }
 
-  return <DashboardLayout user={user} onLogout={onLogout} initialMeetingId={meetingId} />;
+  // Already logged in → join the meeting directly without going to dashboard
+  React.useEffect(() => {
+    if (!meetingId || joinState !== 'idle') return;
+    setJoinState('joining');
+
+    fetchApi(`/meetings/${meetingId}/join`, { method: 'POST' })
+      .then((res) => {
+        if (res.data && res.data.status !== 'ended') {
+          // Cache for refresh persistence
+          localStorage.setItem('pydahsoft_active_meeting_id', meetingId);
+          localStorage.setItem('pydahsoft_active_meeting_data', JSON.stringify(res.data));
+          setJoinedMeeting(res.data);
+          setJoinState('joined');
+        } else {
+          setJoinError('This meeting has ended and can no longer be joined.');
+          setJoinState('error');
+        }
+      })
+      .catch((err) => {
+        setJoinError(err.message || 'Meeting not found or has expired.');
+        setJoinState('error');
+      });
+  }, [meetingId]);
+
+  // Joining in progress — show a beautiful loading screen
+  if (joinState === 'idle' || joinState === 'joining') {
+    return (
+      <div className="fixed inset-0 bg-[#09233d] flex flex-col items-center justify-center gap-5 z-[99999]">
+        <div className="w-14 h-14 rounded-2xl bg-[#20b875] flex items-center justify-center shadow-xl shadow-[#20b875]/30 animate-pulse">
+          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div className="text-center">
+          <p className="text-white font-black text-lg tracking-tight">Joining Meeting</p>
+          <p className="text-emerald-300/70 text-sm font-medium mt-1 font-mono">{meetingId}</p>
+        </div>
+        <div className="flex gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-[#20b875] animate-bounce" style={{ animationDelay: '0ms' }} />
+          <span className="w-2 h-2 rounded-full bg-[#20b875] animate-bounce" style={{ animationDelay: '150ms' }} />
+          <span className="w-2 h-2 rounded-full bg-[#20b875] animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
+    );
+  }
+
+  // Join failed
+  if (joinState === 'error') {
+    return (
+      <div className="fixed inset-0 bg-[#09233d] flex flex-col items-center justify-center gap-5 z-[99999] px-6 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-rose-500 flex items-center justify-center shadow-xl">
+          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-white font-black text-lg">Cannot Join Meeting</p>
+          <p className="text-rose-300 text-sm font-medium mt-1 max-w-sm">{joinError}</p>
+        </div>
+        <a
+          href="/#/dashboard"
+          className="mt-2 px-6 py-2.5 bg-[#20b875] hover:bg-[#189960] text-white font-bold text-sm rounded-xl transition-colors"
+        >
+          Go to Dashboard
+        </a>
+      </div>
+    );
+  }
+
+  // Successfully joined — render DashboardLayout with the pre-joined meeting data
+  // MeetingsPage will read preJoinedMeeting and go directly to the video room
+  return <DashboardLayout user={user} onLogout={onLogout} initialMeetingId={meetingId} preJoinedMeeting={joinedMeeting} />;
 }
 
 function App() {

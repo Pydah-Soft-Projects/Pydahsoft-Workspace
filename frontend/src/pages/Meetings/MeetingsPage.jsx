@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../config/api';
 import MeetingRoom from './MeetingRoom';
 
-export default function MeetingsPage({ currentUser, directMeetingId }) {
+export default function MeetingsPage({ currentUser, directMeetingId, preJoinedMeeting }) {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeMeeting, setActiveMeeting] = useState(() => {
+    // Priority 1: a meeting was pre-joined from a direct link click while already logged in
+    if (preJoinedMeeting) return preJoinedMeeting;
+    // Priority 2: previously cached active meeting in localStorage
     try {
       const cached = localStorage.getItem('pydahsoft_active_meeting_data');
       const parsed = cached ? JSON.parse(cached) : null;
@@ -106,9 +109,19 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
         });
     }
 
+    // Auto-poll meetings list every 8 seconds when document is visible
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState !== 'hidden') {
+        fetchApi('/meetings')
+          .then((res) => setMeetings(res.data || []))
+          .catch(() => {});
+      }
+    }, 8000);
+
     return () => {
       window.removeEventListener('start-instant-meeting', handleStartInstantEvent);
       window.removeEventListener('open-schedule-meeting-modal', handleOpenScheduleEvent);
+      clearInterval(pollInterval);
     };
   }, [directMeetingId]);
 
@@ -219,6 +232,7 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
 
   const activeCalls = meetings.filter((m) => m.status === 'active');
   const upcomingCalls = meetings.filter((m) => m.status === 'scheduled');
+  const pastCalls = meetings.filter((m) => m.status === 'ended');
 
   return (
     <div className="meetings-container max-w-7xl mx-auto space-y-6">
@@ -423,6 +437,45 @@ export default function MeetingsPage({ currentUser, directMeetingId }) {
           </div>
         )}
       </div>
+
+      {/* Past & Inactive Meetings */}
+      {pastCalls.length > 0 && (
+        <div className="bg-slate-50 rounded-2xl border border-gray-200 p-3.5 sm:p-5 shadow-xs space-y-3 sm:space-y-4">
+          <h3 className="text-xs sm:text-sm font-black text-gray-500 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+            <span>Past & Inactive Meetings ({pastCalls.length})</span>
+          </h3>
+
+          <div className="divide-y divide-gray-200/60 max-h-60 overflow-y-auto custom-scrollbar">
+            {pastCalls.map((meetingItem) => (
+              <div key={meetingItem._id} className="py-2.5 flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-gray-200 text-gray-700 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">
+                      Ended
+                    </span>
+                    <h4 className="text-xs font-bold text-gray-700">{meetingItem.title}</h4>
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                    Host: {meetingItem.hostName} &bull; Room Code: <code className="font-mono">{meetingItem.meetingId}</code>
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteMeeting(meetingItem.meetingId || meetingItem._id)}
+                    className="bg-gray-200 hover:bg-rose-100 hover:text-rose-600 text-gray-600 font-bold text-[10px] px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                    title="Remove record"
+                  >
+                    Clear History
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Schedule Meeting Modal */}
       {isModalOpen && (
