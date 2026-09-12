@@ -4,7 +4,8 @@ const User = require('../models/User');
 const login = async (req, res) => {
   try {
     const { username, password } = req.body;
-    const userData = await userService.loginUser(username, password);
+    const io = req.app.get('io');
+    const userData = await userService.loginUser(username, password, io);
     res.status(200).json({
       success: true,
       message: 'Login successful',

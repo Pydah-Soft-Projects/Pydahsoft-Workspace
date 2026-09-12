@@ -38,6 +38,7 @@ const io = new Server(server, {
     methods: ['GET', 'POST']
   }
 });
+app.set('io', io);
 
 // Track meeting rooms and connected peer sockets
 // roomUsers map: meetingId -> Map(socketId -> { socketId, userId, userName, micOn, videoOn, handRaised })
@@ -45,6 +46,15 @@ const roomUsersMap = new Map();
 
 io.on('connection', (socket) => {
   console.log(`[Socket.io] Client connected: ${socket.id}`);
+
+  // Register User for Single Session Invalidation & Account Notifications
+  socket.on('register-user', ({ userId }) => {
+    if (userId) {
+      socket.userId = userId;
+      socket.join(`user:${userId.toString()}`);
+      console.log(`[Socket.io] User ${userId} registered to single-session channel: user:${userId}`);
+    }
+  });
 
   // Join Video Meeting Room
   socket.on('join-room', ({ meetingId, userId, userName }) => {

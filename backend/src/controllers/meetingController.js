@@ -429,10 +429,7 @@ const leaveMeeting = async (req, res) => {
       meeting.activeParticipants = (meeting.activeParticipants || []).filter(
         (p) => String(p.userId) !== String(currentUser._id) && (p.name || '').toLowerCase() !== (currentUser.name || '').toLowerCase()
       );
-      if (String(meeting.host) === String(currentUser._id) || meeting.activeParticipants.length === 0) {
-        meeting.status = 'ended';
-        meeting.activeParticipants = [];
-      }
+      // Note: Leaving a room removes active participant, but preserves room status so users can rejoin via same link
       await meeting.save();
     }
 

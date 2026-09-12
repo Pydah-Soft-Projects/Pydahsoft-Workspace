@@ -239,11 +239,96 @@ function createSyntheticMediaStream(userName) {
   return stream;
 }
 
+// Helper to generate dynamic 30fps HTML5 Canvas Presentation Stream for mobile devices where getDisplayMedia is restricted by iOS/Android OS
+function createMobilePresentationStream(presenterName, meetingTitle) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1280;
+  canvas.height = 720;
+  const ctx = canvas.getContext('2d');
+  let frame = 0;
+
+  function draw() {
+    frame++;
+    const bgGrad = ctx.createLinearGradient(0, 0, 1280, 720);
+    bgGrad.addColorStop(0, '#041527');
+    bgGrad.addColorStop(0.5, '#072b1e');
+    bgGrad.addColorStop(1, '#020b14');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1280, 720);
+
+    // Presentation Grid Overlay
+    ctx.strokeStyle = 'rgba(32, 184, 117, 0.12)';
+    ctx.lineWidth = 1.5;
+    for (let x = 0; x < 1280; x += 60) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 720);
+      ctx.stroke();
+    }
+    for (let y = 0; y < 720; y += 60) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(1280, y);
+      ctx.stroke();
+    }
+
+    // Top Header Banner
+    ctx.fillStyle = '#20b875';
+    ctx.fillRect(40, 40, 1200, 70);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('📱 LIVE MOBILE PRESENTATION STREAM', 65, 85);
+
+    // Content Box
+    ctx.fillStyle = 'rgba(9, 35, 61, 0.85)';
+    ctx.strokeStyle = '#20b875';
+    ctx.lineWidth = 3;
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(40, 140, 1200, 520, 24);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.fillRect(40, 140, 1200, 520);
+    }
+
+    // Presenter Info
+    ctx.fillStyle = '#4ade80';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Presenter: ${presenterName || 'Mobile Presenter'}`, 640, 320);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.fillText(`Meeting: ${meetingTitle || 'Live Video Conference'}`, 640, 380);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '20px monospace';
+    const now = new Date();
+    ctx.fillText(`Status: Mobile Live Broadcast • ${now.toLocaleTimeString()}`, 640, 440);
+
+    // Animated Live Indicator Dot
+    ctx.fillStyle = Math.floor(frame / 15) % 2 === 0 ? '#ef4444' : '#991b1b';
+    ctx.beginPath();
+    ctx.arc(640, 520, 12, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const intervalId = setInterval(draw, 1000 / 30);
+  draw();
+
+  const stream = canvas.captureStream(30);
+  stream.canvasIntervalId = intervalId;
+  return stream;
+}
+
 // Sub-component to render Remote Participant Video Streams cleanly with WebRTC srcObject
 // Wrapped in memo with custom comparator: only re-renders when peer props that AFFECT the visual change.
 // This prevents the video tile from being torn down & rebuilt every time any other peer updates,
 // which was the primary cause of frame lag / stutter in multi-participant meetings.
-const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured }) {
+const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured, onPin, isPinned }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -261,14 +346,14 @@ const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured
 
   const hasVideoStream = peer.stream && peer.stream.getVideoTracks().length > 0 && peer.videoOn !== false;
 
-  // In compact view: smaller avatar + text. In focus thumbnail: tiny avatar
-  const avatarSize = layout === 'compact' ? 'w-12 h-12 text-base' : isFeatured ? 'w-24 h-24 text-3xl' : 'w-16 h-16 text-xl';
-  const nameFontSize = layout === 'compact' ? 'text-[10px]' : 'text-xs';
-  const badgePadding = layout === 'compact' ? 'px-1.5 py-0.5' : 'px-3 py-1.5';
+  // Responsive Avatar Size & Text
+  const avatarSize = layout === 'compact' ? 'w-10 h-10 text-xs' : isFeatured ? 'w-20 h-20 text-2xl' : 'w-12 h-12 text-sm sm:w-16 sm:h-16 sm:text-xl';
+  const nameFontSize = layout === 'compact' ? 'text-[9px]' : 'text-[10px] sm:text-xs';
+  const badgePadding = layout === 'compact' ? 'px-1.5 py-0.5' : 'px-2 py-0.5 sm:px-3 sm:py-1';
 
   return (
-    <div className={`relative bg-[#09233d] border ${isFeatured ? 'border-2 border-[#20b875]' : 'border border-[#13523c]'} rounded-2xl overflow-hidden aspect-video shadow-xl flex flex-col items-center justify-center group w-full h-full`}>
-      {/* Remote Video Stream — always in DOM so audio track never drops */}
+    <div className={`relative bg-[#09233d] border ${isFeatured ? 'border-2 border-[#20b875]' : 'border border-[#13523c]'} rounded-xl sm:rounded-2xl overflow-hidden aspect-video shadow-lg flex flex-col items-center justify-center group w-full h-full`}>
+      {/* Remote Video Stream */}
       <video
         ref={videoRef}
         autoPlay
@@ -276,27 +361,45 @@ const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured
         className="absolute inset-0 w-full h-full object-cover"
       />
 
+      {/* Pin to Entire Screen Hover Action Overlay Button */}
+      {onPin && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPin();
+          }}
+          className="absolute inset-0 m-auto w-max h-max opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[#072b1e]/95 hover:bg-[#20b875] text-white px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-black shadow-2xl border border-emerald-400/50 flex items-center gap-1.5 backdrop-blur-md cursor-pointer z-30 transform hover:scale-105 active:scale-95"
+          title={isPinned ? 'Unpin from entire screen' : `Pin ${peer.name} to entire screen`}
+        >
+          <svg className="w-3.5 h-3.5 text-emerald-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+          </svg>
+          <span>{isPinned ? 'Unpin Screen' : 'Pin to Entire Screen'}</span>
+        </button>
+      )}
+
       {/* Camera Off / Waiting Avatar Overlay */}
       {!hasVideoStream && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gradient-to-b from-[#0b2844] to-[#061829]">
-          <div className={`${avatarSize} rounded-full ${peer.bgColor || 'bg-[#09233d]'} text-white font-black flex items-center justify-center ring-4 ring-emerald-500/30 shadow-2xl animate-pulse`}>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gradient-to-b from-[#0b2844] to-[#061829] p-2">
+          <div className={`${avatarSize} rounded-full ${peer.bgColor || 'bg-[#09233d]'} text-white font-black flex items-center justify-center ring-2 sm:ring-4 ring-emerald-500/30 shadow-xl`}>
             {(peer.name || 'P').split(' ').map((n) => n[0]).join('').toUpperCase()}
           </div>
           {layout !== 'compact' && (
-            <span className="text-xs font-semibold text-emerald-200 mt-3">Camera Disabled</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-emerald-200 mt-1 sm:mt-2 hidden xs:block">Camera Off</span>
           )}
         </div>
       )}
 
-      {/* Role Badge — hidden in compact view to save space */}
+      {/* Role Badge — hidden on mobile to prevent tile clutter */}
       {layout !== 'compact' && (
-        <p className="absolute top-3 left-3 z-20 text-[10px] font-bold text-emerald-300 bg-[#072b1e]/80 px-2 py-0.5 rounded-lg border border-[#0e4733]">
+        <p className="hidden sm:block absolute top-2 left-2 z-20 text-[9px] font-bold text-emerald-300 bg-[#072b1e]/80 px-2 py-0.5 rounded-md border border-[#0e4733]">
           {peer.role || 'Live Participant'}
         </p>
       )}
 
       {/* Participant Footer Info */}
-      <div className={`absolute bottom-2 left-2 z-20 bg-[#072b1e]/90 backdrop-blur-md ${badgePadding} rounded-xl border border-[#0e4733] flex items-center gap-1.5 max-w-[90%]`}>
+      <div className={`absolute bottom-1.5 left-1.5 z-20 bg-[#072b1e]/90 backdrop-blur-md ${badgePadding} rounded-lg border border-[#0e4733] flex items-center gap-1 max-w-[85%]`}>
         <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] shrink-0"></span>
         <span className={`${nameFontSize} font-extrabold text-white truncate`}>{peer.name}</span>
         {peer.handRaised && (
@@ -307,13 +410,13 @@ const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured
       </div>
 
       {/* Mic Status Indicator Icon */}
-      <div className="absolute top-2 right-2 z-20 bg-[#072b1e]/90 backdrop-blur-md p-1 rounded-lg border border-[#0e4733]">
+      <div className="absolute top-1.5 right-1.5 z-20 bg-[#072b1e]/90 backdrop-blur-md p-1 rounded-md border border-[#0e4733]">
         {peer.micOn ? (
-          <svg className="w-3.5 h-3.5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
           </svg>
         ) : (
-          <svg className="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
           </svg>
         )}
@@ -333,14 +436,15 @@ const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured
     pp.name === np.name &&
     pp.bgColor === np.bgColor &&
     prevProps.layout === nextProps.layout &&
-    prevProps.isFeatured === nextProps.isFeatured
+    prevProps.isFeatured === nextProps.isFeatured &&
+    prevProps.isPinned === nextProps.isPinned
   );
 });
 
 
 export default function MeetingRoom({ meeting, currentUser, onLeave }) {
-  const [micOn, setMicOn] = useState(true);
-  const [videoOn, setVideoOn] = useState(true);
+  const [micOn, setMicOn] = useState(false);
+  const [videoOn, setVideoOn] = useState(false);
   const [screenSharing, setScreenSharing] = useState(false);
   const [handRaised, setHandRaised] = useState(false);
   const [activeTab, setActiveTab] = useState('chat'); // 'chat' | 'people'
@@ -356,6 +460,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const [chatNotification, setChatNotification] = useState(null);
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editingText, setEditingText] = useState('');
+  const [pinnedPeerId, setPinnedPeerId] = useState(null);
 
   // WebRTC Remote Peers State: socketId -> { socketId, userId, name, role, stream, micOn, videoOn, handRaised, bgColor }
   const [remotePeers, setRemotePeers] = useState({});
@@ -497,6 +602,13 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
           mediaStreamRef.current = stream;
           activeStream = stream;
+
+          if (stream) {
+            // Default audio & video to OFF upon joining room as requested
+            stream.getAudioTracks().forEach((track) => (track.enabled = false));
+            stream.getVideoTracks().forEach((track) => (track.enabled = false));
+          }
+
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = stream;
           }
@@ -787,37 +899,49 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     }
   };
 
-  // Native Screen Sharing Handler using getDisplayMedia
+  // Direct Native Full Screen Sharing for Mobile & Desktop
   const toggleScreenShare = async () => {
     if (!screenSharing) {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        setToastNotification('Screen sharing is not supported on this browser version or context.');
+        setTimeout(() => setToastNotification(null), 4000);
+        return;
+      }
+
       try {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
-          audio: true
+          audio: false
         });
-        screenStreamRef.current = screenStream;
-        const screenTrack = screenStream.getVideoTracks()[0];
 
-        // Replace camera video track with screen track in all peer connections
-        Object.values(peerConnectionsRef.current).forEach((pc) => {
-          const videoSender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
-          if (videoSender) {
-            videoSender.replaceTrack(screenTrack);
+        if (screenStream) {
+          screenStreamRef.current = screenStream;
+          const screenTrack = screenStream.getVideoTracks()[0];
+
+          // Replace camera video track with screen track in all peer connections
+          Object.values(peerConnectionsRef.current).forEach((pc) => {
+            const videoSender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+            if (videoSender) {
+              videoSender.replaceTrack(screenTrack);
+            }
+          });
+
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = screenStream;
           }
-        });
 
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = screenStream;
+          screenTrack.onended = () => {
+            stopScreenSharing();
+          };
+
+          setScreenSharing(true);
         }
-
-        screenTrack.onended = () => {
-          stopScreenSharing();
-        };
-
-        setScreenSharing(true);
       } catch (err) {
-        console.warn('Screen share cancelled or failed:', err);
-        setScreenSharing(false);
+        console.warn('Native screen share error or cancelled by user:', err);
+        if (err.name !== 'NotAllowedError') {
+          setToastNotification('Could not start screen share: ' + (err.message || 'Permission denied'));
+          setTimeout(() => setToastNotification(null), 4000);
+        }
       }
     } else {
       stopScreenSharing();
@@ -850,10 +974,6 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
   // Graceful Leave Call
   const handleLeaveCall = async () => {
-    if (isHost && !window.confirm('End this meeting for everyone? The room and its chat will no longer be joinable.')) {
-      return;
-    }
-
     if (screenStreamRef.current) {
       screenStreamRef.current.getTracks().forEach((t) => t.stop());
     }
@@ -862,18 +982,11 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     }
     const meetingCode = liveMeetingData?.meetingId || meeting?.meetingId;
     if (socketRef.current && meetingCode) {
-      if (isHost) {
-        socketRef.current.emit('end-meeting', { meetingId: meetingCode });
-      }
       socketRef.current.emit('leave-room', { meetingId: meetingCode });
     }
     if (meetingCode) {
       try {
-        if (isHost) {
-          await fetchApi(`/meetings/${meetingCode}/end`, { method: 'POST' });
-        } else {
-          await fetchApi(`/meetings/${meetingCode}/leave`, { method: 'POST' });
-        }
+        await fetchApi(`/meetings/${meetingCode}/leave`, { method: 'POST' });
       } catch (e) {}
     }
     onLeave();
@@ -1127,12 +1240,138 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         <div className="flex-1 p-3 sm:p-4 overflow-y-auto custom-scrollbar flex flex-col justify-start sm:justify-center items-center">
 
           {/* ═══════════════════════════════════════════════
-              FOCUS VIEW — 1 featured speaker + sidebar thumbnails
+              PINNED FULL SCREEN VIEW — Individual System Stage
           ════════════════════════════════════════════════ */}
-          {layout === 'focus' && totalParticipantsCount > 1 ? (
+          {pinnedPeerId ? (
+            (() => {
+              const isLocalPinned = pinnedPeerId === 'local';
+              const pinnedPeerObj = isLocalPinned ? null : remotePeers[pinnedPeerId];
+              const pinnedName = isLocalPinned ? (currentUser?.name || 'You') : (pinnedPeerObj?.name || 'Participant');
+              const isPinnedVideoOn = isLocalPinned ? videoOn : (pinnedPeerObj?.videoOn !== false);
+
+              return (
+                <div className="w-full max-w-6xl h-full flex-1 flex flex-col gap-3 relative" style={{ minHeight: 0 }}>
+                  {/* Top Floating Pinned Banner */}
+                  <div className="w-full bg-[#072b1e]/95 border border-[#20b875]/40 backdrop-blur-md px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-2xl flex items-center justify-between shadow-xl z-20">
+                    <div className="flex items-center gap-2 sm:gap-2.5 truncate">
+                      <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                      </svg>
+                      <span className="text-xs sm:text-sm font-black text-white tracking-wide truncate">
+                        PINNED FULL SCREEN VIEW: <span className="text-emerald-300">{pinnedName}</span> <span className="text-[10px] text-gray-300 font-normal hidden sm:inline">(Viewing full screen on your device)</span>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPinnedPeerId(null)}
+                      className="bg-[#20b875] hover:bg-[#189960] text-white font-extrabold text-xs px-3 sm:px-4 py-1.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer flex items-center gap-1.5 shrink-0 ml-2"
+                    >
+                      <svg className="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="hidden xs:inline">Exit Full Screen</span>
+                    </button>
+                  </div>
+
+                  {/* Main Expanded Video Stage */}
+                  <div className="flex-1 relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center min-h-[45vh] group">
+                    {isLocalPinned ? (
+                      <video
+                        ref={localVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className={`absolute inset-0 w-full h-full object-cover transform ${
+                          screenSharing ? 'scale-100' : '-scale-x-100'
+                        } ${videoOn ? 'block' : 'hidden'}`}
+                      />
+                    ) : (
+                      <video
+                        ref={(el) => {
+                          if (el && pinnedPeerObj?.stream) {
+                            if (el.srcObject !== pinnedPeerObj.stream) {
+                              el.srcObject = pinnedPeerObj.stream;
+                            }
+                            el.play().catch(() => {});
+                          }
+                        }}
+                        autoPlay
+                        playsInline
+                        className={`absolute inset-0 w-full h-full object-cover ${
+                          isPinnedVideoOn ? 'block' : 'hidden'
+                        }`}
+                      />
+                    )}
+
+                    {/* Camera Off Avatar Overlay */}
+                    {!isPinnedVideoOn && (
+                      <div className="flex flex-col items-center gap-3 z-10">
+                        <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-[#20b875] text-white font-black text-2xl sm:text-4xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-xl">
+                          {pinnedName.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs sm:text-sm font-semibold text-emerald-200">Camera Off</span>
+                      </div>
+                    )}
+
+                    {/* Footer Name Badge */}
+                    <div className="absolute bottom-3 left-3 z-20 bg-[#072b1e]/90 backdrop-blur-md px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full border border-[#166046] flex items-center gap-2 shadow-lg max-w-[85%]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#4ade80] shrink-0"></span>
+                      <span className="text-xs font-black text-white truncate">
+                        {pinnedName} {isLocalPinned ? '(You)' : ''}
+                      </span>
+                    </div>
+
+                    {/* Unpin Overlay Button on Hover */}
+                    <button
+                      type="button"
+                      onClick={() => setPinnedPeerId(null)}
+                      className="absolute inset-0 m-auto w-max h-max opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[#072b1e]/95 hover:bg-[#20b875] text-white px-4 py-2.5 rounded-full text-xs font-black shadow-2xl border border-emerald-400/50 flex items-center gap-2 backdrop-blur-md cursor-pointer z-30 transform hover:scale-105 active:scale-95"
+                    >
+                      <svg className="w-4 h-4 text-emerald-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                      </svg>
+                      <span>Unpin from Entire Screen</span>
+                    </button>
+                  </div>
+
+                  {/* Bottom Horizontal Carousel for Remaining Participants */}
+                  <div className="w-full flex gap-3 overflow-x-auto custom-scrollbar py-1 shrink-0">
+                    {!isLocalPinned && (
+                      <div
+                        onClick={() => setPinnedPeerId('local')}
+                        className="w-32 h-20 shrink-0 cursor-pointer rounded-xl overflow-hidden border border-emerald-500/40 relative bg-[#09233d] hover:border-emerald-400 transition-all shadow-md group"
+                        title="Click to pin your video"
+                      >
+                        <video
+                          ref={localVideoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className={`w-full h-full object-cover transform ${screenSharing ? 'scale-100' : '-scale-x-100'}`}
+                        />
+                        <span className="absolute bottom-1 left-1 bg-black/70 text-[9px] font-bold text-white px-1.5 py-0.5 rounded">You</span>
+                      </div>
+                    )}
+                    {remotePeerList
+                      .filter((p) => p.socketId !== pinnedPeerId)
+                      .map((peer) => (
+                        <div
+                          key={peer.socketId}
+                          onClick={() => setPinnedPeerId(peer.socketId)}
+                          className="w-32 h-20 shrink-0 cursor-pointer rounded-xl overflow-hidden border border-slate-700 relative bg-[#09233d] hover:border-emerald-400 transition-all shadow-md group"
+                          title={`Click to pin ${peer.name}`}
+                        >
+                          <RemoteVideoTile peer={peer} layout="compact" isFeatured={false} onPin={() => setPinnedPeerId(peer.socketId)} isPinned={false} />
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              );
+            })()
+          ) : layout === 'focus' && totalParticipantsCount > 1 ? (
             <div className="w-full max-w-6xl flex gap-3 sm:gap-4 h-full" style={{ minHeight: 0 }}>
               {/* Featured / Speaker Tile — Local User */}
-              <div className="flex-1 relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center" style={{ aspectRatio: '16/9', minHeight: 200 }}>
+              <div className="flex-1 relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center group" style={{ aspectRatio: '16/9', minHeight: 200 }}>
                 <video
                   ref={localVideoRef}
                   autoPlay
@@ -1150,6 +1389,18 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                     <span className="text-sm font-semibold text-emerald-200">Camera Off</span>
                   </div>
                 )}
+                {/* Pin Hover Overlay for Local User */}
+                <button
+                  type="button"
+                  onClick={() => setPinnedPeerId(pinnedPeerId === 'local' ? null : 'local')}
+                  className="absolute inset-0 m-auto w-max h-max opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[#072b1e]/95 hover:bg-[#20b875] text-white px-3.5 py-2 rounded-full text-xs font-black shadow-2xl border border-emerald-400/50 flex items-center gap-2 backdrop-blur-md cursor-pointer z-30 transform hover:scale-105 active:scale-95"
+                  title="Pin your video to entire screen"
+                >
+                  <svg className="w-3.5 h-3.5 text-emerald-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                  </svg>
+                  <span>Pin to Entire Screen</span>
+                </button>
                 {/* Featured badge */}
                 <span className="absolute top-3 left-3 z-20 bg-[#20b875] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> FEATURED
@@ -1182,19 +1433,15 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               <div className="flex flex-col gap-2 sm:gap-3 overflow-y-auto custom-scrollbar shrink-0" style={{ width: '22%', minWidth: 120, maxWidth: 200 }}>
                 {remotePeerList.map((peer) => (
                   <div key={peer.socketId} className="shrink-0" style={{ aspectRatio: '4/3' }}>
-                    <RemoteVideoTile peer={peer} layout="focus-thumbnail" isFeatured={false} />
+                    <RemoteVideoTile peer={peer} layout="focus-thumbnail" isFeatured={false} onPin={() => setPinnedPeerId(peer.socketId)} isPinned={pinnedPeerId === peer.socketId} />
                   </div>
                 ))}
               </div>
             </div>
-
-          /* ═══════════════════════════════════════════════
-              COMPACT VIEW — dense small grid tiles
-          ════════════════════════════════════════════════ */
           ) : layout === 'compact' ? (
             <div className={`w-full max-w-6xl grid gap-2 ${compactGridCols}`}>
               {/* LOCAL USER — Compact Tile */}
-              <div className="relative bg-[#09233d] border border-[#20b875] rounded-xl overflow-hidden aspect-video shadow-lg flex items-center justify-center">
+              <div className="relative bg-[#09233d] border border-[#20b875] rounded-xl overflow-hidden aspect-video shadow-lg flex items-center justify-center group">
                 <video
                   ref={localVideoRef}
                   autoPlay
@@ -1211,6 +1458,18 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                     </div>
                   </div>
                 )}
+                {/* Pin Hover Overlay for Local User */}
+                <button
+                  type="button"
+                  onClick={() => setPinnedPeerId(pinnedPeerId === 'local' ? null : 'local')}
+                  className="absolute inset-0 m-auto w-max h-max opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[#072b1e]/95 hover:bg-[#20b875] text-white px-2.5 py-1 rounded-full text-[10px] font-black shadow-2xl border border-emerald-400/50 flex items-center gap-1 backdrop-blur-md cursor-pointer z-30"
+                  title="Pin your video to entire screen"
+                >
+                  <svg className="w-3 h-3 text-emerald-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                  </svg>
+                  <span>Pin Screen</span>
+                </button>
                 <div className="absolute bottom-1.5 left-1.5 bg-[#072b1e]/90 backdrop-blur-md px-2 py-0.5 rounded-lg border border-[#166046] flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] shrink-0"></span>
                   <span className="text-[10px] font-extrabold text-white truncate max-w-[80px]">
@@ -1232,7 +1491,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
               {/* REMOTE PEERS — Compact Tiles */}
               {remotePeerList.map((peer) => (
-                <RemoteVideoTile key={peer.socketId} peer={peer} layout="compact" isFeatured={false} />
+                <RemoteVideoTile key={peer.socketId} peer={peer} layout="compact" isFeatured={false} onPin={() => setPinnedPeerId(peer.socketId)} isPinned={pinnedPeerId === peer.socketId} />
               ))}
 
               {/* Invite card — only if alone */}
@@ -1249,13 +1508,10 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               )}
             </div>
 
-          /* ═══════════════════════════════════════════════
-              GALLERY VIEW (default) — equal-sized tiles
-          ════════════════════════════════════════════════ */
           ) : (
-            <div className={`w-full max-w-5xl grid gap-3 sm:gap-4 ${galleryGridCols}`}>
+            <div className={`w-full ${totalParticipantsCount === 1 ? 'max-w-6xl h-full flex-1 flex flex-col justify-center items-center relative' : 'max-w-5xl grid gap-3 sm:gap-4 ' + galleryGridCols}`}>
               {/* LOCAL USER VIDEO TILE */}
-              <div className="relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden aspect-video shadow-2xl flex items-center justify-center group">
+              <div className={`relative bg-[#09233d] border-2 border-[#20b875] rounded-xl sm:rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center group ${totalParticipantsCount === 1 ? 'w-full h-full max-h-[80vh] min-h-[60vh]' : 'aspect-video'}`}>
                 <video
                   ref={localVideoRef}
                   autoPlay
@@ -1267,35 +1523,48 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                 />
 
                 {!videoOn && (
-                  <div className="flex flex-col items-center gap-2 sm:gap-3">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#20b875] text-white font-black text-xl sm:text-2xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-lg">
+                  <div className="flex flex-col items-center gap-1 sm:gap-3 p-2">
+                    <div className="w-12 h-12 sm:w-28 sm:h-28 rounded-full bg-[#20b875] text-white font-black text-sm sm:text-4xl flex items-center justify-center ring-2 sm:ring-4 ring-[#4ade80]/30 shadow-lg">
                       {(currentUser?.name || 'Y').charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-[11px] sm:text-xs font-semibold text-emerald-200">Camera Off</span>
+                    <span className="text-[10px] sm:text-sm font-semibold text-emerald-200">Camera Off</span>
                   </div>
                 )}
 
+                {/* Pin Hover Overlay for Local User */}
+                <button
+                  type="button"
+                  onClick={() => setPinnedPeerId(pinnedPeerId === 'local' ? null : 'local')}
+                  className="absolute inset-0 m-auto w-max h-max opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[#072b1e]/95 hover:bg-[#20b875] text-white px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-black shadow-2xl border border-emerald-400/50 flex items-center gap-1.5 backdrop-blur-md cursor-pointer z-30 transform hover:scale-105 active:scale-95"
+                  title="Pin your video to entire screen"
+                >
+                  <svg className="w-3.5 h-3.5 text-emerald-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                  </svg>
+                  <span>Pin to Entire Screen</span>
+                </button>
+
                 {/* Local Participant Info */}
-                <div className="absolute bottom-3 left-3 bg-[#072b1e]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#166046] flex items-center gap-2 max-w-[88%] shadow-md">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#4ade80] shrink-0"></span>
-                  <span className="text-xs font-extrabold text-white truncate">
+                <div className="absolute bottom-1.5 left-1.5 sm:bottom-3 sm:left-3 bg-[#072b1e]/90 backdrop-blur-md px-2 py-0.5 sm:px-3.5 sm:py-1.5 rounded-lg sm:rounded-full border border-[#166046] flex items-center gap-1 sm:gap-2 max-w-[85%] shadow-md">
+                  <span className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 rounded-full bg-[#4ade80] shrink-0"></span>
+                  <span className="text-[10px] sm:text-xs font-extrabold text-white truncate">
                     {currentUser?.name || 'You'} (You) {screenSharing ? '[Sharing]' : ''}
                   </span>
                   {handRaised && (
-                    <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v6.5" />
                     </svg>
                   )}
                 </div>
 
                 {/* Local Mic Status */}
-                <div className="absolute top-3 right-3 bg-[#072b1e]/90 backdrop-blur-md p-2 rounded-xl border border-[#166046] shadow-md">
+                <div className="absolute top-1.5 right-1.5 sm:top-3 sm:right-3 bg-[#072b1e]/90 backdrop-blur-md p-1 sm:p-2 rounded-md sm:rounded-xl border border-[#166046] shadow-md">
                   {micOn ? (
-                    <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
                     </svg>
                   ) : (
-                    <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                     </svg>
                   )}
@@ -1304,26 +1573,18 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
               {/* REMOTE PEERS WEBRTC LIVE VIDEO TILES */}
               {remotePeerList.map((peer) => (
-                <RemoteVideoTile key={peer.socketId} peer={peer} layout="gallery" isFeatured={false} />
+                <RemoteVideoTile key={peer.socketId} peer={peer} layout="gallery" isFeatured={false} onPin={() => setPinnedPeerId(peer.socketId)} isPinned={pinnedPeerId === peer.socketId} />
               ))}
 
-              {/* Quick Copy Link Card if only 1 participant */}
+              {/* Quick Copy Link Banner if only 1 participant */}
               {totalParticipantsCount === 1 && (
                 <div
                   onClick={handleCopyLink}
-                  className="relative bg-white border-2 border-dashed border-emerald-200 hover:border-emerald-400 rounded-3xl overflow-hidden aspect-video shadow-lg flex flex-col items-center justify-center p-5 sm:p-6 text-center cursor-pointer transition-all hover:bg-emerald-50"
+                  className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-white/95 backdrop-blur-md border border-emerald-300 hover:border-emerald-500 px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 cursor-pointer transition-all hover:scale-105"
                 >
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xl sm:text-2xl mb-3">
-                    <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                    </svg>
-                  </div>
-                  <h4 className="text-sm sm:text-base font-black text-slate-900">Invite Colleagues to Join</h4>
-                  <p className="text-xs text-slate-500 font-medium mt-1 max-w-xs leading-relaxed">
-                    Share the live room link with your team members to start instant WebRTC video stream.
-                  </p>
-                  <span className="mt-4 px-6 py-2.5 bg-[#20b875] hover:bg-[#25d386] text-white font-black text-xs rounded-xl shadow-md transition-all">
-                    {copiedLink ? 'Link Copied!' : 'Copy Room Link'}
+                  <span className="w-2 h-2 rounded-full bg-[#20b875] animate-pulse"></span>
+                  <span className="text-xs font-black text-slate-800">
+                    {copiedLink ? 'Link Copied to Clipboard!' : 'Click to Copy Meeting Room Link'}
                   </span>
                 </div>
               )}
@@ -1573,12 +1834,12 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
       </div>
 
       {/* Control Toolbar */}
-      <footer className="relative bg-white border-t border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-evenly sm:justify-center sm:gap-4 w-full shrink-0 shadow-lg">
+      <footer className="relative bg-white border-t border-slate-200 px-2 sm:px-6 py-2 sm:py-3 flex items-center justify-center gap-1.5 sm:gap-4 w-full shrink-0 shadow-lg">
         <div className="relative">
           <button
             type="button"
             onClick={() => setLayoutMenuOpen((open) => !open)}
-            className={`w-9 h-9 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
               layoutMenuOpen ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
             }`}
             title="Choose meeting layout"
@@ -1593,7 +1854,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
             </svg>
           </button>
           {layoutMenuOpen && (
-            <div className="absolute bottom-12 sm:bottom-14 left-0 z-30 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+            <div className="absolute bottom-12 sm:bottom-14 left-2 sm:left-0 z-30 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
               <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-2 pt-1 pb-1.5">Meeting Layout</p>
               {[
                 {
@@ -1671,7 +1932,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         <button
           type="button"
           onClick={toggleMic}
-          className={`w-9 h-9 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             micOn
               ? 'bg-slate-100 border-slate-200 text-emerald-600 hover:bg-slate-200'
               : 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
@@ -1693,7 +1954,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         <button
           type="button"
           onClick={toggleCamera}
-          className={`w-9 h-9 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             videoOn
               ? 'bg-slate-100 border-slate-200 text-emerald-600 hover:bg-slate-200'
               : 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
@@ -1715,7 +1976,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         <button
           type="button"
           onClick={toggleScreenShare}
-          className={`w-9 h-9 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             screenSharing
               ? 'bg-[#20b875] border-[#4ade80] text-white animate-pulse'
               : 'bg-slate-100 border-slate-200 text-emerald-600 hover:bg-slate-200'
@@ -1731,7 +1992,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         <button
           type="button"
           onClick={toggleHand}
-          className={`w-9 h-9 sm:w-12 sm:h-12 rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border text-xs font-bold flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
             handRaised
               ? 'bg-amber-500 border-amber-400 text-white'
               : 'bg-slate-100 border-slate-200 text-amber-500 hover:bg-slate-200'
@@ -1747,13 +2008,13 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         <button
           type="button"
           onClick={handleLeaveCall}
-          className="bg-[#ff0055] hover:bg-[#e0004c] text-white font-extrabold text-xs px-5 sm:px-6 py-3 sm:py-3 rounded-2xl flex items-center gap-2 shadow-lg tracking-wider shrink-0 cursor-pointer"
+          className="w-10 h-10 sm:w-auto bg-[#ff0055] hover:bg-[#e0004c] text-white font-extrabold text-xs px-0 sm:px-6 py-0 sm:py-3 rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 shadow-lg tracking-wider shrink-0 cursor-pointer"
           title={isHost ? 'End Meeting for Everyone' : 'Leave Meeting'}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8l2-2m0 0l2-2m-2 2l-2 2m2-2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h6" />
           </svg>
-          <span className="uppercase font-black tracking-wider">{isHost ? 'END MEETING' : 'LEAVE CALL'}</span>
+          <span className="uppercase font-black tracking-wider hidden sm:inline">{isHost ? 'END MEETING' : 'LEAVE CALL'}</span>
         </button>
       </footer>
     </div>,

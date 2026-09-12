@@ -4,6 +4,7 @@ import Landing from './pages/Landing/Landing';
 import Login from './pages/Login/Login';
 import Sidebar from './components/Sidebar/Sidebar';
 import { fetchApi } from './config/api';
+import { getSocket } from './config/socket';
 import './App.css';
 
 // Lazy-loaded page components for ultra-fast loading and bundle optimization
@@ -734,7 +735,31 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const handleSessionExpired = () => setUser(null);
+    if (user?._id) {
+      const socket = getSocket();
+      if (!socket.connected) {
+        socket.connect();
+      }
+      socket.emit('register-user', { userId: user._id });
+
+      const handleForceLogout = (data) => {
+        alert(data?.message || 'Your account was logged into on another device. You have been logged out.');
+        handleLogout();
+      };
+
+      socket.on('force-logout', handleForceLogout);
+
+      return () => {
+        socket.off('force-logout', handleForceLogout);
+      };
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      alert('Your session has expired because your account was logged into on another device.');
+      handleLogout();
+    };
     window.addEventListener('pydahsoft:session-expired', handleSessionExpired);
     return () => window.removeEventListener('pydahsoft:session-expired', handleSessionExpired);
   }, []);

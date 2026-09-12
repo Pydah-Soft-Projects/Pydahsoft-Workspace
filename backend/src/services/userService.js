@@ -45,7 +45,7 @@ const seedSuperAdmin = async () => {
   };
 };
 
-const loginUser = async (username, password) => {
+const loginUser = async (username, password, io) => {
   if (!username || !password) {
     throw new Error('Please provide both username and password');
   }
@@ -66,6 +66,16 @@ const loginUser = async (username, password) => {
   }
 
   const token = generateToken(user._id, user.role);
+
+  // Single session enforcement: notify and force-logout any existing session on another device/browser
+  if (io && user._id) {
+    io.to(`user:${user._id.toString()}`).emit('force-logout', {
+      message: 'Your account was logged into on another device. You have been logged out.'
+    });
+  }
+
+  user.activeToken = token;
+  await user.save();
 
   // Fetch Role document to merge role default permissions
   const roleDoc = await Role.findOne({ name: user.role.toLowerCase() });
