@@ -61,6 +61,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['Active', 'Inactive'],
       default: 'Active'
+    },
+    activeToken: {
+      type: String,
+      default: null
     }
   },
   {

@@ -36,6 +36,13 @@ const protect = async (req, res, next) => {
       });
     }
 
+    if (user.activeToken && user.activeToken !== token) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Your session has expired because your account was logged into on another device.' }
+      });
+    }
+
     req.user = user;
     next();
   } catch (error) {
