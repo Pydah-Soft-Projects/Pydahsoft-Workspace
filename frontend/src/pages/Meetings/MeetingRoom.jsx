@@ -879,24 +879,23 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     }
   };
 
-  // Screen Sharing Handler with 3-Tier Mobile Fallback Architecture
+  // Screen Sharing Handler (Direct Mobile Screen Sharing + Fallback)
   const toggleScreenShare = async () => {
     if (!screenSharing) {
       let screenStream = null;
 
-      // Attempt 1: Native getDisplayMedia (Supported on Desktop & Android Chrome HTTPS)
+      // Attempt 1: Direct Native Screen Sharing (Android Chrome & Desktop)
       if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
         try {
           screenStream = await navigator.mediaDevices.getDisplayMedia({
-            video: { displaySurface: 'monitor' },
-            audio: false
+            video: true
           });
         } catch (err1) {
-          console.warn('Native getDisplayMedia unavailable or denied on mobile device:', err1);
+          console.warn('Native screen share cancelled or unsupported on this device:', err1);
         }
       }
 
-      // Attempt 2 (Mobile Fallback): Rear Camera Content & Document Share Mode
+      // Attempt 2 (Fallback for iOS/unsupported browsers): Rear Camera Content Share
       if (!screenStream && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
           screenStream = await navigator.mediaDevices.getUserMedia({
