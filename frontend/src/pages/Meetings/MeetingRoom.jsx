@@ -328,7 +328,7 @@ function createMobilePresentationStream(presenterName, meetingTitle) {
 // Wrapped in memo with custom comparator: only re-renders when peer props that AFFECT the visual change.
 // This prevents the video tile from being torn down & rebuilt every time any other peer updates,
 // which was the primary cause of frame lag / stutter in multi-participant meetings.
-const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured }) {
+const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured, onPin, isPinned }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -360,6 +360,24 @@ const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured
         playsInline
         className="absolute inset-0 w-full h-full object-cover"
       />
+
+      {/* Pin to Entire Screen Hover Action Overlay Button */}
+      {onPin && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPin();
+          }}
+          className="absolute inset-0 m-auto w-max h-max opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[#072b1e]/95 hover:bg-[#20b875] text-white px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-black shadow-2xl border border-emerald-400/50 flex items-center gap-1.5 backdrop-blur-md cursor-pointer z-30 transform hover:scale-105 active:scale-95"
+          title={isPinned ? 'Unpin from entire screen' : `Pin ${peer.name} to entire screen`}
+        >
+          <svg className="w-3.5 h-3.5 text-emerald-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+          </svg>
+          <span>{isPinned ? 'Unpin Screen' : 'Pin to Entire Screen'}</span>
+        </button>
+      )}
 
       {/* Camera Off / Waiting Avatar Overlay */}
       {!hasVideoStream && (
@@ -418,7 +436,8 @@ const RemoteVideoTile = memo(function RemoteVideoTile({ peer, layout, isFeatured
     pp.name === np.name &&
     pp.bgColor === np.bgColor &&
     prevProps.layout === nextProps.layout &&
-    prevProps.isFeatured === nextProps.isFeatured
+    prevProps.isFeatured === nextProps.isFeatured &&
+    prevProps.isPinned === nextProps.isPinned
   );
 });
 
@@ -441,6 +460,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
   const [chatNotification, setChatNotification] = useState(null);
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editingText, setEditingText] = useState('');
+  const [pinnedPeerId, setPinnedPeerId] = useState(null);
 
   // WebRTC Remote Peers State: socketId -> { socketId, userId, name, role, stream, micOn, videoOn, handRaised, bgColor }
   const [remotePeers, setRemotePeers] = useState({});
@@ -1220,12 +1240,138 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
         <div className="flex-1 p-3 sm:p-4 overflow-y-auto custom-scrollbar flex flex-col justify-start sm:justify-center items-center">
 
           {/* ═══════════════════════════════════════════════
-              FOCUS VIEW — 1 featured speaker + sidebar thumbnails
+              PINNED FULL SCREEN VIEW — Individual System Stage
           ════════════════════════════════════════════════ */}
-          {layout === 'focus' && totalParticipantsCount > 1 ? (
+          {pinnedPeerId ? (
+            (() => {
+              const isLocalPinned = pinnedPeerId === 'local';
+              const pinnedPeerObj = isLocalPinned ? null : remotePeers[pinnedPeerId];
+              const pinnedName = isLocalPinned ? (currentUser?.name || 'You') : (pinnedPeerObj?.name || 'Participant');
+              const isPinnedVideoOn = isLocalPinned ? videoOn : (pinnedPeerObj?.videoOn !== false);
+
+              return (
+                <div className="w-full max-w-6xl h-full flex-1 flex flex-col gap-3 relative" style={{ minHeight: 0 }}>
+                  {/* Top Floating Pinned Banner */}
+                  <div className="w-full bg-[#072b1e]/95 border border-[#20b875]/40 backdrop-blur-md px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-2xl flex items-center justify-between shadow-xl z-20">
+                    <div className="flex items-center gap-2 sm:gap-2.5 truncate">
+                      <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                      </svg>
+                      <span className="text-xs sm:text-sm font-black text-white tracking-wide truncate">
+                        PINNED FULL SCREEN VIEW: <span className="text-emerald-300">{pinnedName}</span> <span className="text-[10px] text-gray-300 font-normal hidden sm:inline">(Viewing full screen on your device)</span>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPinnedPeerId(null)}
+                      className="bg-[#20b875] hover:bg-[#189960] text-white font-extrabold text-xs px-3 sm:px-4 py-1.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer flex items-center gap-1.5 shrink-0 ml-2"
+                    >
+                      <svg className="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="hidden xs:inline">Exit Full Screen</span>
+                    </button>
+                  </div>
+
+                  {/* Main Expanded Video Stage */}
+                  <div className="flex-1 relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center min-h-[45vh] group">
+                    {isLocalPinned ? (
+                      <video
+                        ref={localVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className={`absolute inset-0 w-full h-full object-cover transform ${
+                          screenSharing ? 'scale-100' : '-scale-x-100'
+                        } ${videoOn ? 'block' : 'hidden'}`}
+                      />
+                    ) : (
+                      <video
+                        ref={(el) => {
+                          if (el && pinnedPeerObj?.stream) {
+                            if (el.srcObject !== pinnedPeerObj.stream) {
+                              el.srcObject = pinnedPeerObj.stream;
+                            }
+                            el.play().catch(() => {});
+                          }
+                        }}
+                        autoPlay
+                        playsInline
+                        className={`absolute inset-0 w-full h-full object-cover ${
+                          isPinnedVideoOn ? 'block' : 'hidden'
+                        }`}
+                      />
+                    )}
+
+                    {/* Camera Off Avatar Overlay */}
+                    {!isPinnedVideoOn && (
+                      <div className="flex flex-col items-center gap-3 z-10">
+                        <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-[#20b875] text-white font-black text-2xl sm:text-4xl flex items-center justify-center ring-4 ring-[#4ade80]/30 shadow-xl">
+                          {pinnedName.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs sm:text-sm font-semibold text-emerald-200">Camera Off</span>
+                      </div>
+                    )}
+
+                    {/* Footer Name Badge */}
+                    <div className="absolute bottom-3 left-3 z-20 bg-[#072b1e]/90 backdrop-blur-md px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full border border-[#166046] flex items-center gap-2 shadow-lg max-w-[85%]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#4ade80] shrink-0"></span>
+                      <span className="text-xs font-black text-white truncate">
+                        {pinnedName} {isLocalPinned ? '(You)' : ''}
+                      </span>
+                    </div>
+
+                    {/* Unpin Overlay Button on Hover */}
+                    <button
+                      type="button"
+                      onClick={() => setPinnedPeerId(null)}
+                      className="absolute inset-0 m-auto w-max h-max opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[#072b1e]/95 hover:bg-[#20b875] text-white px-4 py-2.5 rounded-full text-xs font-black shadow-2xl border border-emerald-400/50 flex items-center gap-2 backdrop-blur-md cursor-pointer z-30 transform hover:scale-105 active:scale-95"
+                    >
+                      <svg className="w-4 h-4 text-emerald-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                      </svg>
+                      <span>Unpin from Entire Screen</span>
+                    </button>
+                  </div>
+
+                  {/* Bottom Horizontal Carousel for Remaining Participants */}
+                  <div className="w-full flex gap-3 overflow-x-auto custom-scrollbar py-1 shrink-0">
+                    {!isLocalPinned && (
+                      <div
+                        onClick={() => setPinnedPeerId('local')}
+                        className="w-32 h-20 shrink-0 cursor-pointer rounded-xl overflow-hidden border border-emerald-500/40 relative bg-[#09233d] hover:border-emerald-400 transition-all shadow-md group"
+                        title="Click to pin your video"
+                      >
+                        <video
+                          ref={localVideoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className={`w-full h-full object-cover transform ${screenSharing ? 'scale-100' : '-scale-x-100'}`}
+                        />
+                        <span className="absolute bottom-1 left-1 bg-black/70 text-[9px] font-bold text-white px-1.5 py-0.5 rounded">You</span>
+                      </div>
+                    )}
+                    {remotePeerList
+                      .filter((p) => p.socketId !== pinnedPeerId)
+                      .map((peer) => (
+                        <div
+                          key={peer.socketId}
+                          onClick={() => setPinnedPeerId(peer.socketId)}
+                          className="w-32 h-20 shrink-0 cursor-pointer rounded-xl overflow-hidden border border-slate-700 relative bg-[#09233d] hover:border-emerald-400 transition-all shadow-md group"
+                          title={`Click to pin ${peer.name}`}
+                        >
+                          <RemoteVideoTile peer={peer} layout="compact" isFeatured={false} onPin={() => setPinnedPeerId(peer.socketId)} isPinned={false} />
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              );
+            })()
+          ) : layout === 'focus' && totalParticipantsCount > 1 ? (
             <div className="w-full max-w-6xl flex gap-3 sm:gap-4 h-full" style={{ minHeight: 0 }}>
               {/* Featured / Speaker Tile — Local User */}
-              <div className="flex-1 relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center" style={{ aspectRatio: '16/9', minHeight: 200 }}>
+              <div className="flex-1 relative bg-[#09233d] border-2 border-[#20b875] rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center group" style={{ aspectRatio: '16/9', minHeight: 200 }}>
                 <video
                   ref={localVideoRef}
                   autoPlay
@@ -1243,6 +1389,18 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                     <span className="text-sm font-semibold text-emerald-200">Camera Off</span>
                   </div>
                 )}
+                {/* Pin Hover Overlay for Local User */}
+                <button
+                  type="button"
+                  onClick={() => setPinnedPeerId(pinnedPeerId === 'local' ? null : 'local')}
+                  className="absolute inset-0 m-auto w-max h-max opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[#072b1e]/95 hover:bg-[#20b875] text-white px-3.5 py-2 rounded-full text-xs font-black shadow-2xl border border-emerald-400/50 flex items-center gap-2 backdrop-blur-md cursor-pointer z-30 transform hover:scale-105 active:scale-95"
+                  title="Pin your video to entire screen"
+                >
+                  <svg className="w-3.5 h-3.5 text-emerald-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                  </svg>
+                  <span>Pin to Entire Screen</span>
+                </button>
                 {/* Featured badge */}
                 <span className="absolute top-3 left-3 z-20 bg-[#20b875] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> FEATURED
@@ -1275,7 +1433,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
               <div className="flex flex-col gap-2 sm:gap-3 overflow-y-auto custom-scrollbar shrink-0" style={{ width: '22%', minWidth: 120, maxWidth: 200 }}>
                 {remotePeerList.map((peer) => (
                   <div key={peer.socketId} className="shrink-0" style={{ aspectRatio: '4/3' }}>
-                    <RemoteVideoTile peer={peer} layout="focus-thumbnail" isFeatured={false} />
+                    <RemoteVideoTile peer={peer} layout="focus-thumbnail" isFeatured={false} onPin={() => setPinnedPeerId(peer.socketId)} isPinned={pinnedPeerId === peer.socketId} />
                   </div>
                 ))}
               </div>
@@ -1283,7 +1441,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
           ) : layout === 'compact' ? (
             <div className={`w-full max-w-6xl grid gap-2 ${compactGridCols}`}>
               {/* LOCAL USER — Compact Tile */}
-              <div className="relative bg-[#09233d] border border-[#20b875] rounded-xl overflow-hidden aspect-video shadow-lg flex items-center justify-center">
+              <div className="relative bg-[#09233d] border border-[#20b875] rounded-xl overflow-hidden aspect-video shadow-lg flex items-center justify-center group">
                 <video
                   ref={localVideoRef}
                   autoPlay
@@ -1300,6 +1458,18 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                     </div>
                   </div>
                 )}
+                {/* Pin Hover Overlay for Local User */}
+                <button
+                  type="button"
+                  onClick={() => setPinnedPeerId(pinnedPeerId === 'local' ? null : 'local')}
+                  className="absolute inset-0 m-auto w-max h-max opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[#072b1e]/95 hover:bg-[#20b875] text-white px-2.5 py-1 rounded-full text-[10px] font-black shadow-2xl border border-emerald-400/50 flex items-center gap-1 backdrop-blur-md cursor-pointer z-30"
+                  title="Pin your video to entire screen"
+                >
+                  <svg className="w-3 h-3 text-emerald-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                  </svg>
+                  <span>Pin Screen</span>
+                </button>
                 <div className="absolute bottom-1.5 left-1.5 bg-[#072b1e]/90 backdrop-blur-md px-2 py-0.5 rounded-lg border border-[#166046] flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] shrink-0"></span>
                   <span className="text-[10px] font-extrabold text-white truncate max-w-[80px]">
@@ -1321,7 +1491,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
               {/* REMOTE PEERS — Compact Tiles */}
               {remotePeerList.map((peer) => (
-                <RemoteVideoTile key={peer.socketId} peer={peer} layout="compact" isFeatured={false} />
+                <RemoteVideoTile key={peer.socketId} peer={peer} layout="compact" isFeatured={false} onPin={() => setPinnedPeerId(peer.socketId)} isPinned={pinnedPeerId === peer.socketId} />
               ))}
 
               {/* Invite card — only if alone */}
@@ -1361,6 +1531,19 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
                   </div>
                 )}
 
+                {/* Pin Hover Overlay for Local User */}
+                <button
+                  type="button"
+                  onClick={() => setPinnedPeerId(pinnedPeerId === 'local' ? null : 'local')}
+                  className="absolute inset-0 m-auto w-max h-max opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[#072b1e]/95 hover:bg-[#20b875] text-white px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-black shadow-2xl border border-emerald-400/50 flex items-center gap-1.5 backdrop-blur-md cursor-pointer z-30 transform hover:scale-105 active:scale-95"
+                  title="Pin your video to entire screen"
+                >
+                  <svg className="w-3.5 h-3.5 text-emerald-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                  </svg>
+                  <span>Pin to Entire Screen</span>
+                </button>
+
                 {/* Local Participant Info */}
                 <div className="absolute bottom-1.5 left-1.5 sm:bottom-3 sm:left-3 bg-[#072b1e]/90 backdrop-blur-md px-2 py-0.5 sm:px-3.5 sm:py-1.5 rounded-lg sm:rounded-full border border-[#166046] flex items-center gap-1 sm:gap-2 max-w-[85%] shadow-md">
                   <span className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 rounded-full bg-[#4ade80] shrink-0"></span>
@@ -1390,7 +1573,7 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
 
               {/* REMOTE PEERS WEBRTC LIVE VIDEO TILES */}
               {remotePeerList.map((peer) => (
-                <RemoteVideoTile key={peer.socketId} peer={peer} layout="gallery" isFeatured={false} />
+                <RemoteVideoTile key={peer.socketId} peer={peer} layout="gallery" isFeatured={false} onPin={() => setPinnedPeerId(peer.socketId)} isPinned={pinnedPeerId === peer.socketId} />
               ))}
 
               {/* Quick Copy Link Banner if only 1 participant */}
