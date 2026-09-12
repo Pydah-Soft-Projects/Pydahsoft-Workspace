@@ -879,67 +879,49 @@ export default function MeetingRoom({ meeting, currentUser, onLeave }) {
     }
   };
 
-  // Screen Sharing Handler (Direct Mobile Screen Sharing + Fallback)
+  // Direct Native Full Screen Sharing for Mobile & Desktop
   const toggleScreenShare = async () => {
     if (!screenSharing) {
-      let screenStream = null;
-
-      // Attempt 1: Direct Native Screen Sharing (Android Chrome & Desktop)
-      if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-        try {
-          screenStream = await navigator.mediaDevices.getDisplayMedia({
-            video: true
-          });
-        } catch (err1) {
-          console.warn('Native screen share cancelled or unsupported on this device:', err1);
-        }
-      }
-
-      // Attempt 2 (Fallback for iOS/unsupported browsers): Rear Camera Content Share
-      if (!screenStream && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        try {
-          screenStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' } },
-            audio: false
-          });
-          setToastNotification('Mobile Presentation Mode (Rear Camera Content Share)');
-          setTimeout(() => setToastNotification(null), 4000);
-        } catch (err2) {
-          console.warn('Rear camera content share fallback failed:', err2);
-        }
-      }
-
-      // Attempt 3 (Universal Mobile Fallback): Interactive Live Mobile Presentation Stream
-      if (!screenStream) {
-        screenStream = createMobilePresentationStream(
-          currentUser?.name || 'Mobile Presenter',
-          liveMeetingData?.title || meeting?.title || 'Live Meeting'
-        );
-        setToastNotification('Mobile Presentation Stream Activated');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        setToastNotification('Screen sharing is not supported on this browser version or context.');
         setTimeout(() => setToastNotification(null), 4000);
+        return;
       }
 
-      if (screenStream) {
-        screenStreamRef.current = screenStream;
-        const screenTrack = screenStream.getVideoTracks()[0];
-
-        // Replace camera video track with screen track in all peer connections
-        Object.values(peerConnectionsRef.current).forEach((pc) => {
-          const videoSender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
-          if (videoSender) {
-            videoSender.replaceTrack(screenTrack);
-          }
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: false
         });
 
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = screenStream;
+        if (screenStream) {
+          screenStreamRef.current = screenStream;
+          const screenTrack = screenStream.getVideoTracks()[0];
+
+          // Replace camera video track with screen track in all peer connections
+          Object.values(peerConnectionsRef.current).forEach((pc) => {
+            const videoSender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+            if (videoSender) {
+              videoSender.replaceTrack(screenTrack);
+            }
+          });
+
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = screenStream;
+          }
+
+          screenTrack.onended = () => {
+            stopScreenSharing();
+          };
+
+          setScreenSharing(true);
         }
-
-        screenTrack.onended = () => {
-          stopScreenSharing();
-        };
-
-        setScreenSharing(true);
+      } catch (err) {
+        console.warn('Native screen share error or cancelled by user:', err);
+        if (err.name !== 'NotAllowedError') {
+          setToastNotification('Could not start screen share: ' + (err.message || 'Permission denied'));
+          setTimeout(() => setToastNotification(null), 4000);
+        }
       }
     } else {
       stopScreenSharing();
