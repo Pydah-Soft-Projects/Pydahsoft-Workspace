@@ -496,13 +496,13 @@ export default function TeamChatPage({ currentUser }) {
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
-              disabled={!!startingCall}
+              disabled={!!activeCall}
               onClick={() => handleStartCall('video')}
               className="px-2.5 py-1.5 bg-emerald-50 hover:bg-[#20b875] text-[#20b875] hover:text-white border border-emerald-200 rounded-full transition-all duration-200 shadow-xs flex items-center gap-1.5 font-bold text-xs cursor-pointer active:scale-95 disabled:opacity-50"
               title="Start instant video call"
               aria-label="Start instant video call"
             >
-              {startingCall === 'video' ? (
+              {activeCall?.type === 'video' ? (
                 <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -513,13 +513,13 @@ export default function TeamChatPage({ currentUser }) {
             </button>
             <button
               type="button"
-              disabled={!!startingCall}
+              disabled={!!activeCall}
               onClick={() => handleStartCall('voice')}
               className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white border border-indigo-200 rounded-full transition-all duration-200 shadow-xs flex items-center gap-1.5 font-bold text-xs cursor-pointer active:scale-95 disabled:opacity-50"
               title="Start instant voice call"
               aria-label="Start instant voice call"
             >
-              {startingCall === 'voice' ? (
+              {activeCall?.type === 'voice' ? (
                 <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

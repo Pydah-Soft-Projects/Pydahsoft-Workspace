@@ -715,6 +715,43 @@ function DirectMeetingHandler({ user, onLogout }) {
   return <DashboardLayout user={user} onLogout={onLogout} initialMeetingId={meetingId} preJoinedMeeting={joinedMeeting} />;
 }
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Uncaught UI error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500 flex items-center justify-center text-rose-400 font-bold text-2xl mb-4">
+            !
+          </div>
+          <h2 className="text-xl font-bold mb-2">Something went wrong loading this view</h2>
+          <p className="text-sm text-gray-400 mb-6 max-w-md">{this.state.error?.message || 'An unexpected error occurred during rendering'}</p>
+          <button
+            onClick={() => {
+              localStorage.setItem('pydahsoft_active_tab', 'overview');
+              window.location.href = '/#/dashboard';
+              window.location.reload();
+            }}
+            className="px-5 py-2.5 bg-[#20b875] hover:bg-[#169a61] text-white font-bold rounded-xl text-xs transition-all shadow-md cursor-pointer"
+          >
+            Reset to Dashboard Overview
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function App() {
   const [user, setUser] = useState(() => {
     const storedUser = sessionStorage.getItem('pydahsoft_user') || localStorage.getItem('pydahsoft_user');
@@ -748,6 +785,55 @@ function App() {
 
   const [incomingCall, setIncomingCall] = useState(null); // { callId, callerId, callerName, callType, callerSocketId }
   const [acceptedDirectCall, setAcceptedDirectCall] = useState(null);
+
+  // Synthesize soft incoming call ringtone chime using Web Audio API
+  useEffect(() => {
+    if (!incomingCall) return;
+
+    let audioCtx;
+    let intervalId;
+
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      const playRingtone = () => {
+        if (!audioCtx || audioCtx.state === 'closed') return;
+        const now = audioCtx.currentTime;
+
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(440, now);
+        gain1.gain.setValueAtTime(0.12, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(554.37, now + 0.15);
+        gain2.gain.setValueAtTime(0.12, now + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now + 0.15);
+        osc2.stop(now + 0.5);
+      };
+
+      playRingtone();
+      intervalId = setInterval(playRingtone, 1200);
+    } catch (e) {
+      console.warn('AudioContext error:', e);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      if (audioCtx) audioCtx.close().catch(() => {});
+    };
+  }, [incomingCall]);
 
   useEffect(() => {
     if (user?._id) {
@@ -812,7 +898,7 @@ function App() {
   }, []);
 
   return (
-    <>
+    <ErrorBoundary>
       <Routes>
         <Route
           path="/"
@@ -827,6 +913,16 @@ function App() {
           element={<DirectMeetingHandler user={user} onLogout={handleLogout} />}
         />
         <Route
+          path="/dashboard"
+          element={
+            user ? (
+              <DashboardLayout user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
           path="/dashboard/*"
           element={
             user ? (
@@ -839,30 +935,56 @@ function App() {
         <Route path="*" element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} />
       </Routes>
 
-      {/* Incoming Call Dialog Notification */}
+      {/* Incoming Call Popup Overlay with Ringtone Sound & Online Indicator */}
       {incomingCall && (
-        <div className="fixed top-6 right-6 z-50 bg-slate-900 border border-slate-700 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-bounce">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center font-bold text-lg text-emerald-400">
-            {incomingCall.callerName ? incomingCall.callerName.charAt(0).toUpperCase() : 'U'}
+        <div className="fixed top-6 right-6 z-50 bg-[#0d131e]/95 backdrop-blur-2xl border-2 border-emerald-500/80 text-white p-5 rounded-3xl shadow-2xl flex items-center gap-5 max-w-md w-full animate-in fade-in slide-in-from-top duration-300">
+          {/* Avatar with pulsing ring sound radar effect */}
+          <div className="relative shrink-0">
+            <div className="w-14 h-14 rounded-full bg-slate-800 border-2 border-emerald-400 flex items-center justify-center font-black text-xl text-white shadow-xl overflow-hidden">
+              {incomingCall.callerName ? incomingCall.callerName.charAt(0).toUpperCase() : 'U'}
+            </div>
+            {/* Animated Ringing Radar Wave */}
+            <div className="absolute -inset-1.5 rounded-full border-2 border-emerald-400 animate-ping opacity-75 pointer-events-none" />
           </div>
-          <div>
-            <h4 className="font-bold text-sm text-white">{incomingCall.callerName}</h4>
-            <p className="text-xs text-gray-400 capitalize">Incoming {incomingCall.callType} call...</p>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider">
+                Online • Incoming Call
+              </span>
+            </div>
+            <h4 className="font-extrabold text-base text-white truncate leading-tight">
+              {incomingCall.callerName || 'Colleague'}
+            </h4>
+            <p className="text-xs text-gray-300 font-medium capitalize mt-0.5 flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 text-emerald-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              {incomingCall.callType === 'video' ? '1-on-1 Video Call...' : '1-on-1 Voice Call...'}
+            </p>
           </div>
-          <div className="flex items-center gap-2 ml-2">
+
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={handleAcceptIncomingCall}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+              className="w-11 h-11 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all cursor-pointer"
+              title="Accept Call"
             >
-              Accept
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.27c1.21.49 2.53.76 3.88.76a1 1 0 011 1V20a1 1 0 01-1 1C10.07 21 3 14.84 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.27 2.67.76 3.88a1 1 0 01-.27 1.11l-2.2 2.2z" />
+              </svg>
             </button>
             <button
               type="button"
               onClick={handleDeclineIncomingCall}
-              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+              className="w-11 h-11 rounded-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all cursor-pointer"
+              title="Decline Call"
             >
-              Decline
+              <svg className="w-5 h-5 text-white rotate-[135deg]" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.27c1.21.49 2.53.76 3.88.76a1 1 0 011 1V20a1 1 0 01-1 1C10.07 21 3 14.84 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.27 2.67.76 3.88a1 1 0 01-.27 1.11l-2.2 2.2z" />
+              </svg>
             </button>
           </div>
         </div>
@@ -877,7 +999,7 @@ function App() {
           onClose={() => setAcceptedDirectCall(null)}
         />
       )}
-    </>
+    </ErrorBoundary>
   );
 }
 
