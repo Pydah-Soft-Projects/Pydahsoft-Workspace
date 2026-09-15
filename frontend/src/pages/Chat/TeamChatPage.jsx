@@ -13,7 +13,22 @@ export default function TeamChatPage({ currentUser }) {
   const [sending, setSending] = useState(false);
   const [mobileView, setMobileView] = useState('list'); // 'list' | 'chat'
   const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
-  const [activeCall, setActiveCall] = useState(null); // { type: 'video' | 'voice', recipient }
+  const [activeCall, setActiveCall] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('pydahsoft_active_direct_call');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (activeCall) {
+      sessionStorage.setItem('pydahsoft_active_direct_call', JSON.stringify(activeCall));
+    } else {
+      sessionStorage.removeItem('pydahsoft_active_direct_call');
+    }
+  }, [activeCall]);
 
   const handleStartCall = (callType = 'video') => {
     setActiveCall({ type: callType, recipient: selectedRecipient });
