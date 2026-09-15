@@ -917,7 +917,7 @@ function App() {
         type: incomingCall.callType,
         recipient: incomingCall.isGroupCall
           ? { type: incomingCall.recipient?.type || 'all', name: incomingCall.callerName ? `${incomingCall.callerName} (Group)` : 'Everyone' }
-          : { name: incomingCall.callerName, _id: incomingCall.callerId }
+          : { name: incomingCall.callerName, _id: incomingCall.callerId, socketId: incomingCall.callerSocketId }
       });
       setIncomingCall(null);
     }

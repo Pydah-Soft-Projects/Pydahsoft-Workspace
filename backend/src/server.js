@@ -203,7 +203,8 @@ io.on('connection', (socket) => {
     if (callerSocketId) {
       io.to(callerSocketId).emit('direct-call-accepted', {
         callId,
-        responderName
+        responderName,
+        callerSocketId: socket.id
       });
     }
   });

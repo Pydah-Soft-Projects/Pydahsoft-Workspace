@@ -59,7 +59,7 @@ export default function DirectCallModal({ callType = 'video', recipient, current
   const peerConnectionRef = useRef(null);
   const peersMapRef = useRef(new Map());
   const remoteStreamRef = useRef(null);
-  const remoteCallerSocketIdRef = useRef(null);
+  const remoteCallerSocketIdRef = useRef(recipient?.socketId || null);
   const pendingCandidatesRef = useRef(new Map());
   const timerRef = useRef(null);
 
@@ -107,9 +107,25 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         { urls: 'stun:stun3.l.google.com:19302' },
         { urls: 'stun:stun4.l.google.com:19302' },
         { urls: 'stun:global.stun.twilio.com:3478' },
-        { urls: 'stun:stun.services.mozilla.com' }
+        { urls: 'stun:openrelay.metered.ca:80' },
+        {
+          urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        },
+        {
+          urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
       ],
-      iceCandidatePoolSize: 10
+      iceCandidatePoolSize: 10,
+      iceTransportPolicy: 'all'
     };
     const pc = new RTCPeerConnection(pcConfig);
     peerConnectionRef.current = pc;
@@ -135,6 +151,14 @@ export default function DirectCallModal({ callType = 'video', recipient, current
           targetSocketId: remoteCallerSocketIdRef.current,
           candidate: event.candidate
         });
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      if (pc.iceConnectionState === 'failed') {
+        if (typeof pc.restartIce === 'function') {
+          pc.restartIce();
+        }
       }
     };
 
@@ -187,6 +211,14 @@ export default function DirectCallModal({ callType = 'video', recipient, current
             targetSocketId: socketId,
             candidate: event.candidate
           });
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        if (pc.iceConnectionState === 'failed') {
+          if (typeof pc.restartIce === 'function') {
+            pc.restartIce();
+          }
         }
       };
 
