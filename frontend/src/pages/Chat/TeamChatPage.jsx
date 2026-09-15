@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchApi } from '../../config/api';
+import DirectCallModal from '../../components/Chat/DirectCallModal';
 
 export default function TeamChatPage({ currentUser }) {
   const [staffList, setStaffList] = useState([]);
@@ -12,6 +13,11 @@ export default function TeamChatPage({ currentUser }) {
   const [sending, setSending] = useState(false);
   const [mobileView, setMobileView] = useState('list'); // 'list' | 'chat'
   const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'admin' | 'lead' | 'employee'
+  const [activeCall, setActiveCall] = useState(null); // { type: 'video' | 'voice', recipient }
+
+  const handleStartCall = (callType = 'video') => {
+    setActiveCall({ type: callType, recipient: selectedRecipient });
+  };
 
   const messagesEndRef = useRef(null);
   const chatStreamRef = useRef(null);
@@ -487,30 +493,44 @@ export default function TeamChatPage({ currentUser }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
-              className="p-2.5 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors"
-              title="Start video call"
-              aria-label="Start video call"
+              disabled={!!startingCall}
+              onClick={() => handleStartCall('video')}
+              className="px-2.5 py-1.5 bg-emerald-50 hover:bg-[#20b875] text-[#20b875] hover:text-white border border-emerald-200 rounded-full transition-all duration-200 shadow-xs flex items-center gap-1.5 font-bold text-xs cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Start instant video call"
+              aria-label="Start instant video call"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
+              {startingCall === 'video' ? (
+                <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              )}
+              <span className="hidden sm:inline">Video Call</span>
             </button>
             <button
               type="button"
-              className="p-2.5 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors"
-              title="Start voice call"
-              aria-label="Start voice call"
+              disabled={!!startingCall}
+              onClick={() => handleStartCall('voice')}
+              className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white border border-indigo-200 rounded-full transition-all duration-200 shadow-xs flex items-center gap-1.5 font-bold text-xs cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Start instant voice call"
+              aria-label="Start instant voice call"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M3 5a2 2 0 012-2h2.28a1 1 0 01.95.684l1.1 3.3a1 1 0 01-.27 1.04L7.6 9.49a16 16 0 006.91 6.91l1.46-1.46a1 1 0 011.04-.27l3.3 1.1A1 1 0 0121 16.72V19a2 2 0 01-2 2h-1C9.16 21 3 14.84 3 7V5z" />
-              </svg>
+              {startingCall === 'voice' ? (
+                <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h2.28a1 1 0 01.95.684l1.1 3.3a1 1 0 01-.27 1.04L7.6 9.49a16 16 0 006.91 6.91l1.46-1.46a1 1 0 011.04-.27l3.3 1.1A1 1 0 0121 16.72V19a2 2 0 01-2 2h-1C9.16 21 3 14.84 3 7V5z" />
+                </svg>
+              )}
+              <span className="hidden sm:inline">Voice Call</span>
             </button>
             <button
               type="button"
-              className="p-2.5 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors"
+              className="p-2 text-gray-500 hover:text-[#20b875] hover:bg-emerald-50 rounded-full transition-colors cursor-pointer"
               title="Chat options"
               aria-label="Chat options"
             >
@@ -656,6 +676,15 @@ export default function TeamChatPage({ currentUser }) {
           </button>
         </div>
       </div>
+
+      {activeCall && (
+        <DirectCallModal
+          callType={activeCall.type}
+          recipient={activeCall.recipient}
+          currentUser={currentUser}
+          onClose={() => setActiveCall(null)}
+        />
+      )}
     </div>
   );
 }

@@ -27,6 +27,8 @@ export default function Login({ onBack, onLoginSuccess }) {
         if (data.data.token) {
           sessionStorage.setItem('pydahsoft_token', data.data.token);
           sessionStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
+          localStorage.setItem('pydahsoft_token', data.data.token);
+          localStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
         }
         if (onLoginSuccess) onLoginSuccess(data.data);
       } else {

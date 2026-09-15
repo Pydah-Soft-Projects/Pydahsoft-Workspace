@@ -62,6 +62,8 @@ export default function Login({ onLoginSuccess }) {
         if (data.data.token) {
           sessionStorage.setItem('pydahsoft_token', data.data.token);
           sessionStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
+          localStorage.setItem('pydahsoft_token', data.data.token);
+          localStorage.setItem('pydahsoft_user', JSON.stringify(data.data));
         }
         const pendingMeetingId = localStorage.getItem('pydahsoft_pending_meeting_id');
         if (pendingMeetingId) {

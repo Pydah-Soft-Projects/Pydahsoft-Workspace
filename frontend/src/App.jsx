@@ -7,25 +7,27 @@ import { fetchApi } from './config/api';
 import { getSocket } from './config/socket';
 import './App.css';
 
-// Lazy-loaded page components for ultra-fast loading and bundle optimization
-const DashboardOverview = lazy(() => import('./pages/Dashboard/DashboardOverview'));
-const TeamChatPage = lazy(() => import('./pages/Chat/TeamChatPage'));
-const UserManagement = lazy(() => import('./pages/UserManagement/UserManagement'));
-const EmployeeManagement = lazy(() => import('./pages/Employees/EmployeeManagement'));
-const ProjectsAndModules = lazy(() => import('./pages/Projects/ProjectsAndModules'));
-const TeamsAndTasks = lazy(() => import('./pages/Teams/TeamsAndTasks'));
-const TimeTracker = lazy(() => import('./pages/TimeTracking/TimeTracker'));
-const TaskReviewQueue = lazy(() => import('./pages/Reviews/TaskReviewQueue'));
-const DailyWorkPlans = lazy(() => import('./pages/DailyPlans/DailyWorkPlans'));
-const PerformanceAndReports = lazy(() => import('./pages/Analytics/PerformanceAndReports'));
-const AuditLogsView = lazy(() => import('./pages/AuditLogs/AuditLogsView'));
-const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
-const MeetingsPage = lazy(() => import('./pages/Meetings/MeetingsPage'));
-
+import DashboardOverview from './pages/Dashboard/DashboardOverview';
+import TeamChatPage from './pages/Chat/TeamChatPage';
+import UserManagement from './pages/UserManagement/UserManagement';
+import EmployeeManagement from './pages/Employees/EmployeeManagement';
+import ProjectsAndModules from './pages/Projects/ProjectsAndModules';
+import TeamsAndTasks from './pages/Teams/TeamsAndTasks';
+import TimeTracker from './pages/TimeTracking/TimeTracker';
+import TaskReviewQueue from './pages/Reviews/TaskReviewQueue';
+import DailyWorkPlans from './pages/DailyPlans/DailyWorkPlans';
+import PerformanceAndReports from './pages/Analytics/PerformanceAndReports';
+import AuditLogsView from './pages/AuditLogs/AuditLogsView';
+import SettingsPage from './pages/Settings/SettingsPage';
+import MeetingsPage from './pages/Meetings/MeetingsPage';
 import LoadingSpinner from './components/Loader/LoadingSpinner';
+import DirectCallModal from './components/Chat/DirectCallModal';
 
-// Fast loading spinner fallback
-const PageLoader = () => <LoadingSpinner />;
+const PageLoader = () => (
+  <div className="flex items-center justify-center p-12 w-full min-h-[300px]">
+    <div className="w-8 h-8 border-3 border-[#20b875] border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmployeeId }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -215,6 +217,16 @@ function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting })
     setActiveTabState(tab);
     localStorage.setItem('pydahsoft_active_tab', tab);
   };
+
+  useEffect(() => {
+    const handleSwitchTab = (e) => {
+      if (e.detail) {
+        setActiveTab(e.detail);
+      }
+    };
+    window.addEventListener('pydahsoft:switch-tab', handleSwitchTab);
+    return () => window.removeEventListener('pydahsoft:switch-tab', handleSwitchTab);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('pydahsoft_active_tab', activeTab);
@@ -734,6 +746,9 @@ function App() {
     }
   }, []);
 
+  const [incomingCall, setIncomingCall] = useState(null); // { callId, callerId, callerName, callType, callerSocketId }
+  const [acceptedDirectCall, setAcceptedDirectCall] = useState(null);
+
   useEffect(() => {
     if (user?._id) {
       const socket = getSocket();
@@ -741,8 +756,52 @@ function App() {
         socket.connect();
       }
       socket.emit('register-user', { userId: user._id });
+
+      const handleIncomingDirectCall = (callData) => {
+        setIncomingCall(callData);
+      };
+
+      const handleDirectCallEnded = () => {
+        setIncomingCall(null);
+        setAcceptedDirectCall(null);
+      };
+
+      socket.on('incoming-direct-call', handleIncomingDirectCall);
+      socket.on('direct-call-ended', handleDirectCallEnded);
+
+      return () => {
+        socket.off('incoming-direct-call', handleIncomingDirectCall);
+        socket.off('direct-call-ended', handleDirectCallEnded);
+      };
     }
   }, [user]);
+
+  const handleAcceptIncomingCall = () => {
+    if (incomingCall) {
+      const socket = getSocket();
+      socket.emit('accept-direct-call', {
+        callerSocketId: incomingCall.callerSocketId,
+        callId: incomingCall.callId,
+        responderName: user?.name
+      });
+      setAcceptedDirectCall({
+        type: incomingCall.callType,
+        recipient: { name: incomingCall.callerName, _id: incomingCall.callerId }
+      });
+      setIncomingCall(null);
+    }
+  };
+
+  const handleDeclineIncomingCall = () => {
+    if (incomingCall) {
+      const socket = getSocket();
+      socket.emit('decline-direct-call', {
+        callerSocketId: incomingCall.callerSocketId,
+        callId: incomingCall.callId
+      });
+      setIncomingCall(null);
+    }
+  };
 
   useEffect(() => {
     const handleSessionExpired = () => {
@@ -753,28 +812,72 @@ function App() {
   }, []);
 
   return (
-    <Routes>
-      <Route path="/" element={<Landing user={user} />} />
-      <Route
-        path="/login"
-        element={<Login onLoginSuccess={(loggedInUser) => setUser(loggedInUser)} />}
-      />
-      <Route
-        path="/meetings/:meetingId"
-        element={<DirectMeetingHandler user={user} onLogout={handleLogout} />}
-      />
-      <Route
-        path="/dashboard/*"
-        element={
-          user ? (
-            <DashboardLayout user={user} onLogout={handleLogout} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route
+          path="/"
+          element={user ? <Navigate to="/dashboard" replace /> : <Landing user={user} />}
+        />
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/dashboard" replace /> : <Login onLoginSuccess={(loggedInUser) => setUser(loggedInUser)} />}
+        />
+        <Route
+          path="/meetings/:meetingId"
+          element={<DirectMeetingHandler user={user} onLogout={handleLogout} />}
+        />
+        <Route
+          path="/dashboard/*"
+          element={
+            user ? (
+              <DashboardLayout user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route path="*" element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} />
+      </Routes>
+
+      {/* Incoming Call Dialog Notification */}
+      {incomingCall && (
+        <div className="fixed top-6 right-6 z-50 bg-slate-900 border border-slate-700 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-bounce">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center font-bold text-lg text-emerald-400">
+            {incomingCall.callerName ? incomingCall.callerName.charAt(0).toUpperCase() : 'U'}
+          </div>
+          <div>
+            <h4 className="font-bold text-sm text-white">{incomingCall.callerName}</h4>
+            <p className="text-xs text-gray-400 capitalize">Incoming {incomingCall.callType} call...</p>
+          </div>
+          <div className="flex items-center gap-2 ml-2">
+            <button
+              type="button"
+              onClick={handleAcceptIncomingCall}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+            >
+              Accept
+            </button>
+            <button
+              type="button"
+              onClick={handleDeclineIncomingCall}
+              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+            >
+              Decline
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Direct Call Modal for Recipient when call is accepted */}
+      {acceptedDirectCall && (
+        <DirectCallModal
+          callType={acceptedDirectCall.type}
+          recipient={acceptedDirectCall.recipient}
+          currentUser={user}
+          onClose={() => setAcceptedDirectCall(null)}
+        />
+      )}
+    </>
   );
 }
 

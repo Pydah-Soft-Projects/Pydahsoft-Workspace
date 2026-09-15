@@ -277,13 +277,13 @@ body.login-page-open::-webkit-scrollbar,
 }
 
 .loader-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
+  position: relative;
+  width: 100%;
+  min-height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(247, 252, 249, 0.76);
+  background: transparent;
 }
 
 .loader-screen > div {

@@ -174,6 +174,43 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Direct Private 1-on-1 Chat Calls (Separate from Public Meetings)
+  socket.on('start-direct-call', ({ targetUserId, callType, callerName, callerId }) => {
+    if (targetUserId) {
+      io.to(`user:${targetUserId.toString()}`).emit('incoming-direct-call', {
+        callId: `direct-${socket.id}-${Date.now()}`,
+        callerId: callerId || socket.userId,
+        callerName: callerName || socket.userName || 'Colleague',
+        callType: callType || 'video',
+        callerSocketId: socket.id
+      });
+    }
+  });
+
+  socket.on('accept-direct-call', ({ callerSocketId, callId, responderName }) => {
+    if (callerSocketId) {
+      io.to(callerSocketId).emit('direct-call-accepted', {
+        callId,
+        responderName
+      });
+    }
+  });
+
+  socket.on('decline-direct-call', ({ callerSocketId, callId }) => {
+    if (callerSocketId) {
+      io.to(callerSocketId).emit('direct-call-declined', { callId });
+    }
+  });
+
+  socket.on('end-direct-call', ({ targetUserId, callerSocketId }) => {
+    if (targetUserId) {
+      io.to(`user:${targetUserId.toString()}`).emit('direct-call-ended');
+    }
+    if (callerSocketId) {
+      io.to(callerSocketId).emit('direct-call-ended');
+    }
+  });
+
   socket.on('leave-room', handleLeaveRoom);
   socket.on('disconnect', handleLeaveRoom);
 });
