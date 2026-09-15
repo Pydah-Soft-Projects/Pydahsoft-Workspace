@@ -878,9 +878,26 @@ function App() {
       if (!socket.connected) {
         socket.connect();
       }
-      socket.emit('register-user', { userId: user._id });
+
+      const registerUserChannel = () => {
+        socket.emit('register-user', { userId: String(user._id) });
+      };
+
+      registerUserChannel();
+      socket.on('connect', registerUserChannel);
 
       const handleIncomingDirectCall = (callData) => {
+        // Do not ring caller themselves if receiving broadcast
+        if (callData.callerId && String(callData.callerId) === String(user._id)) {
+          return;
+        }
+        // For 1-on-1 calls, verify targetUserId matches current user ID
+        if (!callData.isGroupCall && callData.targetUserId) {
+          if (String(callData.targetUserId) !== String(user._id)) {
+            return;
+          }
+        }
+        // Suppress if user is already in an active call session
         const hasActiveCall = Boolean(acceptedDirectCall) || Boolean(sessionStorage.getItem('pydahsoft_active_direct_call'));
         if (hasActiveCall) {
           console.log('[Socket.io] Suppressing incoming direct call banner during active call session.');
@@ -899,6 +916,7 @@ function App() {
       socket.on('direct-call-ended', handleDirectCallEnded);
 
       return () => {
+        socket.off('connect', registerUserChannel);
         socket.off('incoming-direct-call', handleIncomingDirectCall);
         socket.off('direct-call-ended', handleDirectCallEnded);
       };
@@ -917,7 +935,7 @@ function App() {
         type: incomingCall.callType,
         recipient: incomingCall.isGroupCall
           ? { type: incomingCall.recipient?.type || 'all', name: incomingCall.callerName ? `${incomingCall.callerName} (Group)` : 'Everyone' }
-          : { name: incomingCall.callerName, _id: incomingCall.callerId }
+          : { name: incomingCall.callerName, _id: incomingCall.callerId, socketId: incomingCall.callerSocketId }
       });
       setIncomingCall(null);
     }

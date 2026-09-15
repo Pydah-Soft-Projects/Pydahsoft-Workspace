@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getSocket } from '../../config/socket';
+import { fetchApi } from '../../config/api';
 
 function RemoteVideoTile({ peer, fallbackName }) {
   const [hasVideo, setHasVideo] = useState(false);
@@ -59,7 +60,8 @@ export default function DirectCallModal({ callType = 'video', recipient, current
   const peerConnectionRef = useRef(null);
   const peersMapRef = useRef(new Map());
   const remoteStreamRef = useRef(null);
-  const remoteCallerSocketIdRef = useRef(null);
+  const remoteCallerSocketIdRef = useRef(recipient?.socketId || null);
+  const pendingCandidatesRef = useRef(new Map());
   const timerRef = useRef(null);
 
   // Store active call in sessionStorage so refresh (F5) doesn't re-trigger incoming call banner ring popup
@@ -71,6 +73,20 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       );
     } catch (e) {}
   }, [callType, recipient, isIncoming]);
+
+  // Process buffered ICE candidates once remote description is set
+  const processPendingCandidates = async (pc, key = 'direct') => {
+    if (!pc || !pc.remoteDescription) return;
+    const list = pendingCandidatesRef.current.get(key) || [];
+    while (list.length > 0) {
+      const candidate = list.shift();
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.warn('Buffered ICE candidate error:', e);
+      }
+    }
+  };
 
   // Initialize Camera & Microphone media stream & Socket direct call signaling ONLY ONCE on mount
   useEffect(() => {
@@ -87,8 +103,30 @@ export default function DirectCallModal({ callType = 'video', recipient, current
     const pcConfig = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-      ]
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' },
+        { urls: 'stun:openrelay.metered.ca:80' },
+        {
+          urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        },
+        {
+          urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
+      ],
+      iceCandidatePoolSize: 10,
+      iceTransportPolicy: 'all'
     };
     const pc = new RTCPeerConnection(pcConfig);
     peerConnectionRef.current = pc;
@@ -117,8 +155,17 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       }
     };
 
+    pc.oniceconnectionstatechange = () => {
+      if (pc.iceConnectionState === 'failed') {
+        if (typeof pc.restartIce === 'function') {
+          pc.restartIce();
+        }
+      }
+    };
+
     // Emit direct call invite to target person or broadcast to group/everyone if caller
-    const targetUserId = recipient?.data?._id || recipient?._id;
+    const rawTargetId = recipient?.data?._id || recipient?._id;
+    const targetUserId = rawTargetId ? String(rawTargetId) : null;
     const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
     if (!isIncoming) {
       socket.emit('start-direct-call', {
@@ -169,6 +216,14 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         }
       };
 
+      pc.oniceconnectionstatechange = () => {
+        if (pc.iceConnectionState === 'failed') {
+          if (typeof pc.restartIce === 'function') {
+            pc.restartIce();
+          }
+        }
+      };
+
       return pc;
     };
 
@@ -187,7 +242,7 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       if (isMounted) setCallStatus('Connected');
       if (callerSocketId) remoteCallerSocketIdRef.current = callerSocketId;
       try {
-        if (peerConnectionRef.current) {
+        if (peerConnectionRef.current && peerConnectionRef.current.signalingState === 'stable') {
           if (localStreamRef.current) {
             localStreamRef.current.getTracks().forEach((track) => {
               const senders = peerConnectionRef.current.getSenders();
@@ -209,6 +264,19 @@ export default function DirectCallModal({ callType = 'video', recipient, current
     const handleCallDeclined = () => {
       if (isMounted) {
         setCallStatus('Declined');
+        const rawTargetId = recipient?.data?._id || recipient?._id;
+        const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
+        if (rawTargetId && !isGroupCall) {
+          fetchApi('/chat/send', {
+            method: 'POST',
+            body: JSON.stringify({
+              recipientType: 'individual',
+              recipientId: rawTargetId,
+              recipientName: recipient?.data?.name || recipient?.name,
+              message: `CALL_LOG|${callType}|Call declined`
+            })
+          }).catch((err) => console.warn('Failed to log call message:', err));
+        }
         setTimeout(() => {
           if (isMounted) onClose();
         }, 1500);
@@ -236,7 +304,12 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         if (callerSocketId) remoteCallerSocketIdRef.current = callerSocketId;
         const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
         const pc = (isGroupCall && callerSocketId) ? getOrCreatePeerConnection(callerSocketId, callerName) : peerConnectionRef.current;
-        if (pc) {
+        if (pc && pc.signalingState !== 'closed') {
+          if (pc.signalingState !== 'stable') {
+            try {
+              await pc.setLocalDescription({ type: 'rollback' });
+            } catch (e) {}
+          }
           if (localStreamRef.current) {
             localStreamRef.current.getTracks().forEach((track) => {
               const senders = pc.getSenders();
@@ -247,6 +320,7 @@ export default function DirectCallModal({ callType = 'video', recipient, current
             });
           }
           await pc.setRemoteDescription(new RTCSessionDescription(offer));
+          await processPendingCandidates(pc, isGroupCall ? callerSocketId : 'direct');
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           socket.emit('webrtc-answer', { callerSocketId, answer });
@@ -262,8 +336,9 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         if (responderSocketId) remoteCallerSocketIdRef.current = responderSocketId;
         const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
         const pc = (isGroupCall && responderSocketId) ? getOrCreatePeerConnection(responderSocketId) : peerConnectionRef.current;
-        if (pc) {
+        if (pc && pc.signalingState === 'have-local-offer') {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          await processPendingCandidates(pc, isGroupCall ? responderSocketId : 'direct');
           if (isMounted) setCallStatus('Connected');
         }
       } catch (err) {
@@ -276,8 +351,17 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         if (callerSocketId) remoteCallerSocketIdRef.current = callerSocketId;
         const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
         const pc = (isGroupCall && callerSocketId) ? getOrCreatePeerConnection(callerSocketId) : peerConnectionRef.current;
+        const key = (isGroupCall && callerSocketId) ? callerSocketId : 'direct';
+
         if (candidate && pc) {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          if (pc.remoteDescription && pc.signalingState !== 'closed') {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } else {
+            if (!pendingCandidatesRef.current.has(key)) {
+              pendingCandidatesRef.current.set(key, []);
+            }
+            pendingCandidatesRef.current.get(key).push(candidate);
+          }
         }
       } catch (err) {
         console.warn('WebRTC candidate error:', err);
@@ -339,8 +423,8 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         if (isGroupCall) {
           socket.emit('join-group-call', { userName: currentUser?.name || 'Colleague' });
         } else {
-          // 1-on-1 Call: Send WebRTC offer with local tracks attached
-          if (peerConnectionRef.current) {
+          // 1-on-1 Call: Send WebRTC offer with local tracks attached IF signaling state is stable
+          if (peerConnectionRef.current && peerConnectionRef.current.signalingState === 'stable') {
             try {
               const offer = await peerConnectionRef.current.createOffer();
               await peerConnectionRef.current.setLocalDescription(offer);
@@ -517,24 +601,52 @@ export default function DirectCallModal({ callType = 'video', recipient, current
   // ONLY this function ends/cuts the call
   const handleEndCall = (e) => {
     if (e) e.stopPropagation();
+
     try {
+      const rawTargetId = recipient?.data?._id || recipient?._id;
+      const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
+
+      if (rawTargetId && !isGroupCall) {
+        let statusText = 'Call ended';
+        if (callStatus === 'Declined') {
+          statusText = 'Call declined';
+        } else if (callStatus === 'Calling...' || callDuration === 0) {
+          statusText = 'No answer';
+        } else if (callDuration > 0) {
+          statusText = `Call ended • ${formatTime(callDuration)}`;
+        }
+
+        fetchApi('/chat/send', {
+          method: 'POST',
+          body: JSON.stringify({
+            recipientType: 'individual',
+            recipientId: rawTargetId,
+            recipientName: recipient?.data?.name || recipient?.name,
+            message: `CALL_LOG|${callType}|${statusText}`
+          })
+        }).catch((err) => console.warn('Failed to log call message:', err));
+      }
+
       sessionStorage.removeItem('pydahsoft_active_direct_call');
       const socket = getSocket();
-      const targetUserId = recipient?.data?._id || recipient?._id;
-      const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
       socket.emit('end-direct-call', {
-        targetUserId,
+        targetUserId: rawTargetId,
         callerSocketId: socket.id,
         isGroupCall
       });
-    } catch (err) {}
+    } catch (err) {
+      console.warn('Error during end call sequence:', err);
+    }
 
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((t) => t.stop());
-    }
-    if (screenStreamRef.current) {
-      screenStreamRef.current.getTracks().forEach((t) => t.stop());
-    }
+    try {
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+    } catch (e) {}
+
     onClose();
   };
 
@@ -875,20 +987,6 @@ export default function DirectCallModal({ callType = 'video', recipient, current
             </svg>
           </button>
 
-          {/* Invite Participants Button */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              showToast('Call invite sent to recipient');
-            }}
-            className="p-1.5 sm:p-2.5 text-gray-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
-            title="Invite Participants"
-          >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
-          </button>
         </div>
 
         {/* RIGHT CONTROL: Red End Call Circle Button */}
