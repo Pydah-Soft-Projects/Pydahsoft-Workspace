@@ -1,6 +1,45 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getSocket } from '../../config/socket';
 
+function RemoteVideoTile({ peer, fallbackName }) {
+  const [hasVideo, setHasVideo] = useState(false);
+  const name = peer?.name || fallbackName || 'Group Member';
+  const letter = name ? name.charAt(0).toUpperCase() : 'M';
+
+  return (
+    <div className="bg-slate-900/90 rounded-xl border border-slate-700/80 shadow-lg relative overflow-hidden flex flex-col items-center justify-center min-h-[140px]">
+      <video
+        ref={(el) => {
+          if (el && peer?.stream && el.srcObject !== peer.stream) {
+            el.srcObject = peer.stream;
+            el.muted = false;
+            el.volume = 1.0;
+            el.play().catch(() => {});
+            setHasVideo(true);
+          }
+        }}
+        autoPlay
+        playsInline
+        className={`w-full h-full object-cover ${hasVideo ? 'block' : 'hidden'}`}
+      />
+      {!hasVideo && (
+        <div className="flex flex-col items-center justify-center p-4 text-center">
+          <div className="w-12 h-12 rounded-full bg-slate-800 border-2 border-emerald-500 flex items-center justify-center text-white text-lg font-bold shadow-md mb-1.5 relative">
+            {letter}
+            <div className="absolute inset-0 rounded-full border border-emerald-500 animate-pulse" />
+          </div>
+          <p className="text-white text-xs font-bold truncate max-w-[120px]">{name}</p>
+          <p className="text-emerald-400 text-[10px] font-semibold mt-0.5">Live Participant</p>
+        </div>
+      )}
+      <div className="absolute bottom-2 left-2 bg-slate-900/85 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-extrabold text-white flex items-center gap-1.5 border border-slate-700/50 z-20">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+        {name}
+      </div>
+    </div>
+  );
+}
+
 export default function DirectCallModal({ callType = 'video', recipient, currentUser, isIncoming = false, onClose }) {
   const [micOn, setMicOn] = useState(true);
   const [videoOn, setVideoOn] = useState(callType === 'video');
@@ -11,13 +50,27 @@ export default function DirectCallModal({ callType = 'video', recipient, current
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
+  const [remotePeers, setRemotePeers] = useState([]);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const localStreamRef = useRef(null);
   const screenStreamRef = useRef(null);
   const peerConnectionRef = useRef(null);
+  const peersMapRef = useRef(new Map());
+  const remoteStreamRef = useRef(null);
+  const remoteCallerSocketIdRef = useRef(null);
   const timerRef = useRef(null);
+
+  // Store active call in sessionStorage so refresh (F5) doesn't re-trigger incoming call banner ring popup
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        'pydahsoft_active_direct_call',
+        JSON.stringify({ type: callType, recipient, isIncoming })
+      );
+    } catch (e) {}
+  }, [callType, recipient, isIncoming]);
 
   // Initialize Camera & Microphone media stream & Socket direct call signaling ONLY ONCE on mount
   useEffect(() => {
@@ -41,11 +94,14 @@ export default function DirectCallModal({ callType = 'video', recipient, current
     peerConnectionRef.current = pc;
 
     pc.ontrack = (event) => {
-      if (remoteVideoRef.current && event.streams && event.streams[0]) {
-        remoteVideoRef.current.srcObject = event.streams[0];
-        remoteVideoRef.current.muted = false;
-        remoteVideoRef.current.volume = 1.0;
-        remoteVideoRef.current.play().catch(() => {});
+      if (event.streams && event.streams[0]) {
+        remoteStreamRef.current = event.streams[0];
+        if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== event.streams[0]) {
+          remoteVideoRef.current.srcObject = event.streams[0];
+          remoteVideoRef.current.muted = false;
+          remoteVideoRef.current.volume = 1.0;
+          remoteVideoRef.current.play().catch(() => {});
+        }
         if (isMounted) setHasRemoteVideo(true);
       }
     };
@@ -55,29 +111,95 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         const targetUserId = recipient?.data?._id || recipient?._id;
         socket.emit('webrtc-candidate', {
           targetUserId,
+          targetSocketId: remoteCallerSocketIdRef.current,
           candidate: event.candidate
         });
       }
     };
 
-    // Emit direct call invite to target person if caller
+    // Emit direct call invite to target person or broadcast to group/everyone if caller
     const targetUserId = recipient?.data?._id || recipient?._id;
-    if (targetUserId && !isIncoming) {
+    const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
+    if (!isIncoming) {
       socket.emit('start-direct-call', {
         targetUserId,
+        isGroupCall,
+        recipientType: recipient?.type || 'user',
         callType,
         callerName: currentUser?.name || 'Colleague',
         callerId: currentUser?._id
       });
     }
 
-    const handleCallAccepted = async () => {
+    const getOrCreatePeerConnection = (socketId, peerName) => {
+      if (peersMapRef.current.has(socketId)) {
+        return peersMapRef.current.get(socketId);
+      }
+      const pc = new RTCPeerConnection(pcConfig);
+      peersMapRef.current.set(socketId, pc);
+
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => {
+          pc.addTrack(track, localStreamRef.current);
+        });
+      }
+
+      pc.ontrack = (event) => {
+        if (event.streams && event.streams[0]) {
+          const stream = event.streams[0];
+          if (isMounted) {
+            setRemotePeers((prev) => {
+              const exists = prev.some((p) => p.id === socketId);
+              if (exists) {
+                return prev.map((p) => (p.id === socketId ? { ...p, stream, name: peerName || p.name } : p));
+              }
+              return [...prev, { id: socketId, name: peerName || `Member ${prev.length + 1}`, stream }];
+            });
+            setHasRemoteVideo(true);
+          }
+        }
+      };
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit('webrtc-candidate', {
+            targetSocketId: socketId,
+            candidate: event.candidate
+          });
+        }
+      };
+
+      return pc;
+    };
+
+    const handleUserJoinedGroupCall = async ({ socketId, userName }) => {
+      try {
+        const pc = getOrCreatePeerConnection(socketId, userName);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit('webrtc-offer', { targetSocketId: socketId, offer, callerName: currentUser?.name });
+      } catch (e) {
+        console.warn('Error creating offer for joined user:', e);
+      }
+    };
+
+    const handleCallAccepted = async ({ responderName, callerSocketId } = {}) => {
       if (isMounted) setCallStatus('Connected');
+      if (callerSocketId) remoteCallerSocketIdRef.current = callerSocketId;
       try {
         if (peerConnectionRef.current) {
+          if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach((track) => {
+              const senders = peerConnectionRef.current.getSenders();
+              const exists = senders.some((s) => s.track && s.track.id === track.id);
+              if (!exists) {
+                peerConnectionRef.current.addTrack(track, localStreamRef.current);
+              }
+            });
+          }
           const offer = await peerConnectionRef.current.createOffer();
           await peerConnectionRef.current.setLocalDescription(offer);
-          socket.emit('webrtc-offer', { targetUserId, offer });
+          socket.emit('webrtc-offer', { targetUserId, targetSocketId: callerSocketId, offer, callerName: currentUser?.name });
         }
       } catch (e) {
         console.warn('Error creating WebRTC offer:', e);
@@ -97,12 +219,36 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       if (isMounted) onClose();
     };
 
-    const handleWebRtcOffer = async ({ offer, callerSocketId }) => {
+    const handleGroupPeerLeft = ({ socketId }) => {
+      if (socketId && peersMapRef.current.has(socketId)) {
+        try {
+          peersMapRef.current.get(socketId).close();
+        } catch (e) {}
+        peersMapRef.current.delete(socketId);
+      }
+      if (isMounted) {
+        setRemotePeers((prev) => prev.filter((p) => p.id !== socketId));
+      }
+    };
+
+    const handleWebRtcOffer = async ({ offer, callerSocketId, callerName }) => {
       try {
-        if (peerConnectionRef.current) {
-          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(offer));
-          const answer = await peerConnectionRef.current.createAnswer();
-          await peerConnectionRef.current.setLocalDescription(answer);
+        if (callerSocketId) remoteCallerSocketIdRef.current = callerSocketId;
+        const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
+        const pc = (isGroupCall && callerSocketId) ? getOrCreatePeerConnection(callerSocketId, callerName) : peerConnectionRef.current;
+        if (pc) {
+          if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach((track) => {
+              const senders = pc.getSenders();
+              const exists = senders.some((s) => s.track && s.track.id === track.id);
+              if (!exists) {
+                try { pc.addTrack(track, localStreamRef.current); } catch (e) {}
+              }
+            });
+          }
+          await pc.setRemoteDescription(new RTCSessionDescription(offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
           socket.emit('webrtc-answer', { callerSocketId, answer });
           if (isMounted) setCallStatus('Connected');
         }
@@ -111,10 +257,13 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       }
     };
 
-    const handleWebRtcAnswer = async ({ answer }) => {
+    const handleWebRtcAnswer = async ({ answer, responderSocketId }) => {
       try {
-        if (peerConnectionRef.current) {
-          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+        if (responderSocketId) remoteCallerSocketIdRef.current = responderSocketId;
+        const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
+        const pc = (isGroupCall && responderSocketId) ? getOrCreatePeerConnection(responderSocketId) : peerConnectionRef.current;
+        if (pc) {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
           if (isMounted) setCallStatus('Connected');
         }
       } catch (err) {
@@ -122,10 +271,13 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       }
     };
 
-    const handleWebRtcCandidate = async ({ candidate }) => {
+    const handleWebRtcCandidate = async ({ candidate, callerSocketId }) => {
       try {
-        if (candidate && peerConnectionRef.current) {
-          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        if (callerSocketId) remoteCallerSocketIdRef.current = callerSocketId;
+        const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
+        const pc = (isGroupCall && callerSocketId) ? getOrCreatePeerConnection(callerSocketId) : peerConnectionRef.current;
+        if (candidate && pc) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
         }
       } catch (err) {
         console.warn('WebRTC candidate error:', err);
@@ -142,6 +294,8 @@ export default function DirectCallModal({ callType = 'video', recipient, current
     socket.on('direct-call-accepted', handleCallAccepted);
     socket.on('direct-call-declined', handleCallDeclined);
     socket.on('direct-call-ended', handleCallEnded);
+    socket.on('group-peer-left', handleGroupPeerLeft);
+    socket.on('user-joined-group-call', handleUserJoinedGroupCall);
     socket.on('webrtc-offer', handleWebRtcOffer);
     socket.on('webrtc-answer', handleWebRtcAnswer);
     socket.on('webrtc-candidate', handleWebRtcCandidate);
@@ -167,26 +321,45 @@ export default function DirectCallModal({ callType = 'video', recipient, current
 
         if (peerConnectionRef.current) {
           stream.getTracks().forEach((track) => {
-            peerConnectionRef.current.addTrack(track, stream);
+            const senders = peerConnectionRef.current.getSenders();
+            const exists = senders.some((s) => s.track && s.track.id === track.id);
+            if (!exists) {
+              peerConnectionRef.current.addTrack(track, stream);
+            }
           });
         }
 
-        // If recipient (isIncoming=true), send offer right after tracks are added
-        if (isIncoming && peerConnectionRef.current && targetUserId) {
-          try {
-            const offer = await peerConnectionRef.current.createOffer();
-            await peerConnectionRef.current.setLocalDescription(offer);
-            socket.emit('webrtc-offer', { targetUserId, offer });
-          } catch (e) {
-            console.warn('Error creating WebRTC offer on init:', e);
+        peersMapRef.current.forEach((pc) => {
+          stream.getTracks().forEach((track) => {
+            try { pc.addTrack(track, stream); } catch (e) {}
+          });
+        });
+
+        const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
+        if (isGroupCall) {
+          socket.emit('join-group-call', { userName: currentUser?.name || 'Colleague' });
+        } else {
+          // 1-on-1 Call: Send WebRTC offer with local tracks attached
+          if (peerConnectionRef.current) {
+            try {
+              const offer = await peerConnectionRef.current.createOffer();
+              await peerConnectionRef.current.setLocalDescription(offer);
+              socket.emit('webrtc-offer', {
+                targetUserId,
+                targetSocketId: remoteCallerSocketIdRef.current,
+                offer,
+                callerName: currentUser?.name
+              });
+            } catch (e) {
+              console.warn('Error creating WebRTC offer on init:', e);
+            }
           }
         }
 
-        // Auto-connect if no recipient ID (e.g. self call or fallback)
-        if (!targetUserId) {
+        if (isGroupCall || !targetUserId) {
           setTimeout(() => {
             if (isMounted) setCallStatus('Connected');
-          }, 1500);
+          }, 1000);
         }
       } catch (err) {
         console.warn('Could not access hardware camera/mic:', err);
@@ -198,9 +371,12 @@ export default function DirectCallModal({ callType = 'video', recipient, current
 
     return () => {
       isMounted = false;
+      try { sessionStorage.removeItem('pydahsoft_active_direct_call'); } catch (e) {}
       socket.off('direct-call-accepted', handleCallAccepted);
       socket.off('direct-call-declined', handleCallDeclined);
       socket.off('direct-call-ended', handleCallEnded);
+      socket.off('group-peer-left', handleGroupPeerLeft);
+      socket.off('user-joined-group-call', handleUserJoinedGroupCall);
       socket.off('webrtc-offer', handleWebRtcOffer);
       socket.off('webrtc-answer', handleWebRtcAnswer);
       socket.off('webrtc-candidate', handleWebRtcCandidate);
@@ -209,6 +385,11 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
       }
+      peersMapRef.current.forEach((pc) => {
+        try { pc.close(); } catch (e) {}
+      });
+      peersMapRef.current.clear();
+
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((t) => t.stop());
       }
@@ -219,7 +400,7 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         clearInterval(timerRef.current);
       }
     };
-  }, []); // Run ONLY once on mount
+  }, []); // Run ONLY once on mount // Run ONLY once on mount
 
   // Bind video srcObject whenever video element mounts or videoOn/isScreenSharing changes
   useEffect(() => {
@@ -340,9 +521,11 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       sessionStorage.removeItem('pydahsoft_active_direct_call');
       const socket = getSocket();
       const targetUserId = recipient?.data?._id || recipient?._id;
+      const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
       socket.emit('end-direct-call', {
         targetUserId,
-        callerSocketId: socket.id
+        callerSocketId: socket.id,
+        isGroupCall
       });
     } catch (err) {}
 
@@ -456,7 +639,9 @@ export default function DirectCallModal({ callType = 'video', recipient, current
 
           {/* GROUP / EVERYONE CALL MULTI-FRAME SPLIT GRID LAYOUT */}
           {(recipient?.type === 'all' || recipient?.type === 'team') ? (
-            <div className="w-full h-full grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 overflow-y-auto custom-scrollbar">
+            <div className={`w-full h-full grid gap-3 p-3 overflow-y-auto custom-scrollbar ${
+              remotePeers.length >= 2 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
+            }`}>
               {/* Frame 1: Local Self User */}
               <div className="bg-slate-900/90 rounded-xl border border-slate-700/80 shadow-lg relative overflow-hidden flex flex-col items-center justify-center min-h-[140px]">
                 {videoOn || isScreenSharing ? (
@@ -483,41 +668,64 @@ export default function DirectCallModal({ callType = 'video', recipient, current
                 </div>
               </div>
 
-              {/* Frame 2: Remote Peer / Team Member Stream */}
-              <div className="bg-slate-900/90 rounded-xl border border-slate-700/80 shadow-lg relative overflow-hidden flex flex-col items-center justify-center min-h-[140px]">
-                <video
-                  ref={remoteVideoRef}
-                  autoPlay
-                  playsInline
-                  onLoadedMetadata={(e) => {
-                    e.target.muted = false;
-                    e.target.volume = 1.0;
-                    e.target.play().catch(() => {});
-                  }}
-                  className={`w-full h-full object-cover ${hasRemoteVideo ? 'block' : 'hidden'}`}
-                />
-                {!hasRemoteVideo && (
-                  <div className="flex flex-col items-center justify-center p-4 text-center">
-                    <div className="w-12 h-12 rounded-full bg-slate-800 border-2 border-emerald-500 flex items-center justify-center text-white text-lg font-bold shadow-md mb-1.5 relative">
-                      {avatarLetter}
-                      <div className="absolute inset-0 rounded-full border border-emerald-500 animate-pulse" />
+              {/* Dynamic Remote Peers Video Cards for 3+ members */}
+              {remotePeers.map((peer) => (
+                <RemoteVideoTile key={peer.id} peer={peer} fallbackName={recipientName} />
+              ))}
+
+              {/* Default Remote Peer Frame (Fallback if remotePeers list is empty) */}
+              {remotePeers.length === 0 && (
+                <div className="bg-slate-900/90 rounded-xl border border-slate-700/80 shadow-lg relative overflow-hidden flex flex-col items-center justify-center min-h-[140px]">
+                  <video
+                    ref={(el) => {
+                      remoteVideoRef.current = el;
+                      if (el && remoteStreamRef.current && el.srcObject !== remoteStreamRef.current) {
+                        el.srcObject = remoteStreamRef.current;
+                        el.muted = false;
+                        el.volume = 1.0;
+                        el.play().catch(() => {});
+                      }
+                    }}
+                    autoPlay
+                    playsInline
+                    onLoadedMetadata={(e) => {
+                      e.target.muted = false;
+                      e.target.volume = 1.0;
+                      e.target.play().catch(() => {});
+                    }}
+                    className={`w-full h-full object-cover ${hasRemoteVideo ? 'block' : 'hidden'}`}
+                  />
+                  {!hasRemoteVideo && (
+                    <div className="flex flex-col items-center justify-center p-4 text-center">
+                      <div className="w-12 h-12 rounded-full bg-slate-800 border-2 border-emerald-500 flex items-center justify-center text-white text-lg font-bold shadow-md mb-1.5 relative">
+                        {avatarLetter}
+                        <div className="absolute inset-0 rounded-full border border-emerald-500 animate-pulse" />
+                      </div>
+                      <p className="text-white text-xs font-bold">{recipientName}</p>
+                      <p className="text-emerald-400 text-[10px] font-semibold mt-0.5">Group Call Member</p>
                     </div>
-                    <p className="text-white text-xs font-bold">{recipientName}</p>
-                    <p className="text-emerald-400 text-[10px] font-semibold mt-0.5">Group Call Member</p>
+                  )}
+                  <div className="absolute bottom-2 left-2 bg-slate-900/85 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-extrabold text-white flex items-center gap-1.5 border border-slate-700/50">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    {recipientName}
                   </div>
-                )}
-                <div className="absolute bottom-2 left-2 bg-slate-900/85 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-extrabold text-white flex items-center gap-1.5 border border-slate-700/50">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  {recipientName}
                 </div>
-              </div>
+              )}
             </div>
           ) : (
             /* 1-ON-1 DIRECT CALL DUAL VIEW (MAIN REMOTE + FLOATING SELF INSET) */
             <>
               {/* 1. MAIN VIEW: REMOTE PARTICIPANT STREAM */}
               <video
-                ref={remoteVideoRef}
+                ref={(el) => {
+                  remoteVideoRef.current = el;
+                  if (el && remoteStreamRef.current && el.srcObject !== remoteStreamRef.current) {
+                    el.srcObject = remoteStreamRef.current;
+                    el.muted = false;
+                    el.volume = 1.0;
+                    el.play().catch(() => {});
+                  }
+                }}
                 autoPlay
                 playsInline
                 onLoadedMetadata={(e) => {

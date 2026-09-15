@@ -174,15 +174,27 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Direct Private 1-on-1 Chat Calls (Separate from Public Meetings)
-  socket.on('start-direct-call', ({ targetUserId, callType, callerName, callerId }) => {
-    if (targetUserId) {
+  // Direct Private 1-on-1 & Group Calls
+  socket.on('start-direct-call', ({ targetUserId, isGroupCall, recipientType, callType, callerName, callerId }) => {
+    if (isGroupCall || recipientType === 'all' || recipientType === 'team') {
+      socket.broadcast.emit('incoming-direct-call', {
+        callId: `group-${socket.id}-${Date.now()}`,
+        callerId: callerId || socket.userId,
+        callerName: callerName || socket.userName || 'Colleague',
+        callType: callType || 'video',
+        callerSocketId: socket.id,
+        isGroupCall: true,
+        recipient: { type: recipientType || 'all' }
+      });
+      console.log(`[Socket.io] Group call initiated by ${callerName} to ${recipientType}`);
+    } else if (targetUserId) {
       io.to(`user:${targetUserId.toString()}`).emit('incoming-direct-call', {
         callId: `direct-${socket.id}-${Date.now()}`,
         callerId: callerId || socket.userId,
         callerName: callerName || socket.userName || 'Colleague',
         callType: callType || 'video',
-        callerSocketId: socket.id
+        callerSocketId: socket.id,
+        isGroupCall: false
       });
     }
   });
@@ -202,41 +214,60 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('end-direct-call', ({ targetUserId, callerSocketId }) => {
-    if (targetUserId) {
-      io.to(`user:${targetUserId.toString()}`).emit('direct-call-ended');
-    }
-    if (callerSocketId) {
-      io.to(callerSocketId).emit('direct-call-ended');
+  socket.on('end-direct-call', ({ targetUserId, callerSocketId, isGroupCall }) => {
+    if (isGroupCall) {
+      socket.broadcast.emit('group-peer-left', { socketId: socket.id });
+    } else {
+      if (targetUserId) {
+        io.to(`user:${targetUserId.toString()}`).emit('direct-call-ended');
+      }
+      if (callerSocketId) {
+        io.to(callerSocketId).emit('direct-call-ended');
+      }
     }
   });
 
-  // WebRTC 1-on-1 Video Stream Signaling Relays
-  socket.on('webrtc-offer', ({ targetUserId, targetSocketId, offer }) => {
+  socket.on('join-group-call', ({ userName }) => {
+    socket.broadcast.emit('user-joined-group-call', {
+      socketId: socket.id,
+      userName: userName || 'Colleague'
+    });
+  });
+
+  // WebRTC Video Stream Signaling Relays (Supports 1-on-1 & Group Calls)
+  socket.on('webrtc-offer', ({ targetUserId, targetSocketId, offer, callerName }) => {
     if (targetSocketId) {
-      io.to(targetSocketId).emit('webrtc-offer', { offer, callerSocketId: socket.id });
+      io.to(targetSocketId).emit('webrtc-offer', { offer, callerSocketId: socket.id, callerName: callerName || socket.userName });
     } else if (targetUserId) {
-      io.to(`user:${targetUserId.toString()}`).emit('webrtc-offer', { offer, callerSocketId: socket.id });
+      io.to(`user:${targetUserId.toString()}`).emit('webrtc-offer', { offer, callerSocketId: socket.id, callerName: callerName || socket.userName });
+    } else {
+      socket.broadcast.emit('webrtc-offer', { offer, callerSocketId: socket.id, callerName: callerName || socket.userName });
     }
   });
 
   socket.on('webrtc-answer', ({ callerSocketId, answer }) => {
     if (callerSocketId) {
       io.to(callerSocketId).emit('webrtc-answer', { answer, responderSocketId: socket.id });
+    } else {
+      socket.broadcast.emit('webrtc-answer', { answer, responderSocketId: socket.id });
     }
   });
 
   socket.on('webrtc-candidate', ({ targetUserId, targetSocketId, candidate }) => {
     if (targetSocketId) {
-      io.to(targetSocketId).emit('webrtc-candidate', { candidate });
+      io.to(targetSocketId).emit('webrtc-candidate', { candidate, callerSocketId: socket.id });
     } else if (targetUserId) {
-      io.to(`user:${targetUserId.toString()}`).emit('webrtc-candidate', { candidate });
+      io.to(`user:${targetUserId.toString()}`).emit('webrtc-candidate', { candidate, callerSocketId: socket.id });
+    } else {
+      socket.broadcast.emit('webrtc-candidate', { candidate, callerSocketId: socket.id });
     }
   });
 
   socket.on('send-call-reaction', ({ targetUserId, emoji }) => {
     if (targetUserId) {
       io.to(`user:${targetUserId.toString()}`).emit('incoming-call-reaction', { emoji });
+    } else {
+      socket.broadcast.emit('incoming-call-reaction', { emoji });
     }
   });
 

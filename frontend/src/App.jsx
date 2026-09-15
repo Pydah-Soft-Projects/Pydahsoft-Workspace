@@ -881,12 +881,18 @@ function App() {
       socket.emit('register-user', { userId: user._id });
 
       const handleIncomingDirectCall = (callData) => {
+        const hasActiveCall = Boolean(acceptedDirectCall) || Boolean(sessionStorage.getItem('pydahsoft_active_direct_call'));
+        if (hasActiveCall) {
+          console.log('[Socket.io] Suppressing incoming direct call banner during active call session.');
+          return;
+        }
         setIncomingCall(callData);
       };
 
       const handleDirectCallEnded = () => {
         setIncomingCall(null);
         setAcceptedDirectCall(null);
+        try { sessionStorage.removeItem('pydahsoft_active_direct_call'); } catch (e) {}
       };
 
       socket.on('incoming-direct-call', handleIncomingDirectCall);
@@ -897,7 +903,7 @@ function App() {
         socket.off('direct-call-ended', handleDirectCallEnded);
       };
     }
-  }, [user]);
+  }, [user, acceptedDirectCall]);
 
   const handleAcceptIncomingCall = () => {
     if (incomingCall) {
@@ -909,7 +915,9 @@ function App() {
       });
       setAcceptedDirectCall({
         type: incomingCall.callType,
-        recipient: { name: incomingCall.callerName, _id: incomingCall.callerId }
+        recipient: incomingCall.isGroupCall
+          ? { type: incomingCall.recipient?.type || 'all', name: incomingCall.callerName ? `${incomingCall.callerName} (Group)` : 'Everyone' }
+          : { name: incomingCall.callerName, _id: incomingCall.callerId }
       });
       setIncomingCall(null);
     }
@@ -998,7 +1006,11 @@ function App() {
               <svg className="w-3 h-3 text-emerald-400 animate-pulse shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              <span className="truncate">{incomingCall.callType === 'video' ? '1-on-1 Video Call...' : '1-on-1 Voice Call...'}</span>
+              <span className="truncate">
+                {incomingCall.isGroupCall
+                  ? (incomingCall.callType === 'video' ? 'Group Video Call...' : 'Group Voice Call...')
+                  : (incomingCall.callType === 'video' ? '1-on-1 Video Call...' : '1-on-1 Voice Call...')}
+              </span>
             </p>
           </div>
 
