@@ -7,25 +7,27 @@ import { fetchApi } from './config/api';
 import { getSocket } from './config/socket';
 import './App.css';
 
-// Lazy-loaded page components for ultra-fast loading and bundle optimization
-const DashboardOverview = lazy(() => import('./pages/Dashboard/DashboardOverview'));
-const TeamChatPage = lazy(() => import('./pages/Chat/TeamChatPage'));
-const UserManagement = lazy(() => import('./pages/UserManagement/UserManagement'));
-const EmployeeManagement = lazy(() => import('./pages/Employees/EmployeeManagement'));
-const ProjectsAndModules = lazy(() => import('./pages/Projects/ProjectsAndModules'));
-const TeamsAndTasks = lazy(() => import('./pages/Teams/TeamsAndTasks'));
-const TimeTracker = lazy(() => import('./pages/TimeTracking/TimeTracker'));
-const TaskReviewQueue = lazy(() => import('./pages/Reviews/TaskReviewQueue'));
-const DailyWorkPlans = lazy(() => import('./pages/DailyPlans/DailyWorkPlans'));
-const PerformanceAndReports = lazy(() => import('./pages/Analytics/PerformanceAndReports'));
-const AuditLogsView = lazy(() => import('./pages/AuditLogs/AuditLogsView'));
-const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
-const MeetingsPage = lazy(() => import('./pages/Meetings/MeetingsPage'));
-
+import DashboardOverview from './pages/Dashboard/DashboardOverview';
+import TeamChatPage from './pages/Chat/TeamChatPage';
+import UserManagement from './pages/UserManagement/UserManagement';
+import EmployeeManagement from './pages/Employees/EmployeeManagement';
+import ProjectsAndModules from './pages/Projects/ProjectsAndModules';
+import TeamsAndTasks from './pages/Teams/TeamsAndTasks';
+import TimeTracker from './pages/TimeTracking/TimeTracker';
+import TaskReviewQueue from './pages/Reviews/TaskReviewQueue';
+import DailyWorkPlans from './pages/DailyPlans/DailyWorkPlans';
+import PerformanceAndReports from './pages/Analytics/PerformanceAndReports';
+import AuditLogsView from './pages/AuditLogs/AuditLogsView';
+import SettingsPage from './pages/Settings/SettingsPage';
+import MeetingsPage from './pages/Meetings/MeetingsPage';
 import LoadingSpinner from './components/Loader/LoadingSpinner';
+import DirectCallModal from './components/Chat/DirectCallModal';
 
-// Fast loading spinner fallback
-const PageLoader = () => <LoadingSpinner />;
+const PageLoader = () => (
+  <div className="flex items-center justify-center p-12 w-full min-h-[300px]">
+    <div className="w-8 h-8 border-3 border-[#20b875] border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmployeeId }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -215,6 +217,16 @@ function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting })
     setActiveTabState(tab);
     localStorage.setItem('pydahsoft_active_tab', tab);
   };
+
+  useEffect(() => {
+    const handleSwitchTab = (e) => {
+      if (e.detail) {
+        setActiveTab(e.detail);
+      }
+    };
+    window.addEventListener('pydahsoft:switch-tab', handleSwitchTab);
+    return () => window.removeEventListener('pydahsoft:switch-tab', handleSwitchTab);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('pydahsoft_active_tab', activeTab);
@@ -703,6 +715,43 @@ function DirectMeetingHandler({ user, onLogout }) {
   return <DashboardLayout user={user} onLogout={onLogout} initialMeetingId={meetingId} preJoinedMeeting={joinedMeeting} />;
 }
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Uncaught UI error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500 flex items-center justify-center text-rose-400 font-bold text-2xl mb-4">
+            !
+          </div>
+          <h2 className="text-xl font-bold mb-2">Something went wrong loading this view</h2>
+          <p className="text-sm text-gray-400 mb-6 max-w-md">{this.state.error?.message || 'An unexpected error occurred during rendering'}</p>
+          <button
+            onClick={() => {
+              localStorage.setItem('pydahsoft_active_tab', 'overview');
+              window.location.href = '/#/dashboard';
+              window.location.reload();
+            }}
+            className="px-5 py-2.5 bg-[#20b875] hover:bg-[#169a61] text-white font-bold rounded-xl text-xs transition-all shadow-md cursor-pointer"
+          >
+            Reset to Dashboard Overview
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function App() {
   const [user, setUser] = useState(() => {
     const storedUser = sessionStorage.getItem('pydahsoft_user') || localStorage.getItem('pydahsoft_user');
@@ -734,6 +783,58 @@ function App() {
     }
   }, []);
 
+  const [incomingCall, setIncomingCall] = useState(null); // { callId, callerId, callerName, callType, callerSocketId }
+  const [acceptedDirectCall, setAcceptedDirectCall] = useState(null);
+
+  // Synthesize soft incoming call ringtone chime using Web Audio API
+  useEffect(() => {
+    if (!incomingCall) return;
+
+    let audioCtx;
+    let intervalId;
+
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      const playRingtone = () => {
+        if (!audioCtx || audioCtx.state === 'closed') return;
+        const now = audioCtx.currentTime;
+
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(440, now);
+        gain1.gain.setValueAtTime(0.12, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(554.37, now + 0.15);
+        gain2.gain.setValueAtTime(0.12, now + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now + 0.15);
+        osc2.stop(now + 0.5);
+      };
+
+      playRingtone();
+      intervalId = setInterval(playRingtone, 1200);
+    } catch (e) {
+      console.warn('AudioContext error:', e);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      if (audioCtx) audioCtx.close().catch(() => {});
+    };
+  }, [incomingCall]);
+
   useEffect(() => {
     if (user?._id) {
       const socket = getSocket();
@@ -742,22 +843,54 @@ function App() {
       }
       socket.emit('register-user', { userId: user._id });
 
-      const handleForceLogout = (data) => {
-        alert(data?.message || 'Your account was logged into on another device. You have been logged out.');
-        handleLogout();
+      const handleIncomingDirectCall = (callData) => {
+        setIncomingCall(callData);
       };
 
-      socket.on('force-logout', handleForceLogout);
+      const handleDirectCallEnded = () => {
+        setIncomingCall(null);
+        setAcceptedDirectCall(null);
+      };
+
+      socket.on('incoming-direct-call', handleIncomingDirectCall);
+      socket.on('direct-call-ended', handleDirectCallEnded);
 
       return () => {
-        socket.off('force-logout', handleForceLogout);
+        socket.off('incoming-direct-call', handleIncomingDirectCall);
+        socket.off('direct-call-ended', handleDirectCallEnded);
       };
     }
   }, [user]);
 
+  const handleAcceptIncomingCall = () => {
+    if (incomingCall) {
+      const socket = getSocket();
+      socket.emit('accept-direct-call', {
+        callerSocketId: incomingCall.callerSocketId,
+        callId: incomingCall.callId,
+        responderName: user?.name
+      });
+      setAcceptedDirectCall({
+        type: incomingCall.callType,
+        recipient: { name: incomingCall.callerName, _id: incomingCall.callerId }
+      });
+      setIncomingCall(null);
+    }
+  };
+
+  const handleDeclineIncomingCall = () => {
+    if (incomingCall) {
+      const socket = getSocket();
+      socket.emit('decline-direct-call', {
+        callerSocketId: incomingCall.callerSocketId,
+        callId: incomingCall.callId
+      });
+      setIncomingCall(null);
+    }
+  };
+
   useEffect(() => {
     const handleSessionExpired = () => {
-      alert('Your session has expired because your account was logged into on another device.');
       handleLogout();
     };
     window.addEventListener('pydahsoft:session-expired', handleSessionExpired);
@@ -765,28 +898,108 @@ function App() {
   }, []);
 
   return (
-    <Routes>
-      <Route path="/" element={<Landing user={user} />} />
-      <Route
-        path="/login"
-        element={<Login onLoginSuccess={(loggedInUser) => setUser(loggedInUser)} />}
-      />
-      <Route
-        path="/meetings/:meetingId"
-        element={<DirectMeetingHandler user={user} onLogout={handleLogout} />}
-      />
-      <Route
-        path="/dashboard/*"
-        element={
-          user ? (
-            <DashboardLayout user={user} onLogout={handleLogout} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <ErrorBoundary>
+      <Routes>
+        <Route
+          path="/"
+          element={user ? <Navigate to="/dashboard" replace /> : <Landing user={user} />}
+        />
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/dashboard" replace /> : <Login onLoginSuccess={(loggedInUser) => setUser(loggedInUser)} />}
+        />
+        <Route
+          path="/meetings/:meetingId"
+          element={<DirectMeetingHandler user={user} onLogout={handleLogout} />}
+        />
+        <Route
+          path="/dashboard"
+          element={
+            user ? (
+              <DashboardLayout user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/dashboard/*"
+          element={
+            user ? (
+              <DashboardLayout user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route path="*" element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} />
+      </Routes>
+
+      {/* Incoming Call Popup Overlay with Ringtone Sound & Online Indicator */}
+      {incomingCall && (
+        <div className="fixed top-6 right-6 z-50 bg-[#0d131e]/95 backdrop-blur-2xl border-2 border-emerald-500/80 text-white p-5 rounded-3xl shadow-2xl flex items-center gap-5 max-w-md w-full animate-in fade-in slide-in-from-top duration-300">
+          {/* Avatar with pulsing ring sound radar effect */}
+          <div className="relative shrink-0">
+            <div className="w-14 h-14 rounded-full bg-slate-800 border-2 border-emerald-400 flex items-center justify-center font-black text-xl text-white shadow-xl overflow-hidden">
+              {incomingCall.callerName ? incomingCall.callerName.charAt(0).toUpperCase() : 'U'}
+            </div>
+            {/* Animated Ringing Radar Wave */}
+            <div className="absolute -inset-1.5 rounded-full border-2 border-emerald-400 animate-ping opacity-75 pointer-events-none" />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider">
+                Online • Incoming Call
+              </span>
+            </div>
+            <h4 className="font-extrabold text-base text-white truncate leading-tight">
+              {incomingCall.callerName || 'Colleague'}
+            </h4>
+            <p className="text-xs text-gray-300 font-medium capitalize mt-0.5 flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 text-emerald-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              {incomingCall.callType === 'video' ? '1-on-1 Video Call...' : '1-on-1 Voice Call...'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleAcceptIncomingCall}
+              className="w-11 h-11 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all cursor-pointer"
+              title="Accept Call"
+            >
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.27c1.21.49 2.53.76 3.88.76a1 1 0 011 1V20a1 1 0 01-1 1C10.07 21 3 14.84 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.27 2.67.76 3.88a1 1 0 01-.27 1.11l-2.2 2.2z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={handleDeclineIncomingCall}
+              className="w-11 h-11 rounded-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all cursor-pointer"
+              title="Decline Call"
+            >
+              <svg className="w-5 h-5 text-white rotate-[135deg]" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.27c1.21.49 2.53.76 3.88.76a1 1 0 011 1V20a1 1 0 01-1 1C10.07 21 3 14.84 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.27 2.67.76 3.88a1 1 0 01-.27 1.11l-2.2 2.2z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Direct Call Modal for Recipient when call is accepted */}
+      {acceptedDirectCall && (
+        <DirectCallModal
+          callType={acceptedDirectCall.type}
+          recipient={acceptedDirectCall.recipient}
+          currentUser={user}
+          onClose={() => setAcceptedDirectCall(null)}
+        />
+      )}
+    </ErrorBoundary>
   );
 }
 

@@ -67,16 +67,6 @@ const loginUser = async (username, password, io) => {
 
   const token = generateToken(user._id, user.role);
 
-  // Single session enforcement: notify and force-logout any existing session on another device/browser
-  if (io && user._id) {
-    io.to(`user:${user._id.toString()}`).emit('force-logout', {
-      message: 'Your account was logged into on another device. You have been logged out.'
-    });
-  }
-
-  user.activeToken = token;
-  await user.save();
-
   // Fetch Role document to merge role default permissions
   const roleDoc = await Role.findOne({ name: user.role.toLowerCase() });
   const roleDefaults = roleDoc?.defaultPermissions
