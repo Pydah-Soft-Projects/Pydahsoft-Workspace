@@ -163,7 +163,8 @@ export default function DirectCallModal({ callType = 'video', recipient, current
     };
 
     // Emit direct call invite to target person or broadcast to group/everyone if caller
-    const targetUserId = recipient?.data?._id || recipient?._id;
+    const rawTargetId = recipient?.data?._id || recipient?._id;
+    const targetUserId = rawTargetId ? String(rawTargetId) : null;
     const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
     if (!isIncoming) {
       socket.emit('start-direct-call', {

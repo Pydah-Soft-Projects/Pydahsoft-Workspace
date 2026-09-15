@@ -176,26 +176,22 @@ io.on('connection', (socket) => {
 
   // Direct Private 1-on-1 & Group Calls
   socket.on('start-direct-call', ({ targetUserId, isGroupCall, recipientType, callType, callerName, callerId }) => {
-    if (isGroupCall || recipientType === 'all' || recipientType === 'team') {
-      socket.broadcast.emit('incoming-direct-call', {
-        callId: `group-${socket.id}-${Date.now()}`,
-        callerId: callerId || socket.userId,
-        callerName: callerName || socket.userName || 'Colleague',
-        callType: callType || 'video',
-        callerSocketId: socket.id,
-        isGroupCall: true,
-        recipient: { type: recipientType || 'all' }
-      });
-      console.log(`[Socket.io] Group call initiated by ${callerName} to ${recipientType}`);
-    } else if (targetUserId) {
-      io.to(`user:${targetUserId.toString()}`).emit('incoming-direct-call', {
-        callId: `direct-${socket.id}-${Date.now()}`,
-        callerId: callerId || socket.userId,
-        callerName: callerName || socket.userName || 'Colleague',
-        callType: callType || 'video',
-        callerSocketId: socket.id,
-        isGroupCall: false
-      });
+    const isGroup = Boolean(isGroupCall || recipientType === 'all' || recipientType === 'team');
+    const payload = {
+      callId: isGroup ? `group-${socket.id}-${Date.now()}` : `direct-${socket.id}-${Date.now()}`,
+      callerId: callerId || socket.userId,
+      callerName: callerName || socket.userName || 'Colleague',
+      callType: callType || 'video',
+      callerSocketId: socket.id,
+      isGroupCall: isGroup,
+      targetUserId: targetUserId ? targetUserId.toString() : null,
+      recipient: { type: recipientType || (isGroup ? 'all' : 'user') }
+    };
+
+    console.log(`[Socket.io] Call initiated by ${callerName} (Group: ${isGroup}, Target: ${targetUserId})`);
+    socket.broadcast.emit('incoming-direct-call', payload);
+    if (targetUserId) {
+      io.to(`user:${targetUserId.toString()}`).emit('incoming-direct-call', payload);
     }
   });
 
