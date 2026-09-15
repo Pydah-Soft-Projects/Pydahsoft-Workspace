@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getSocket } from '../../config/socket';
+import { fetchApi } from '../../config/api';
 
 function RemoteVideoTile({ peer, fallbackName }) {
   const [hasVideo, setHasVideo] = useState(false);
@@ -263,6 +264,19 @@ export default function DirectCallModal({ callType = 'video', recipient, current
     const handleCallDeclined = () => {
       if (isMounted) {
         setCallStatus('Declined');
+        const rawTargetId = recipient?.data?._id || recipient?._id;
+        const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
+        if (rawTargetId && !isGroupCall) {
+          fetchApi('/chat/send', {
+            method: 'POST',
+            body: JSON.stringify({
+              recipientType: 'individual',
+              recipientId: rawTargetId,
+              recipientName: recipient?.data?.name || recipient?.name,
+              message: `CALL_LOG|${callType}|Call declined`
+            })
+          }).catch((err) => console.warn('Failed to log call message:', err));
+        }
         setTimeout(() => {
           if (isMounted) onClose();
         }, 1500);
@@ -587,24 +601,52 @@ export default function DirectCallModal({ callType = 'video', recipient, current
   // ONLY this function ends/cuts the call
   const handleEndCall = (e) => {
     if (e) e.stopPropagation();
+
     try {
+      const rawTargetId = recipient?.data?._id || recipient?._id;
+      const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
+
+      if (rawTargetId && !isGroupCall) {
+        let statusText = 'Call ended';
+        if (callStatus === 'Declined') {
+          statusText = 'Call declined';
+        } else if (callStatus === 'Calling...' || callDuration === 0) {
+          statusText = 'No answer';
+        } else if (callDuration > 0) {
+          statusText = `Call ended • ${formatTime(callDuration)}`;
+        }
+
+        fetchApi('/chat/send', {
+          method: 'POST',
+          body: JSON.stringify({
+            recipientType: 'individual',
+            recipientId: rawTargetId,
+            recipientName: recipient?.data?.name || recipient?.name,
+            message: `CALL_LOG|${callType}|${statusText}`
+          })
+        }).catch((err) => console.warn('Failed to log call message:', err));
+      }
+
       sessionStorage.removeItem('pydahsoft_active_direct_call');
       const socket = getSocket();
-      const targetUserId = recipient?.data?._id || recipient?._id;
-      const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
       socket.emit('end-direct-call', {
-        targetUserId,
+        targetUserId: rawTargetId,
         callerSocketId: socket.id,
         isGroupCall
       });
-    } catch (err) {}
+    } catch (err) {
+      console.warn('Error during end call sequence:', err);
+    }
 
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((t) => t.stop());
-    }
-    if (screenStreamRef.current) {
-      screenStreamRef.current.getTracks().forEach((t) => t.stop());
-    }
+    try {
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+    } catch (e) {}
+
     onClose();
   };
 

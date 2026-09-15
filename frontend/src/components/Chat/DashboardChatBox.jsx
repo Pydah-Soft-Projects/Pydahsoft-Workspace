@@ -534,6 +534,46 @@ export default function DashboardChatBox({ currentUser, employeeList = [] }) {
             filteredMessages.map((msg) => {
               const isMe = String(msg.sender) === String(currentUser?._id);
 
+              if (msg.message && msg.message.startsWith('CALL_LOG|')) {
+                const parts = msg.message.split('|');
+                const logType = parts[1] || 'video';
+                const logStatus = parts[2] || 'Call ended';
+                const isVideo = logType === 'video';
+
+                return (
+                  <div key={msg._id || msg.createdAt} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} my-2`}>
+                    <div className={`p-3 rounded-2xl flex items-center gap-3 max-w-[280px] shadow-2xs border ${
+                      isMe
+                        ? 'bg-emerald-100/90 text-emerald-950 border-emerald-300/80'
+                        : 'bg-white text-slate-900 border-gray-200'
+                    }`}>
+                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-emerald-600 shadow-2xs shrink-0 border border-emerald-100">
+                        {isVideo ? (
+                          <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h2.28a1 1 0 01.95.684l1.1 3.3a1 1 0 01-.27 1.04L7.6 9.49a16 16 0 006.91 6.91l1.46-1.46a1 1 0 011.04-.27l3.3 1.1A1 1 0 0121 16.72V19a2 2 0 01-2 2h-1C9.16 21 3 14.84 3 7V5z" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h5 className="font-extrabold text-xs text-slate-900 capitalize leading-tight">
+                          {isVideo ? 'Video call' : 'Voice call'}
+                        </h5>
+                        <p className="text-[11px] font-semibold text-slate-600 truncate mt-0.5">
+                          {logStatus}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400 self-end ml-1 shrink-0">
+                        {formatTime(msg.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={msg._id || msg.createdAt}
