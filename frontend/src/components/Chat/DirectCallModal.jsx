@@ -60,6 +60,7 @@ export default function DirectCallModal({ callType = 'video', recipient, current
   const peersMapRef = useRef(new Map());
   const remoteStreamRef = useRef(null);
   const remoteCallerSocketIdRef = useRef(null);
+  const pendingCandidatesRef = useRef(new Map());
   const timerRef = useRef(null);
 
   // Store active call in sessionStorage so refresh (F5) doesn't re-trigger incoming call banner ring popup
@@ -71,6 +72,20 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       );
     } catch (e) {}
   }, [callType, recipient, isIncoming]);
+
+  // Process buffered ICE candidates once remote description is set
+  const processPendingCandidates = async (pc, key = 'direct') => {
+    if (!pc || !pc.remoteDescription) return;
+    const list = pendingCandidatesRef.current.get(key) || [];
+    while (list.length > 0) {
+      const candidate = list.shift();
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.warn('Buffered ICE candidate error:', e);
+      }
+    }
+  };
 
   // Initialize Camera & Microphone media stream & Socket direct call signaling ONLY ONCE on mount
   useEffect(() => {
@@ -87,8 +102,14 @@ export default function DirectCallModal({ callType = 'video', recipient, current
     const pcConfig = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-      ]
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' },
+        { urls: 'stun:stun.services.mozilla.com' }
+      ],
+      iceCandidatePoolSize: 10
     };
     const pc = new RTCPeerConnection(pcConfig);
     peerConnectionRef.current = pc;
@@ -187,7 +208,7 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       if (isMounted) setCallStatus('Connected');
       if (callerSocketId) remoteCallerSocketIdRef.current = callerSocketId;
       try {
-        if (peerConnectionRef.current) {
+        if (peerConnectionRef.current && peerConnectionRef.current.signalingState === 'stable') {
           if (localStreamRef.current) {
             localStreamRef.current.getTracks().forEach((track) => {
               const senders = peerConnectionRef.current.getSenders();
@@ -236,7 +257,12 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         if (callerSocketId) remoteCallerSocketIdRef.current = callerSocketId;
         const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
         const pc = (isGroupCall && callerSocketId) ? getOrCreatePeerConnection(callerSocketId, callerName) : peerConnectionRef.current;
-        if (pc) {
+        if (pc && pc.signalingState !== 'closed') {
+          if (pc.signalingState !== 'stable') {
+            try {
+              await pc.setLocalDescription({ type: 'rollback' });
+            } catch (e) {}
+          }
           if (localStreamRef.current) {
             localStreamRef.current.getTracks().forEach((track) => {
               const senders = pc.getSenders();
@@ -247,6 +273,7 @@ export default function DirectCallModal({ callType = 'video', recipient, current
             });
           }
           await pc.setRemoteDescription(new RTCSessionDescription(offer));
+          await processPendingCandidates(pc, isGroupCall ? callerSocketId : 'direct');
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           socket.emit('webrtc-answer', { callerSocketId, answer });
@@ -262,8 +289,9 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         if (responderSocketId) remoteCallerSocketIdRef.current = responderSocketId;
         const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
         const pc = (isGroupCall && responderSocketId) ? getOrCreatePeerConnection(responderSocketId) : peerConnectionRef.current;
-        if (pc) {
+        if (pc && pc.signalingState === 'have-local-offer') {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          await processPendingCandidates(pc, isGroupCall ? responderSocketId : 'direct');
           if (isMounted) setCallStatus('Connected');
         }
       } catch (err) {
@@ -276,8 +304,17 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         if (callerSocketId) remoteCallerSocketIdRef.current = callerSocketId;
         const isGroupCall = recipient?.type === 'all' || recipient?.type === 'team';
         const pc = (isGroupCall && callerSocketId) ? getOrCreatePeerConnection(callerSocketId) : peerConnectionRef.current;
+        const key = (isGroupCall && callerSocketId) ? callerSocketId : 'direct';
+
         if (candidate && pc) {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          if (pc.remoteDescription && pc.signalingState !== 'closed') {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } else {
+            if (!pendingCandidatesRef.current.has(key)) {
+              pendingCandidatesRef.current.set(key, []);
+            }
+            pendingCandidatesRef.current.get(key).push(candidate);
+          }
         }
       } catch (err) {
         console.warn('WebRTC candidate error:', err);
@@ -339,8 +376,8 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         if (isGroupCall) {
           socket.emit('join-group-call', { userName: currentUser?.name || 'Colleague' });
         } else {
-          // 1-on-1 Call: Send WebRTC offer with local tracks attached
-          if (peerConnectionRef.current) {
+          // 1-on-1 Call: Send WebRTC offer with local tracks attached IF signaling state is stable
+          if (peerConnectionRef.current && peerConnectionRef.current.signalingState === 'stable') {
             try {
               const offer = await peerConnectionRef.current.createOffer();
               await peerConnectionRef.current.setLocalDescription(offer);
