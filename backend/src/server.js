@@ -234,6 +234,12 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('send-call-reaction', ({ targetUserId, emoji }) => {
+    if (targetUserId) {
+      io.to(`user:${targetUserId.toString()}`).emit('incoming-call-reaction', { emoji });
+    }
+  });
+
   socket.on('leave-room', handleLeaveRoom);
   socket.on('disconnect', handleLeaveRoom);
 });

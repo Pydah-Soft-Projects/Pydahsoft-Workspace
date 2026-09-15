@@ -8,9 +8,6 @@ export default function DirectCallModal({ callType = 'video', recipient, current
   const [callDuration, setCallDuration] = useState(0);
   const [activeReaction, setActiveReaction] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showInCallChat, setShowInCallChat] = useState(false);
-  const [inCallMessages, setInCallMessages] = useState([]);
-  const [chatInputText, setChatInputText] = useState('');
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
@@ -21,7 +18,6 @@ export default function DirectCallModal({ callType = 'video', recipient, current
   const screenStreamRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const timerRef = useRef(null);
-  const chatEndRef = useRef(null);
 
   // Initialize Camera & Microphone media stream & Socket direct call signaling ONLY ONCE on mount
   useEffect(() => {
@@ -45,8 +41,11 @@ export default function DirectCallModal({ callType = 'video', recipient, current
     peerConnectionRef.current = pc;
 
     pc.ontrack = (event) => {
-      if (remoteVideoRef.current && event.streams[0]) {
+      if (remoteVideoRef.current && event.streams && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
+        remoteVideoRef.current.muted = false;
+        remoteVideoRef.current.volume = 1.0;
+        remoteVideoRef.current.play().catch(() => {});
         if (isMounted) setHasRemoteVideo(true);
       }
     };
@@ -133,12 +132,20 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       }
     };
 
+    const handleIncomingReaction = ({ emoji }) => {
+      if (isMounted) {
+        setActiveReaction(emoji);
+        setTimeout(() => setActiveReaction(null), 2500);
+      }
+    };
+
     socket.on('direct-call-accepted', handleCallAccepted);
     socket.on('direct-call-declined', handleCallDeclined);
     socket.on('direct-call-ended', handleCallEnded);
     socket.on('webrtc-offer', handleWebRtcOffer);
     socket.on('webrtc-answer', handleWebRtcAnswer);
     socket.on('webrtc-candidate', handleWebRtcCandidate);
+    socket.on('incoming-call-reaction', handleIncomingReaction);
 
     async function initMedia() {
       try {
@@ -164,6 +171,17 @@ export default function DirectCallModal({ callType = 'video', recipient, current
           });
         }
 
+        // If recipient (isIncoming=true), send offer right after tracks are added
+        if (isIncoming && peerConnectionRef.current && targetUserId) {
+          try {
+            const offer = await peerConnectionRef.current.createOffer();
+            await peerConnectionRef.current.setLocalDescription(offer);
+            socket.emit('webrtc-offer', { targetUserId, offer });
+          } catch (e) {
+            console.warn('Error creating WebRTC offer on init:', e);
+          }
+        }
+
         // Auto-connect if no recipient ID (e.g. self call or fallback)
         if (!targetUserId) {
           setTimeout(() => {
@@ -186,6 +204,7 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       socket.off('webrtc-offer', handleWebRtcOffer);
       socket.off('webrtc-answer', handleWebRtcAnswer);
       socket.off('webrtc-candidate', handleWebRtcCandidate);
+      socket.off('incoming-call-reaction', handleIncomingReaction);
 
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
@@ -224,13 +243,6 @@ export default function DirectCallModal({ callType = 'video', recipient, current
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [callStatus]);
-
-  // Auto scroll in-call chat
-  useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [inCallMessages]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -321,20 +333,6 @@ export default function DirectCallModal({ callType = 'video', recipient, current
     }
   };
 
-  // Send In-Call Message
-  const handleSendInCallMessage = (e) => {
-    e.preventDefault();
-    if (!chatInputText.trim()) return;
-    const newMsg = {
-      id: Date.now(),
-      sender: currentUser?.name || 'You',
-      text: chatInputText.trim(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    setInCallMessages((prev) => [...prev, newMsg]);
-    setChatInputText('');
-  };
-
   // ONLY this function ends/cuts the call
   const handleEndCall = (e) => {
     if (e) e.stopPropagation();
@@ -362,6 +360,16 @@ export default function DirectCallModal({ callType = 'video', recipient, current
     setActiveReaction(emoji);
     setShowEmojiPicker(false);
     setTimeout(() => setActiveReaction(null), 2500);
+
+    try {
+      const socket = getSocket();
+      const targetUserId = recipient?.data?._id || recipient?._id;
+      if (targetUserId) {
+        socket.emit('send-call-reaction', { targetUserId, emoji });
+      }
+    } catch (err) {
+      console.warn('Error sending reaction socket event:', err);
+    }
   };
 
   const formatTime = (seconds) => {
@@ -419,6 +427,22 @@ export default function DirectCallModal({ callType = 'video', recipient, current
         </p>
       </div>
 
+      {/* Emoji Picker Floating Popup (Front of screen z-[100]) */}
+      {showEmojiPicker && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl p-2.5 flex gap-2 sm:gap-3 shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-150">
+          {['👍', '❤️', '👏', '🎉', '🔥', '😂'].map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={(e) => handleSendReaction(emoji, e)}
+              className="text-2xl hover:scale-130 active:scale-95 transition-transform p-1 cursor-pointer"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* 2. CENTER MAIN CONTAINER (MAIN REMOTE VIDEO + FLOATING LOCAL SELF VIDEO) */}
       <div className="w-full max-w-4xl flex-1 flex items-center justify-center my-2 md:my-4 relative gap-4">
         {/* Main Remote & Self Video View Container */}
@@ -430,113 +454,126 @@ export default function DirectCallModal({ callType = 'video', recipient, current
             </div>
           )}
 
-          {/* 1. MAIN VIEW: REMOTE PARTICIPANT STREAM */}
-          {videoOn || hasRemoteVideo ? (
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              onLoadedMetadata={(e) => {
-                e.target.play().catch(() => {});
-              }}
-              className="w-full h-full object-cover rounded-2xl md:rounded-3xl"
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center text-center p-6">
-              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-slate-800 border-4 border-slate-700 flex items-center justify-center text-white text-3xl md:text-4xl font-extrabold shadow-2xl mb-4 relative">
-                {avatarLetter}
-                <div className="absolute inset-0 rounded-full border-2 border-emerald-500/50 animate-pulse" />
+          {/* GROUP / EVERYONE CALL MULTI-FRAME SPLIT GRID LAYOUT */}
+          {(recipient?.type === 'all' || recipient?.type === 'team') ? (
+            <div className="w-full h-full grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 overflow-y-auto custom-scrollbar">
+              {/* Frame 1: Local Self User */}
+              <div className="bg-slate-900/90 rounded-xl border border-slate-700/80 shadow-lg relative overflow-hidden flex flex-col items-center justify-center min-h-[140px]">
+                {videoOn || isScreenSharing ? (
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    onLoadedMetadata={(e) => e.target.play().catch(() => {})}
+                    className={`w-full h-full object-cover ${isScreenSharing ? '' : 'transform -scale-x-100'}`}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-4">
+                    <div className="w-12 h-12 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-white text-lg font-bold shadow-md mb-1.5">
+                      {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'Y'}
+                    </div>
+                    <p className="text-white text-xs font-bold">{currentUser?.name || 'You'}</p>
+                    <p className="text-slate-400 text-[10px]">Camera Off</p>
+                  </div>
+                )}
+                <div className="absolute bottom-2 left-2 bg-slate-900/85 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-extrabold text-white flex items-center gap-1.5 border border-slate-700/50">
+                  <span className={`w-1.5 h-1.5 rounded-full ${micOn ? 'bg-emerald-400' : 'bg-rose-500'}`} />
+                  {currentUser?.name || 'You'} (Self)
+                </div>
               </div>
-              <p className="text-white text-base md:text-lg font-black tracking-wide">
-                {recipientName}
-              </p>
-              <p className="text-slate-400 text-xs md:text-sm font-semibold mt-1">
-                {callStatus === 'Connected' ? '1-on-1 Call Connected' : 'Calling participant...'}
-              </p>
+
+              {/* Frame 2: Remote Peer / Team Member Stream */}
+              <div className="bg-slate-900/90 rounded-xl border border-slate-700/80 shadow-lg relative overflow-hidden flex flex-col items-center justify-center min-h-[140px]">
+                <video
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                  onLoadedMetadata={(e) => {
+                    e.target.muted = false;
+                    e.target.volume = 1.0;
+                    e.target.play().catch(() => {});
+                  }}
+                  className={`w-full h-full object-cover ${hasRemoteVideo ? 'block' : 'hidden'}`}
+                />
+                {!hasRemoteVideo && (
+                  <div className="flex flex-col items-center justify-center p-4 text-center">
+                    <div className="w-12 h-12 rounded-full bg-slate-800 border-2 border-emerald-500 flex items-center justify-center text-white text-lg font-bold shadow-md mb-1.5 relative">
+                      {avatarLetter}
+                      <div className="absolute inset-0 rounded-full border border-emerald-500 animate-pulse" />
+                    </div>
+                    <p className="text-white text-xs font-bold">{recipientName}</p>
+                    <p className="text-emerald-400 text-[10px] font-semibold mt-0.5">Group Call Member</p>
+                  </div>
+                )}
+                <div className="absolute bottom-2 left-2 bg-slate-900/85 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-extrabold text-white flex items-center gap-1.5 border border-slate-700/50">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  {recipientName}
+                </div>
+              </div>
             </div>
-          )}
-
-          {/* Remote User Name Badge */}
-          <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700/50 text-[10px] md:text-xs font-semibold text-white flex items-center gap-1.5 z-20">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            {recipientName}
-          </div>
-
-          {/* 2. FLOATING INSET VIEW: SELF LOCAL CAMERA PREVIEW */}
-          <div className="absolute bottom-2 right-2 md:bottom-3 md:right-3 w-28 sm:w-36 md:w-44 aspect-video bg-slate-900/90 rounded-xl border-2 border-emerald-500/80 shadow-2xl overflow-hidden z-20 transition-all hover:scale-105">
-            {videoOn || isScreenSharing ? (
+          ) : (
+            /* 1-ON-1 DIRECT CALL DUAL VIEW (MAIN REMOTE + FLOATING SELF INSET) */
+            <>
+              {/* 1. MAIN VIEW: REMOTE PARTICIPANT STREAM */}
               <video
-                ref={localVideoRef}
+                ref={remoteVideoRef}
                 autoPlay
                 playsInline
-                muted
                 onLoadedMetadata={(e) => {
+                  e.target.muted = false;
+                  e.target.volume = 1.0;
                   e.target.play().catch(() => {});
                 }}
-                className={`w-full h-full object-cover ${isScreenSharing ? '' : 'transform -scale-x-100'}`}
+                className={`w-full h-full object-cover rounded-2xl md:rounded-3xl ${hasRemoteVideo ? 'block' : 'hidden'}`}
               />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-slate-400 text-[10px] font-bold p-1 text-center">
-                <span>Camera Off</span>
-              </div>
-            )}
-            <div className="absolute bottom-1 left-1.5 text-[8px] md:text-[9px] font-black text-white bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-xs">
-              {currentUser?.name ? 'You' : 'Self'} {!micOn && '(Muted)'}
-            </div>
-          </div>
-        </div>
 
-        {/* IN-CALL SIDEBAR CHAT PANEL */}
-        {showInCallChat && (
-          <div className="w-80 h-full max-h-[360px] bg-[#151d2a] rounded-2xl border border-slate-800 flex flex-col overflow-hidden shadow-2xl z-20 animate-fade-in">
-            <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
-              <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                In-Call Live Chat
-              </h4>
-              <button
-                type="button"
-                onClick={() => setShowInCallChat(false)}
-                className="text-gray-400 hover:text-white text-xs font-bold px-1.5 py-0.5 rounded hover:bg-slate-800"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="flex-1 p-3 overflow-y-auto space-y-2 text-xs">
-              {inCallMessages.length === 0 ? (
-                <p className="text-gray-500 text-center py-8 text-[11px]">No in-call messages yet.</p>
-              ) : (
-                inCallMessages.map((msg) => (
-                  <div key={msg.id} className="bg-slate-800/80 p-2 rounded-lg border border-slate-700/50">
-                    <div className="flex items-center justify-between text-[10px] text-gray-400 font-bold mb-0.5">
-                      <span>{msg.sender}</span>
-                      <span>{msg.time}</span>
-                    </div>
-                    <p className="text-gray-200 text-xs font-medium leading-relaxed">{msg.text}</p>
+              {!hasRemoteVideo && (
+                <div className="flex flex-col items-center justify-center text-center p-6">
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-slate-800 border-4 border-slate-700 flex items-center justify-center text-white text-3xl md:text-4xl font-extrabold shadow-2xl mb-4 relative">
+                    {avatarLetter}
+                    <div className="absolute inset-0 rounded-full border-2 border-emerald-500/50 animate-pulse" />
                   </div>
-                ))
+                  <p className="text-white text-base md:text-lg font-black tracking-wide">
+                    {recipientName}
+                  </p>
+                  <p className="text-slate-400 text-xs md:text-sm font-semibold mt-1">
+                    {callStatus === 'Connected' ? 'Connecting live 1-on-1 video & audio...' : 'Calling participant...'}
+                  </p>
+                </div>
               )}
-              <div ref={chatEndRef} />
-            </div>
 
-            <form onSubmit={handleSendInCallMessage} className="p-2 border-t border-slate-800 bg-slate-900/60 flex items-center gap-1.5">
-              <input
-                type="text"
-                value={chatInputText}
-                onChange={(e) => setChatInputText(e.target.value)}
-                placeholder="Type in call..."
-                className="flex-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder-gray-500 outline-none focus:border-emerald-500"
-              />
-              <button
-                type="submit"
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-colors cursor-pointer"
-              >
-                Send
-              </button>
-            </form>
-          </div>
-        )}
+              {/* Remote User Name Badge */}
+              <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700/50 text-[10px] md:text-xs font-semibold text-white flex items-center gap-1.5 z-20">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                {recipientName}
+              </div>
+
+              {/* 2. FLOATING INSET VIEW: SELF LOCAL CAMERA PREVIEW */}
+              <div className="absolute bottom-2 right-2 md:bottom-3 md:right-3 w-28 sm:w-36 md:w-44 aspect-video bg-slate-900/90 rounded-xl border-2 border-emerald-500/80 shadow-2xl overflow-hidden z-20 transition-all hover:scale-105">
+                {videoOn || isScreenSharing ? (
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    onLoadedMetadata={(e) => {
+                      e.target.play().catch(() => {});
+                    }}
+                    className={`w-full h-full object-cover ${isScreenSharing ? '' : 'transform -scale-x-100'}`}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center bg-slate-800 text-slate-400 text-[10px] font-bold p-1 text-center h-full">
+                    <span>Camera Off</span>
+                  </div>
+                )}
+                <div className="absolute bottom-1 left-1.5 text-[8px] md:text-[9px] font-black text-white bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-xs">
+                  {currentUser?.name ? 'You' : 'Self'} {!micOn && '(Muted)'}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* 3. BOTTOM CONTROL TOOLBAR (RESPONSIVE FOR MOBILE VIEW) */}
@@ -597,7 +634,7 @@ export default function DirectCallModal({ callType = 'video', recipient, current
           </button>
         </div>
 
-        {/* MIDDLE CONTROLS: Reaction, Screen Share, Invite, Chat Toggle */}
+        {/* MIDDLE CONTROLS: Reaction, Screen Share, Invite */}
         <div className="flex items-center gap-1 sm:gap-2.5 relative shrink-0">
           {/* Emoji Reaction Button */}
           <button
@@ -613,22 +650,6 @@ export default function DirectCallModal({ callType = 'video', recipient, current
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
-
-          {/* Emoji Picker Popup */}
-          {showEmojiPicker && (
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 rounded-xl p-2 flex gap-2 shadow-2xl z-50">
-              {['👍', '❤️', '👏', '🎉', '🔥', '😂'].map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={(e) => handleSendReaction(emoji, e)}
-                  className="text-xl hover:scale-125 transition-transform p-1 cursor-pointer"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
 
           {/* Screen Share Button */}
           <button
@@ -646,7 +667,7 @@ export default function DirectCallModal({ callType = 'video', recipient, current
             </svg>
           </button>
 
-          {/* Add People / Invite Button */}
+          {/* Invite Participants Button */}
           <button
             type="button"
             onClick={(e) => {
@@ -658,25 +679,6 @@ export default function DirectCallModal({ callType = 'video', recipient, current
           >
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
-          </button>
-
-          {/* In-Call Live Chat Toggle Button */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowInCallChat(!showInCallChat);
-            }}
-            className={`p-1.5 sm:p-2.5 rounded-xl transition-all cursor-pointer ${
-              showInCallChat
-                ? 'bg-[#20b875] text-white shadow-xs'
-                : 'text-gray-300 hover:text-white hover:bg-slate-800'
-            }`}
-            title="In-call Chat"
-          >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </button>
         </div>
