@@ -741,23 +741,11 @@ function App() {
         socket.connect();
       }
       socket.emit('register-user', { userId: user._id });
-
-      const handleForceLogout = (data) => {
-        alert(data?.message || 'Your account was logged into on another device. You have been logged out.');
-        handleLogout();
-      };
-
-      socket.on('force-logout', handleForceLogout);
-
-      return () => {
-        socket.off('force-logout', handleForceLogout);
-      };
     }
   }, [user]);
 
   useEffect(() => {
     const handleSessionExpired = () => {
-      alert('Your session has expired because your account was logged into on another device.');
       handleLogout();
     };
     window.addEventListener('pydahsoft:session-expired', handleSessionExpired);

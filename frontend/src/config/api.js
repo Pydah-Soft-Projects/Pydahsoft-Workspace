@@ -21,9 +21,11 @@ export const fetchApi = async (endpoint, options = {}) => {
 
   if (!response.ok || data.success === false) {
     const errorMsg = data.error?.message || data.message || `Request failed with status ${response.status}`;
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
       sessionStorage.removeItem('pydahsoft_token');
       sessionStorage.removeItem('pydahsoft_user');
+      localStorage.removeItem('pydahsoft_token');
+      localStorage.removeItem('pydahsoft_user');
       window.dispatchEvent(new Event('pydahsoft:session-expired'));
     }
     throw new Error(errorMsg);
