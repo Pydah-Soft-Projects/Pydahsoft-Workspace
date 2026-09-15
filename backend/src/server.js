@@ -211,6 +211,29 @@ io.on('connection', (socket) => {
     }
   });
 
+  // WebRTC 1-on-1 Video Stream Signaling Relays
+  socket.on('webrtc-offer', ({ targetUserId, targetSocketId, offer }) => {
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('webrtc-offer', { offer, callerSocketId: socket.id });
+    } else if (targetUserId) {
+      io.to(`user:${targetUserId.toString()}`).emit('webrtc-offer', { offer, callerSocketId: socket.id });
+    }
+  });
+
+  socket.on('webrtc-answer', ({ callerSocketId, answer }) => {
+    if (callerSocketId) {
+      io.to(callerSocketId).emit('webrtc-answer', { answer, responderSocketId: socket.id });
+    }
+  });
+
+  socket.on('webrtc-candidate', ({ targetUserId, targetSocketId, candidate }) => {
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('webrtc-candidate', { candidate });
+    } else if (targetUserId) {
+      io.to(`user:${targetUserId.toString()}`).emit('webrtc-candidate', { candidate });
+    }
+  });
+
   socket.on('leave-room', handleLeaveRoom);
   socket.on('disconnect', handleLeaveRoom);
 });

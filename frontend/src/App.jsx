@@ -784,11 +784,35 @@ function App() {
   }, []);
 
   const [incomingCall, setIncomingCall] = useState(null); // { callId, callerId, callerName, callType, callerSocketId }
-  const [acceptedDirectCall, setAcceptedDirectCall] = useState(null);
+  const [acceptedDirectCall, setAcceptedDirectCall] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('pydahsoft_active_direct_call');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  });
 
-  // Synthesize soft incoming call ringtone chime using Web Audio API
+  useEffect(() => {
+    if (acceptedDirectCall) {
+      sessionStorage.setItem('pydahsoft_active_direct_call', JSON.stringify(acceptedDirectCall));
+    } else {
+      sessionStorage.removeItem('pydahsoft_active_direct_call');
+    }
+  }, [acceptedDirectCall]);
+
+  // Synthesize soft incoming call ringtone chime & trigger device vibration pattern (WhatsApp style ring-vibrate)
   useEffect(() => {
     if (!incomingCall) return;
+
+    // Trigger device vibration pattern if supported on browser/mobile
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try {
+        navigator.vibrate([1000, 500, 1000, 500, 1000, 500]);
+      } catch (e) {
+        console.warn('Device vibration error:', e);
+      }
+    }
 
     let audioCtx;
     let intervalId;
@@ -797,6 +821,13 @@ function App() {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
       const playRingtone = () => {
+        // Re-trigger vibration pattern alongside ringtone chime
+        if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+          try {
+            navigator.vibrate([800, 400]);
+          } catch (e) {}
+        }
+
         if (!audioCtx || audioCtx.state === 'closed') return;
         const now = audioCtx.currentTime;
 
@@ -830,6 +861,12 @@ function App() {
     }
 
     return () => {
+      // Stop device vibration when call is answered, declined, or ended
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        try {
+          navigator.vibrate(0);
+        } catch (e) {}
+      }
       if (intervalId) clearInterval(intervalId);
       if (audioCtx) audioCtx.close().catch(() => {});
     };
@@ -937,52 +974,52 @@ function App() {
 
       {/* Incoming Call Popup Overlay with Ringtone Sound & Online Indicator */}
       {incomingCall && (
-        <div className="fixed top-6 right-6 z-50 bg-[#0d131e]/95 backdrop-blur-2xl border-2 border-emerald-500/80 text-white p-5 rounded-3xl shadow-2xl flex items-center gap-5 max-w-md w-full animate-in fade-in slide-in-from-top duration-300">
+        <div className="fixed top-2.5 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-auto sm:right-6 sm:top-6 z-50 bg-[#0d131e]/95 backdrop-blur-2xl border-2 border-emerald-500/80 text-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-2xl flex items-center gap-2 sm:gap-4 max-w-[310px] sm:max-w-md w-[92%] sm:w-auto animate-in fade-in slide-in-from-top duration-300 overflow-hidden">
           {/* Avatar with pulsing ring sound radar effect */}
           <div className="relative shrink-0">
-            <div className="w-14 h-14 rounded-full bg-slate-800 border-2 border-emerald-400 flex items-center justify-center font-black text-xl text-white shadow-xl overflow-hidden">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-slate-800 border border-emerald-400 flex items-center justify-center font-black text-sm sm:text-lg text-white shadow-lg overflow-hidden">
               {incomingCall.callerName ? incomingCall.callerName.charAt(0).toUpperCase() : 'U'}
             </div>
             {/* Animated Ringing Radar Wave */}
-            <div className="absolute -inset-1.5 rounded-full border-2 border-emerald-400 animate-ping opacity-75 pointer-events-none" />
+            <div className="absolute -inset-1 rounded-full border border-emerald-400 animate-ping opacity-75 pointer-events-none" />
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider">
+            <div className="flex items-center gap-1 mb-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span className="text-[8px] sm:text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider truncate">
                 Online • Incoming Call
               </span>
             </div>
-            <h4 className="font-extrabold text-base text-white truncate leading-tight">
+            <h4 className="font-extrabold text-xs sm:text-base text-white truncate leading-tight">
               {incomingCall.callerName || 'Colleague'}
             </h4>
-            <p className="text-xs text-gray-300 font-medium capitalize mt-0.5 flex items-center gap-1">
-              <svg className="w-3.5 h-3.5 text-emerald-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <p className="text-[10px] sm:text-xs text-gray-300 font-medium capitalize mt-0.5 flex items-center gap-1 truncate">
+              <svg className="w-3 h-3 text-emerald-400 animate-pulse shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              {incomingCall.callType === 'video' ? '1-on-1 Video Call...' : '1-on-1 Voice Call...'}
+              <span className="truncate">{incomingCall.callType === 'video' ? '1-on-1 Video Call...' : '1-on-1 Voice Call...'}</span>
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={handleAcceptIncomingCall}
-              className="w-11 h-11 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all cursor-pointer"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center shadow-md transition-all cursor-pointer shrink-0"
               title="Accept Call"
             >
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.27c1.21.49 2.53.76 3.88.76a1 1 0 011 1V20a1 1 0 01-1 1C10.07 21 3 14.84 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.27 2.67.76 3.88a1 1 0 01-.27 1.11l-2.2 2.2z" />
               </svg>
             </button>
             <button
               type="button"
               onClick={handleDeclineIncomingCall}
-              className="w-11 h-11 rounded-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all cursor-pointer"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white flex items-center justify-center shadow-md transition-all cursor-pointer shrink-0"
               title="Decline Call"
             >
-              <svg className="w-5 h-5 text-white rotate-[135deg]" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white rotate-[135deg]" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.27c1.21.49 2.53.76 3.88.76a1 1 0 011 1V20a1 1 0 01-1 1C10.07 21 3 14.84 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.27 2.67.76 3.88a1 1 0 01-.27 1.11l-2.2 2.2z" />
               </svg>
             </button>
@@ -996,6 +1033,7 @@ function App() {
           callType={acceptedDirectCall.type}
           recipient={acceptedDirectCall.recipient}
           currentUser={user}
+          isIncoming={true}
           onClose={() => setAcceptedDirectCall(null)}
         />
       )}
