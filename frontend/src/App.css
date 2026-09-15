@@ -279,15 +279,17 @@ body.login-page-open::-webkit-scrollbar,
 .loader-screen {
   position: relative;
   width: 100%;
-  min-height: 300px;
+  min-height: calc(100vh - 200px);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-top: 40px;
   background: transparent;
 }
 
 .loader-screen > div {
   padding: 24px;
+  margin-top: 30px;
 }
 
 .loader-orbit {
