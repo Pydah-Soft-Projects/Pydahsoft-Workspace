@@ -227,14 +227,21 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('join-group-call', ({ userName }) => {
+    socket.broadcast.emit('user-joined-group-call', {
+      socketId: socket.id,
+      userName: userName || 'Colleague'
+    });
+  });
+
   // WebRTC Video Stream Signaling Relays (Supports 1-on-1 & Group Calls)
-  socket.on('webrtc-offer', ({ targetUserId, targetSocketId, offer }) => {
+  socket.on('webrtc-offer', ({ targetUserId, targetSocketId, offer, callerName }) => {
     if (targetSocketId) {
-      io.to(targetSocketId).emit('webrtc-offer', { offer, callerSocketId: socket.id });
+      io.to(targetSocketId).emit('webrtc-offer', { offer, callerSocketId: socket.id, callerName: callerName || socket.userName });
     } else if (targetUserId) {
-      io.to(`user:${targetUserId.toString()}`).emit('webrtc-offer', { offer, callerSocketId: socket.id });
+      io.to(`user:${targetUserId.toString()}`).emit('webrtc-offer', { offer, callerSocketId: socket.id, callerName: callerName || socket.userName });
     } else {
-      socket.broadcast.emit('webrtc-offer', { offer, callerSocketId: socket.id });
+      socket.broadcast.emit('webrtc-offer', { offer, callerSocketId: socket.id, callerName: callerName || socket.userName });
     }
   });
 
@@ -248,11 +255,11 @@ io.on('connection', (socket) => {
 
   socket.on('webrtc-candidate', ({ targetUserId, targetSocketId, candidate }) => {
     if (targetSocketId) {
-      io.to(targetSocketId).emit('webrtc-candidate', { candidate });
+      io.to(targetSocketId).emit('webrtc-candidate', { candidate, callerSocketId: socket.id });
     } else if (targetUserId) {
-      io.to(`user:${targetUserId.toString()}`).emit('webrtc-candidate', { candidate });
+      io.to(`user:${targetUserId.toString()}`).emit('webrtc-candidate', { candidate, callerSocketId: socket.id });
     } else {
-      socket.broadcast.emit('webrtc-candidate', { candidate });
+      socket.broadcast.emit('webrtc-candidate', { candidate, callerSocketId: socket.id });
     }
   });
 

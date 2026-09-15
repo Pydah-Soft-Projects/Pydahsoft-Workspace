@@ -881,12 +881,18 @@ function App() {
       socket.emit('register-user', { userId: user._id });
 
       const handleIncomingDirectCall = (callData) => {
+        const hasActiveCall = Boolean(acceptedDirectCall) || Boolean(sessionStorage.getItem('pydahsoft_active_direct_call'));
+        if (hasActiveCall) {
+          console.log('[Socket.io] Suppressing incoming direct call banner during active call session.');
+          return;
+        }
         setIncomingCall(callData);
       };
 
       const handleDirectCallEnded = () => {
         setIncomingCall(null);
         setAcceptedDirectCall(null);
+        try { sessionStorage.removeItem('pydahsoft_active_direct_call'); } catch (e) {}
       };
 
       socket.on('incoming-direct-call', handleIncomingDirectCall);
@@ -897,7 +903,7 @@ function App() {
         socket.off('direct-call-ended', handleDirectCallEnded);
       };
     }
-  }, [user]);
+  }, [user, acceptedDirectCall]);
 
   const handleAcceptIncomingCall = () => {
     if (incomingCall) {
