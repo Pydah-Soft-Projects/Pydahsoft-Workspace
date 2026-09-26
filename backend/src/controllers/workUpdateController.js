@@ -85,6 +85,18 @@ const submitWorkUpdate = async (req, res) => {
       date: { $gte: updateDate, $lt: endDate }
     });
 
+    if (existingRecord) {
+      const isSuperAdminOrSuperior = ['superadmin', 'superior'].includes(req.user.role);
+
+      // Work update is editable UP TO verification: Block edits if fully Verified
+      if (existingRecord.submissionStatus === 'Verified' && !isSuperAdminOrSuperior) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'This work update has already been verified and can no longer be edited.' }
+        });
+      }
+    }
+
     let mergedProjectUpdates = [];
     if (existingRecord) {
       if (action === 'draft') {
@@ -121,10 +133,25 @@ const submitWorkUpdate = async (req, res) => {
       if (targetStatus === 'Submitted') {
         existingRecord.submissionStatus = 'Submitted';
         existingRecord.submittedAt = new Date();
-        // Reset TL verification if re-submitted
+        // Reset TL and Manager verification so updated work can be verified fresh
         existingRecord.verifiedBy = null;
         existingRecord.verificationRemarks = '';
         existingRecord.verifiedAt = null;
+
+        existingRecord.projectUpdates.forEach((pu) => {
+          if (pu.submissionStatus !== 'Verified') {
+            pu.submissionStatus = 'Submitted';
+            pu.verifiedBy = null;
+            pu.verificationRemarks = '';
+            pu.verifiedAt = null;
+            pu.tlVerifiedBy = null;
+            pu.tlVerificationRemarks = '';
+            pu.tlVerifiedAt = null;
+            pu.managerVerifiedBy = null;
+            pu.managerVerificationRemarks = '';
+            pu.managerVerifiedAt = null;
+          }
+        });
       } else {
         // If saving draft, keep 'Draft' status unless it was already submitted/verified
         if (!['Submitted', 'Verified'].includes(existingRecord.submissionStatus)) {
@@ -324,6 +351,7 @@ const getGroupedWorkUpdates = async (req, res) => {
     const workUpdates = await WorkUpdate.find(filter)
       .populate('employee', 'name username employeeId designation department')
       .populate('verifiedBy', 'name username designation')
+      .populate('projectUpdates.verifiedBy', 'name username designation')
       .populate('team', 'name teamId teamLead')
       .populate('projectUpdates.project', 'name projectId priority status')
       .sort({ createdAt: -1 });
@@ -418,9 +446,16 @@ const getGroupedWorkUpdates = async (req, res) => {
           projectMap.set(projIdStr, projContainer);
         }
 
+        const itemStatus = pu.submissionStatus || record.submissionStatus || 'Submitted';
+        const itemVerifiedBy = pu.verifiedBy || record.verifiedBy;
+        const itemRemarks = (pu.verificationRemarks !== undefined && pu.verificationRemarks !== '') ? pu.verificationRemarks : (record.verificationRemarks || '');
+        const itemVerifiedAt = pu.verifiedAt || record.verifiedAt;
+
         // Add employee work update block under this project
         projContainer.employees.push({
           updateRecordId: record._id,
+          projectUpdateId: pu._id,
+          projectId: pu.project ? (pu.project._id || pu.project) : null,
           updateId: record.updateId,
           date: record.date,
           submittedAt: record.submittedAt,
@@ -428,10 +463,10 @@ const getGroupedWorkUpdates = async (req, res) => {
           team: record.team,
           updates: pu.updates || [],
           overallSummary: record.overallSummary,
-          submissionStatus: record.submissionStatus,
-          verifiedBy: record.verifiedBy,
-          verificationRemarks: record.verificationRemarks,
-          verifiedAt: record.verifiedAt,
+          submissionStatus: itemStatus,
+          verifiedBy: itemVerifiedBy,
+          verificationRemarks: itemRemarks,
+          verifiedAt: itemVerifiedAt,
           totalHours: record.totalHours
         });
       });
@@ -492,7 +527,7 @@ const getGroupedWorkUpdates = async (req, res) => {
 const verifyWorkUpdate = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, remarks } = req.body;
+    const { status, remarks, projectId, projectUpdateId } = req.body;
 
     const validStatuses = ['Verified', 'Needs Revision', 'Rejected'];
     if (!status || !validStatuses.includes(status)) {
@@ -510,30 +545,107 @@ const verifyWorkUpdate = async (req, res) => {
       });
     }
 
-    // Dynamic Team Lead Check: Only superadmin/superior OR the assigned teamLead of this employee's team can verify
-    const isSuperiorOrAdmin = ['superadmin', 'superior'].includes(req.user.role);
+    // Determine Team Lead vs Manager role for this employee/team
+    let targetTeam = record.team;
+    if (!targetTeam) {
+      targetTeam = await Team.findOne({ members: record.employee });
+    } else {
+      targetTeam = await Team.findById(record.team);
+    }
 
-    if (!isSuperiorOrAdmin) {
-      let targetTeam = record.team;
-      if (!targetTeam) {
-        targetTeam = await Team.findOne({ members: record.employee });
+    const isAssignedTeamLead = targetTeam && targetTeam.teamLead && targetTeam.teamLead.toString() === req.user._id.toString();
+    const isTeamLeadRole = req.user.role === 'teamlead' || isAssignedTeamLead;
+    const isManagerRole = ['superadmin', 'superior', 'manager'].includes(req.user.role);
+
+    if (!isTeamLeadRole && !isManagerRole) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Only Team Leads or Managers can verify work updates' }
+      });
+    }
+
+    // Target specific project block if projectId or projectUpdateId provided
+    let targetBlock = null;
+    if (projectUpdateId) {
+      targetBlock = record.projectUpdates.id(projectUpdateId);
+    } else if (projectId) {
+      targetBlock = record.projectUpdates.find(
+        (pu) => pu.project && pu.project.toString() === projectId.toString()
+      );
+    }
+
+    const blocksToVerify = targetBlock ? [targetBlock] : record.projectUpdates;
+
+    for (const block of blocksToVerify) {
+      const currentBlockStatus = block.submissionStatus || 'Submitted';
+
+      if (status === 'Verified') {
+        if (isTeamLeadRole && !isManagerRole) {
+          // TL verifying -> Sets to 'TL Verified'
+          block.submissionStatus = 'TL Verified';
+          block.tlVerifiedBy = req.user._id;
+          block.tlVerificationRemarks = remarks || '';
+          block.tlVerifiedAt = new Date();
+          block.verifiedBy = req.user._id;
+          block.verificationRemarks = remarks || '';
+          block.verifiedAt = new Date();
+        } else if (isManagerRole && !isAssignedTeamLead) {
+          // Manager verifying -> MUST check if TL has verified first!
+          if (currentBlockStatus !== 'TL Verified' && currentBlockStatus !== 'Verified') {
+            return res.status(400).json({
+              success: false,
+              error: { message: 'Manager can only verify after Team Lead verification. Waiting for Team Lead to verify first.' }
+            });
+          }
+          block.submissionStatus = 'Verified';
+          block.managerVerifiedBy = req.user._id;
+          block.managerVerificationRemarks = remarks || '';
+          block.managerVerifiedAt = new Date();
+          block.verifiedBy = req.user._id;
+          block.verificationRemarks = remarks || '';
+          block.verifiedAt = new Date();
+        } else {
+          // User has both TL & Manager capabilities -> If 'Submitted', mark 'TL Verified', if 'TL Verified', mark 'Verified'
+          if (currentBlockStatus === 'TL Verified') {
+            block.submissionStatus = 'Verified';
+            block.managerVerifiedBy = req.user._id;
+            block.managerVerificationRemarks = remarks || '';
+            block.managerVerifiedAt = new Date();
+          } else {
+            block.submissionStatus = 'TL Verified';
+            block.tlVerifiedBy = req.user._id;
+            block.tlVerificationRemarks = remarks || '';
+            block.tlVerifiedAt = new Date();
+          }
+          block.verifiedBy = req.user._id;
+          block.verificationRemarks = remarks || '';
+          block.verifiedAt = new Date();
+        }
       } else {
-        targetTeam = await Team.findById(record.team);
-      }
-
-      const isAssignedTeamLead = targetTeam && targetTeam.teamLead && targetTeam.teamLead.toString() === req.user._id.toString();
-
-      if (!isAssignedTeamLead) {
-        return res.status(403).json({
-          success: false,
-          error: { message: 'Only the designated Team Lead for this employee can verify work updates' }
-        });
+        // Needs Revision or Rejected
+        block.submissionStatus = status;
+        block.verificationRemarks = remarks || '';
+        block.verifiedBy = req.user._id;
+        block.verifiedAt = new Date();
       }
     }
 
-    record.submissionStatus = status;
+    // Recalculate record-level overall submission status
+    const allStatuses = record.projectUpdates.map((pu) => pu.submissionStatus || 'Submitted');
+    if (allStatuses.every((s) => s === 'Verified')) {
+      record.submissionStatus = 'Verified';
+    } else if (allStatuses.every((s) => s === 'TL Verified' || s === 'Verified')) {
+      record.submissionStatus = 'TL Verified';
+    } else if (allStatuses.some((s) => s === 'Needs Revision')) {
+      record.submissionStatus = 'Needs Revision';
+    } else if (allStatuses.some((s) => s === 'Rejected')) {
+      record.submissionStatus = 'Rejected';
+    } else {
+      record.submissionStatus = 'Submitted';
+    }
+
     record.verifiedBy = req.user._id;
-    record.verificationRemarks = remarks || '';
+    record.verificationRemarks = remarks || record.verificationRemarks || '';
     record.verifiedAt = new Date();
 
     const updatedRecord = await record.save();
@@ -541,6 +653,7 @@ const verifyWorkUpdate = async (req, res) => {
     const populated = await WorkUpdate.findById(updatedRecord._id)
       .populate('employee', 'name username employeeId designation department')
       .populate('verifiedBy', 'name username designation')
+      .populate('projectUpdates.verifiedBy', 'name username designation')
       .populate('team', 'name teamId teamLead')
       .populate('projectUpdates.project', 'name projectId priority status');
 
@@ -549,7 +662,7 @@ const verifyWorkUpdate = async (req, res) => {
       entityId: updatedRecord._id,
       action: 'VERIFY_WORK_UPDATE',
       performedBy: req.user._id,
-      details: { status, remarks }
+      details: { status, remarks, projectId, projectUpdateId }
     });
 
     res.status(200).json({

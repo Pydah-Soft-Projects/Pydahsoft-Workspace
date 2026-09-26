@@ -27,7 +27,54 @@ const workUpdateItemSchema = new mongoose.Schema({
         default: 'Completed'
       }
     }
-  ]
+  ],
+  submissionStatus: {
+    type: String,
+    enum: ['Draft', 'Submitted', 'TL Verified', 'Verified', 'Needs Revision', 'Rejected'],
+    default: 'Submitted'
+  },
+  verifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  verificationRemarks: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  verifiedAt: {
+    type: Date,
+    default: null
+  },
+  tlVerifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  tlVerificationRemarks: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  tlVerifiedAt: {
+    type: Date,
+    default: null
+  },
+  managerVerifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  managerVerificationRemarks: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  managerVerifiedAt: {
+    type: Date,
+    default: null
+  }
 });
 
 const workUpdateSchema = new mongoose.Schema(
@@ -65,7 +112,7 @@ const workUpdateSchema = new mongoose.Schema(
     },
     submissionStatus: {
       type: String,
-      enum: ['Draft', 'Submitted', 'Verified', 'Needs Revision', 'Rejected'],
+      enum: ['Draft', 'Submitted', 'TL Verified', 'Verified', 'Needs Revision', 'Rejected'],
       default: 'Submitted',
       index: true
     },

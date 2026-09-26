@@ -10,8 +10,14 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // View mode tab state: 'by-project' | 'by-employee'
+  const [activeTab, setActiveTab] = useState('by-project');
+
   // Selected project for Level-2 detailed 3-per-row view (TL / Manager)
   const [selectedProjectForDetail, setSelectedProjectForDetail] = useState(null);
+
+  // Selected employee for Level-2 detailed view in "By Employee" tab
+  const [selectedEmployeeForDetail, setSelectedEmployeeForDetail] = useState(null);
 
   // Selected project for Employee Point Editor (Employee Flow)
   const [activeProjectForEmployee, setActiveProjectForEmployee] = useState(null);
@@ -68,6 +74,73 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
 
   // Determine user role mode
   const isEmployeeRole = currentUser?.role === 'employee' || !['superadmin', 'superior', 'manager', 'teamlead'].includes(currentUser?.role);
+  const isManagerRole = ['superadmin', 'superior', 'manager'].includes(currentUser?.role);
+
+  const renderVerifyButton = (itemStatus, onClickHandler) => {
+    const isVerified = itemStatus === 'Verified';
+    const isTLVerified = itemStatus === 'TL Verified';
+    const isSubmitted = itemStatus === 'Submitted' || !itemStatus;
+    const isTeamLead = currentUser?.role === 'teamlead' || groupedData.stats?.isUserTeamLead;
+
+    if (isVerified) {
+      return (
+        <button
+          type="button"
+          onClick={onClickHandler}
+          className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer flex items-center gap-1 shrink-0"
+        >
+          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Edit Remarks</span>
+        </button>
+      );
+    }
+
+    if (isTLVerified) {
+      return (
+        <button
+          type="button"
+          onClick={onClickHandler}
+          className="px-3 py-1 bg-[#0d6e49] hover:bg-[#128a5c] text-white rounded-lg text-[11px] font-extrabold shadow-2xs transition-all active:scale-95 cursor-pointer flex items-center gap-1 shrink-0"
+        >
+          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{isManagerRole ? 'Approve & Verify (Manager)' : 'TL Verified (Edit)'}</span>
+        </button>
+      );
+    }
+
+    if (isSubmitted && isManagerRole && !isTeamLead) {
+      return (
+        <button
+          type="button"
+          disabled
+          title="Team Lead must verify this update before Manager can approve."
+          className="px-3 py-1 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[11px] font-bold cursor-not-allowed flex items-center gap-1 shrink-0 opacity-80"
+        >
+          <svg className="w-3 h-3 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Awaiting TL Verification</span>
+        </button>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={onClickHandler}
+        className="px-3 py-1 bg-[#0d6e49] hover:bg-[#128a5c] text-white rounded-lg text-[11px] font-extrabold shadow-2xs transition-all active:scale-95 cursor-pointer flex items-center gap-1 shrink-0"
+      >
+        <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Verify (TL)</span>
+      </button>
+    );
+  };
 
   // Load available projects and employees
   useEffect(() => {
@@ -120,12 +193,132 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
     loadWorkUpdates();
   }, [selectedDate, selectedStatusFilter]);
 
+  // Derive Employee-Centric Grouping from groupedData.projects and availableEmployees
+  const employeeGroupedList = React.useMemo(() => {
+    const empMap = new Map();
+
+    if (groupedData.projects && Array.isArray(groupedData.projects)) {
+      groupedData.projects.forEach((pGroup) => {
+        const projInfo = pGroup.project;
+        if (!pGroup.employees) return;
+
+        pGroup.employees.forEach((empBlock) => {
+          const empObj = empBlock.employee;
+          if (!empObj || !empObj._id) return;
+          const empIdStr = empObj._id.toString();
+
+          let empEntry = empMap.get(empIdStr);
+          if (!empEntry) {
+            empEntry = {
+              employee: empObj,
+              updateRecordId: empBlock.updateRecordId,
+              updateId: empBlock.updateId,
+              submissionStatus: empBlock.submissionStatus,
+              submittedAt: empBlock.submittedAt,
+              overallSummary: empBlock.overallSummary,
+              verifiedBy: empBlock.verifiedBy,
+              verificationRemarks: empBlock.verificationRemarks,
+              verifiedAt: empBlock.verifiedAt,
+              totalHours: empBlock.totalHours || 0,
+              projects: []
+            };
+            empMap.set(empIdStr, empEntry);
+          }
+
+          const existingProj = empEntry.projects.find(
+            (p) => p.project._id.toString() === projInfo._id.toString()
+          );
+
+          if (!existingProj) {
+            empEntry.projects.push({
+              project: projInfo,
+              projectUpdateId: empBlock.projectUpdateId,
+              updates: empBlock.updates || [],
+              submissionStatus: empBlock.submissionStatus || 'Submitted',
+              verifiedBy: empBlock.verifiedBy || null,
+              verificationRemarks: empBlock.verificationRemarks || '',
+              verifiedAt: empBlock.verifiedAt || null
+            });
+          }
+        });
+      });
+    }
+
+    if (Array.isArray(availableEmployees)) {
+      availableEmployees.forEach((emp) => {
+        if (!emp._id) return;
+        const empIdStr = emp._id.toString();
+        if (!empMap.has(empIdStr)) {
+          empMap.set(empIdStr, {
+            employee: emp,
+            updateRecordId: null,
+            updateId: null,
+            submissionStatus: 'No Update',
+            submittedAt: null,
+            overallSummary: '',
+            verifiedBy: null,
+            verificationRemarks: '',
+            verifiedAt: null,
+            totalHours: 0,
+            projects: []
+          });
+        }
+      });
+    }
+
+    return Array.from(empMap.values());
+  }, [groupedData, availableEmployees]);
+
+  const filteredEmployeesList = React.useMemo(() => {
+    return employeeGroupedList.filter((empRecord) => {
+      if (selectedProjectFilter !== 'ALL') {
+        const workedOnProj = empRecord.projects.some(
+          (p) => p.project._id.toString() === selectedProjectFilter
+        );
+        if (!workedOnProj) return false;
+      }
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const empNameMatch =
+          empRecord.employee.name?.toLowerCase().includes(q) ||
+          empRecord.employee.username?.toLowerCase().includes(q) ||
+          empRecord.employee.department?.toLowerCase().includes(q) ||
+          empRecord.employee.designation?.toLowerCase().includes(q);
+
+        const projMatch = empRecord.projects.some(
+          (p) =>
+            p.project.name?.toLowerCase().includes(q) ||
+            p.project.projectId?.toLowerCase().includes(q) ||
+            p.updates.some((u) => u.point.toLowerCase().includes(q))
+        );
+
+        return empNameMatch || projMatch;
+      }
+
+      return true;
+    });
+  }, [employeeGroupedList, selectedProjectFilter, searchQuery]);
+
+  useEffect(() => {
+    if (selectedEmployeeForDetail) {
+      const updatedEmp = employeeGroupedList.find(
+        (e) => e.employee?._id?.toString() === selectedEmployeeForDetail.employee?._id?.toString()
+      );
+      if (updatedEmp) {
+        setSelectedEmployeeForDetail(updatedEmp);
+      }
+    }
+  }, [employeeGroupedList]);
+
   // Handle Date Quick Navigation
   const handlePrevDay = () => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() - 1);
     setSelectedDate(d.toISOString().split('T')[0]);
     setActiveProjectForEmployee(null);
+    setSelectedProjectForDetail(null);
+    setSelectedEmployeeForDetail(null);
   };
 
   const handleNextDay = () => {
@@ -133,6 +326,8 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
     d.setDate(d.getDate() + 1);
     setSelectedDate(d.toISOString().split('T')[0]);
     setActiveProjectForEmployee(null);
+    setSelectedProjectForDetail(null);
+    setSelectedEmployeeForDetail(null);
   };
 
   // ---------------- EMPLOYEE WORKFLOW HANDLERS ----------------
@@ -435,7 +630,9 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
         method: 'PUT',
         body: JSON.stringify({
           status: verifyStatus,
-          remarks: verifyRemarks
+          remarks: verifyRemarks,
+          projectId: selectedUpdateToVerify.projectId || (selectedUpdateToVerify.projectInfo ? selectedUpdateToVerify.projectInfo._id : undefined),
+          projectUpdateId: selectedUpdateToVerify.projectUpdateId
         })
       });
 
@@ -482,6 +679,7 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
   const myDailyRecord = groupedData.stats?.myDailyRecord;
   const isDraftState = myDailyRecord?.submissionStatus === 'Draft';
   const isSubmittedState = myDailyRecord?.submissionStatus === 'Submitted';
+  const isTLVerifiedState = myDailyRecord?.submissionStatus === 'TL Verified';
   const isVerifiedState = myDailyRecord?.submissionStatus === 'Verified';
   const isNeedsRevisionState = myDailyRecord?.submissionStatus === 'Needs Revision';
 
@@ -643,9 +841,366 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
         </div>
       </div>
 
-      {/* -------------------- EMPLOYEE VIEW vs TL / MANAGER VIEW -------------------- */}
+      {/* 2. VIEW NAVIGATION TABS ("By Project" vs "By Employee") */}
+      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('by-project');
+            setSelectedProjectForDetail(null);
+            setSelectedEmployeeForDetail(null);
+          }}
+          className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+            activeTab === 'by-project'
+              ? 'bg-[#0d6e49] text-white shadow-xs'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <span>By Project</span>
+          <span className={`px-1.5 py-0.5 text-[10px] rounded-full font-extrabold ${
+            activeTab === 'by-project' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+          }`}>
+            {groupedData.projects.length}
+          </span>
+        </button>
 
-      {isEmployeeRole ? (
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('by-employee');
+            setSelectedProjectForDetail(null);
+            setSelectedEmployeeForDetail(null);
+          }}
+          className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+            activeTab === 'by-employee'
+              ? 'bg-[#0d6e49] text-white shadow-xs'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span>By Employee</span>
+          <span className={`px-1.5 py-0.5 text-[10px] rounded-full font-extrabold ${
+            activeTab === 'by-employee' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+          }`}>
+            {filteredEmployeesList.length}
+          </span>
+        </button>
+      </div>
+
+      {/* -------------------- MAIN DISPLAY VIEWS -------------------- */}
+      {activeTab === 'by-employee' ? (
+        /* ==================== BY EMPLOYEE TAB VIEW ==================== */
+        <div className="space-y-4">
+          {loading ? (
+            <div className="bg-white rounded-2xl p-10 sm:p-12 border border-slate-200/80 text-center">
+              <div className="w-8 h-8 border-4 border-[#0d6e49] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              <p className="text-xs font-bold text-slate-500">Loading employee work updates...</p>
+            </div>
+          ) : selectedEmployeeForDetail ? (
+            /* LEVEL 2: DETAILED PROJECTS WORKED & UPDATE POINTS FOR SELECTED EMPLOYEE */
+            <div className="space-y-3.5 animate-in fade-in duration-150">
+              {/* Back Header Bar */}
+              <div className="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2.5 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEmployeeForDetail(null)}
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <span>←</span>
+                    <span>Back to Employees List</span>
+                  </button>
+                  <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-[#0d6e49] text-white font-black flex items-center justify-center text-xs shadow-2xs shrink-0">
+                      {selectedEmployeeForDetail.employee?.name ? selectedEmployeeForDetail.employee.name.charAt(0).toUpperCase() : 'E'}
+                    </div>
+                    <div>
+                      <h2 className="text-xs sm:text-sm font-black text-[#09233d] truncate">
+                        {selectedEmployeeForDetail.employee?.name}
+                      </h2>
+                      <span className="text-[10px] text-slate-400 font-medium block truncate">
+                        {selectedEmployeeForDetail.employee?.designation || selectedEmployeeForDetail.employee?.department || 'Staff'} • {selectedEmployeeForDetail.employee?.username || 'Member'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs font-bold w-full sm:w-auto shrink-0">
+                  <span className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border ${
+                    selectedEmployeeForDetail.submissionStatus === 'Verified'
+                      ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                      : selectedEmployeeForDetail.submissionStatus === 'Submitted'
+                      ? 'bg-sky-100 border-sky-300 text-sky-800'
+                      : selectedEmployeeForDetail.submissionStatus === 'Needs Revision'
+                      ? 'bg-amber-100 border-amber-300 text-amber-800'
+                      : selectedEmployeeForDetail.submissionStatus === 'Draft'
+                      ? 'bg-amber-50 border-amber-200 text-amber-900'
+                      : 'bg-slate-100 border-slate-200 text-slate-500'
+                  }`}>
+                    {selectedEmployeeForDetail.submissionStatus === 'No Update'
+                      ? 'No Update Written'
+                      : `Status: ${selectedEmployeeForDetail.submissionStatus}`}
+                  </span>
+                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg">
+                    {selectedEmployeeForDetail.projects.length} Project(s) Worked
+                  </span>
+                </div>
+              </div>
+
+              {/* Projects Worked List */}
+              {selectedEmployeeForDetail.projects.length === 0 ? (
+                <div className="bg-white rounded-2xl p-8 sm:p-10 border border-slate-200 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-xs font-bold text-slate-500">
+                    No project work updates logged by {selectedEmployeeForDetail.employee?.name} on {selectedDate}.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedEmployeeForDetail.projects.map((projBlock, pIdx) => (
+                    <div
+                      key={projBlock.project._id || pIdx}
+                      className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden hover:border-emerald-400 transition-all flex flex-col justify-between"
+                    >
+                      {/* Card Top Banner */}
+                      <div className="p-3 bg-[#0d6e49] text-white flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-xs text-white font-black flex items-center justify-center text-xs shrink-0">
+                            {projBlock.project.name ? projBlock.project.name.charAt(0).toUpperCase() : 'P'}
+                          </div>
+                          <h3 className="text-xs sm:text-sm font-black text-white truncate">
+                            {projBlock.project.name}
+                          </h3>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className={`px-2 py-0.5 text-[9.5px] font-black rounded-md shrink-0 shadow-2xs ${
+                            (projBlock.submissionStatus || 'Submitted') === 'Verified'
+                              ? 'bg-emerald-900 text-emerald-200'
+                              : (projBlock.submissionStatus || 'Submitted') === 'Needs Revision'
+                              ? 'bg-amber-900 text-amber-200'
+                              : (projBlock.submissionStatus || 'Submitted') === 'Rejected'
+                              ? 'bg-rose-900 text-rose-200'
+                              : 'bg-white/20 text-white'
+                          }`}>
+                            {projBlock.submissionStatus || 'Submitted'}
+                          </span>
+                          <span className="px-2 py-0.5 bg-white/20 text-white font-mono font-bold text-[10px] rounded-md backdrop-blur-xs shrink-0">
+                            {projBlock.project.projectId || 'PRJ'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Point-wise updates */}
+                      <div className="p-3.5 space-y-3 flex-1">
+                        <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                          <span>Update Points ({projBlock.updates.length}):</span>
+                        </div>
+
+                        <div className="bg-slate-50 rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden text-xs">
+                          {projBlock.updates.map((pt, ptIdx) => (
+                            <div key={ptIdx} className="p-2.5 flex items-start justify-between gap-2">
+                              <div className="flex items-start gap-2 flex-1 min-w-0">
+                                <span className="w-5 h-5 rounded-full bg-emerald-100 text-[#0d6e49] font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                                  {ptIdx + 1}
+                                </span>
+                                <span className="font-semibold text-slate-800 leading-snug">
+                                  {pt.point}
+                                </span>
+                              </div>
+                              <span
+                                className={`px-2 py-0.5 text-[9.5px] font-bold rounded shrink-0 ${
+                                  pt.status === 'Completed'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : pt.status === 'In Progress'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-rose-100 text-rose-800'
+                                }`}
+                              >
+                                {pt.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Remarks Inside Approved Card */}
+                        {(projBlock.verificationRemarks || projBlock.verifiedBy) && (
+                          <div className="p-2.5 bg-emerald-50/90 border border-emerald-200 rounded-xl text-xs space-y-1">
+                            <div className="flex items-center justify-between text-emerald-950 font-bold">
+                              <span className="text-[10px] uppercase tracking-wider text-emerald-800 font-black">TL Remarks:</span>
+                              {projBlock.verifiedAt && (
+                                <span className="text-[9px] text-emerald-700 font-medium">
+                                  {new Date(projBlock.verifiedAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs font-semibold text-emerald-950 italic">
+                              "{projBlock.verificationRemarks || 'Verified without remarks'}"
+                            </p>
+                            {projBlock.verifiedBy && (
+                              <span className="text-[9.5px] font-extrabold text-emerald-700 block">
+                                By: {projBlock.verifiedBy.name || 'Team Lead'}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* TL / Manager Verify Action Button - Small Right Corner */}
+                        {!isEmployeeRole && selectedEmployeeForDetail.updateRecordId && (
+                          <div className="flex justify-end pt-1">
+                            {renderVerifyButton(projBlock.submissionStatus, () =>
+                              handleOpenVerifyModal(
+                                {
+                                  updateRecordId: selectedEmployeeForDetail.updateRecordId,
+                                  projectUpdateId: projBlock.projectUpdateId,
+                                  projectId: projBlock.project._id,
+                                  updateId: selectedEmployeeForDetail.updateId,
+                                  employee: selectedEmployeeForDetail.employee,
+                                  submissionStatus: projBlock.submissionStatus || 'Submitted',
+                                  verificationRemarks: projBlock.verificationRemarks || '',
+                                  updates: projBlock.updates
+                                },
+                                projBlock.project
+                              )
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card Footer: Overall Summary */}
+                      {selectedEmployeeForDetail.overallSummary && (
+                        <div className="p-3 bg-slate-50 border-t border-slate-100 text-xs">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Summary Notes:</span>
+                          <p className="font-medium text-slate-700 italic">{selectedEmployeeForDetail.overallSummary}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* LEVEL 1: EMPLOYEE CARDS GRID */
+            <div className="space-y-3">
+              {filteredEmployeesList.length === 0 ? (
+                <div className="bg-white rounded-2xl p-8 sm:p-12 border border-slate-200/80 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                    <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-base font-black text-[#09233d]">No Employee Work Updates Found</h3>
+                  <p className="text-xs font-medium text-slate-500 max-w-md mx-auto">
+                    There are no staff update entries matching your selected date ({selectedDate}) and search/filter criteria.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+                  {filteredEmployeesList.map((empRecord) => {
+                    const { employee, projects, submissionStatus } = empRecord;
+                    const hasUpdates = projects.length > 0;
+
+                    return (
+                      <div
+                        key={employee._id}
+                        className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all hover:border-emerald-400 hover:shadow-md flex flex-col justify-between group"
+                      >
+                        {/* Top Solid Green Card Header */}
+                        <div className="p-3 bg-[#0d6e49] text-white space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs text-white font-black flex items-center justify-center text-xs shrink-0">
+                                {employee.name ? employee.name.charAt(0).toUpperCase() : 'E'}
+                              </div>
+                              <div className="min-w-0">
+                                <h3 className="text-sm font-black tracking-tight text-white truncate">
+                                  {employee.name}
+                                </h3>
+                                <span className="text-[10px] text-emerald-100/90 font-medium block truncate">
+                                  {employee.designation || employee.department || 'Staff Member'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <span className={`px-2 py-0.5 text-[9.5px] font-black rounded-md shrink-0 shadow-2xs ${
+                              submissionStatus === 'Verified'
+                                ? 'bg-emerald-900 text-emerald-200'
+                                : submissionStatus === 'Submitted'
+                                ? 'bg-sky-900 text-sky-200'
+                                : submissionStatus === 'Needs Revision'
+                                ? 'bg-amber-900 text-amber-200'
+                                : submissionStatus === 'Draft'
+                                ? 'bg-amber-800 text-amber-100'
+                                : 'bg-[#08422c] text-emerald-200/60'
+                            }`}>
+                              {submissionStatus === 'No Update' ? 'No Submission' : submissionStatus}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Card Body */}
+                        <div className="p-3.5 bg-white space-y-3 flex-1 flex flex-col justify-between">
+                          {hasUpdates ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                                <span>Projects Worked:</span>
+                                <span className="text-xs font-black text-[#09233d]">{projects.length} Project(s)</span>
+                              </div>
+
+                              <div className="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200/70 text-xs">
+                                {projects.map((pBlock, pIdx) => (
+                                  <div key={pIdx} className="flex items-center justify-between text-slate-800 text-[11px] py-0.5">
+                                    <span className="font-extrabold text-[#09233d] truncate flex-1">• {pBlock.project.name}</span>
+                                    <span className="text-[10px] font-mono text-slate-500 shrink-0 ml-1.5 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                                      {pBlock.updates.length} point(s)
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="py-4 text-center">
+                              <p className="text-xs font-semibold text-slate-400">
+                                No work updates submitted by this employee for today.
+                              </p>
+                            </div>
+                          )}
+
+                          {/* View Projects & Update Points Button */}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedEmployeeForDetail(empRecord)}
+                            className="w-full py-2 px-3 bg-[#f3fbf6] hover:bg-emerald-100/70 border border-emerald-200/60 rounded-xl flex items-center justify-between text-xs font-extrabold text-[#0d6e49] transition-colors cursor-pointer group"
+                          >
+                            <span className="flex items-center gap-1.5 min-w-0">
+                              <svg className="w-4 h-4 text-[#0d6e49] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              <span className="truncate">View Projects & Update Points</span>
+                            </span>
+                            <span className="text-xs transition-transform group-hover:translate-x-1 shrink-0">→</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : isEmployeeRole ? (
         /* ==================== EMPLOYEE ROLE VIEW ==================== */
         <div className="space-y-4">
           {/* Daily Status Banner for Employee */}
@@ -709,27 +1264,33 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
                 </h3>
                 <p className="text-[11px] font-medium opacity-80 leading-snug">
                   {isVerifiedState
-                    ? `Verified on ${myDailyRecord?.verifiedAt ? new Date(myDailyRecord.verifiedAt).toLocaleDateString() : 'today'}. ${myDailyRecord?.verificationRemarks ? `TL Remarks: "${myDailyRecord.verificationRemarks}"` : ''}`
+                    ? `Verified on ${myDailyRecord?.verifiedAt ? new Date(myDailyRecord.verifiedAt).toLocaleDateString() : 'today'}. Work update is locked from further editing. ${myDailyRecord?.verificationRemarks ? `Manager Remarks: "${myDailyRecord.verificationRemarks}"` : ''}`
                     : isSubmittedState
-                    ? 'Your daily submission is under review by your Team Lead.'
+                    ? 'Your daily submission is under review. You can edit your points anytime before final verification.'
+                    : isTLVerifiedState
+                    ? 'Your daily submission has been verified by your Team Lead and is pending Manager approval. You can still edit if needed.'
                     : isNeedsRevisionState
                     ? `TL Remarks: "${myDailyRecord?.verificationRemarks || 'Please review and update points.'}"`
                     : isDraftState
-                    ? 'You have saved draft updates. Open projects to add or edit points, then click "Submit Daily Work Update" when done.'
+                    ? 'You have saved draft updates. Open projects to add or edit points, then click "Submit All Updates" when done.'
                     : 'Click on any project below to start writing your daily update points.'}
                 </p>
               </div>
             </div>
 
-            {/* Banner Quick Submit Action */}
-            {(isDraftState || isNeedsRevisionState || !myDailyRecord) && (
+            {/* Banner Quick Submit / Edit Action */}
+            {!isVerifiedState && (
               <button
                 type="button"
                 onClick={handleSubmitAllEmployeeUpdates}
                 disabled={submittingDaily}
                 className="w-full sm:w-auto px-4 py-2 bg-[#0d6e49] hover:bg-[#128a5c] text-white rounded-xl text-xs font-black shadow-xs transition-all active:scale-95 cursor-pointer shrink-0 text-center disabled:opacity-50"
               >
-                Submit All Updates →
+                {submittingDaily
+                  ? 'Submitting...'
+                  : (isSubmittedState || isTLVerifiedState)
+                  ? 'Edit & Re-submit Update →'
+                  : 'Submit All Updates →'}
               </button>
             )}
           </div>
@@ -762,17 +1323,27 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
                   </div>
                 </div>
 
-                <div className="w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={handleSaveEmployeeDraft}
-                    disabled={savingDraft}
-                    className="w-full sm:w-auto px-4 py-2 sm:py-1.5 bg-[#0d6e49] hover:bg-[#128a5c] text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer disabled:opacity-50 text-center"
-                  >
-                    {savingDraft ? 'Saving Draft...' : 'Save Draft'}
-                  </button>
-                </div>
+                {!isVerifiedState && (
+                  <div className="w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={handleSaveEmployeeDraft}
+                      disabled={savingDraft}
+                      className="w-full sm:w-auto px-4 py-2 sm:py-1.5 bg-[#0d6e49] hover:bg-[#128a5c] text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer disabled:opacity-50 text-center"
+                    >
+                      {savingDraft ? 'Saving Draft...' : 'Save Draft'}
+                    </button>
+                  </div>
+                )}
               </div>
+
+              {/* Locked Notice if Verified */}
+              {isVerifiedState && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 flex items-center gap-2">
+                  <span>🔒</span>
+                  <span>This work update has been verified and approved by your Manager. Editing is locked.</span>
+                </div>
+              )}
 
               {/* Point-Wise Form Editor */}
               <div className="space-y-3">
@@ -780,13 +1351,15 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
                   <span className="text-[11px] sm:text-xs font-black text-[#09233d] uppercase tracking-wider">
                     Point-Wise Work Updates for {activeProjectForEmployee.name}
                   </span>
-                  <button
-                    type="button"
-                    onClick={handleAddEmployeePoint}
-                    className="text-xs font-black text-[#0d6e49] hover:text-emerald-800 flex items-center gap-1 cursor-pointer shrink-0"
-                  >
-                    + Add Point
-                  </button>
+                  {!isVerifiedState && (
+                    <button
+                      type="button"
+                      onClick={handleAddEmployeePoint}
+                      className="text-xs font-black text-[#0d6e49] hover:text-emerald-800 flex items-center gap-1 cursor-pointer shrink-0"
+                    >
+                      + Add Point
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-2.5">
@@ -799,25 +1372,27 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
 
                         <input
                           type="text"
+                          disabled={isVerifiedState}
                           placeholder="Enter point-wise task description..."
                           value={pt.point}
                           onChange={(e) => handleUpdateEmployeePoint(pIdx, 'point', e.target.value)}
-                          className="flex-1 w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-[#09233d] focus:outline-none focus:ring-1 focus:ring-[#20b875]"
+                          className="flex-1 w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-[#09233d] focus:outline-none focus:ring-1 focus:ring-[#20b875] disabled:bg-slate-100 disabled:text-slate-500"
                         />
                       </div>
 
                       <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-200/60">
                         <select
+                          disabled={isVerifiedState}
                           value={pt.status}
                           onChange={(e) => handleUpdateEmployeePoint(pIdx, 'status', e.target.value)}
-                          className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#20b875]"
+                          className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#20b875] disabled:bg-slate-100 disabled:text-slate-500"
                         >
                           <option value="Completed">Completed</option>
                           <option value="In Progress">In Progress</option>
                           <option value="Blocked">Blocked</option>
                         </select>
 
-                        {employeePoints.length > 1 && (
+                        {!isVerifiedState && employeePoints.length > 1 && (
                           <button
                             type="button"
                             onClick={() => handleRemoveEmployeePoint(pIdx)}
@@ -840,10 +1415,11 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
                 </label>
                 <textarea
                   rows="2"
+                  disabled={isVerifiedState}
                   placeholder="Notes, links to pull requests, or blockers..."
                   value={employeeSummary}
                   onChange={(e) => setEmployeeSummary(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-[#09233d] focus:outline-none focus:ring-1 focus:ring-[#20b875]"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-[#09233d] focus:outline-none focus:ring-1 focus:ring-[#20b875] disabled:bg-slate-100 disabled:text-slate-500"
                 />
               </div>
 
@@ -857,14 +1433,16 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
                   ← Save & Back to Projects
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleSaveEmployeeDraft}
-                  disabled={savingDraft}
-                  className="w-full sm:w-auto px-5 py-2 bg-[#0d6e49] hover:bg-[#128a5c] text-white rounded-xl text-xs font-black shadow-xs cursor-pointer disabled:opacity-50 text-center"
-                >
-                  {savingDraft ? 'Saving Draft...' : 'Save Draft'}
-                </button>
+                {!isVerifiedState && (
+                  <button
+                    type="button"
+                    onClick={handleSaveEmployeeDraft}
+                    disabled={savingDraft}
+                    className="w-full sm:w-auto px-5 py-2 bg-[#0d6e49] hover:bg-[#128a5c] text-white rounded-xl text-xs font-black shadow-xs cursor-pointer disabled:opacity-50 text-center"
+                  >
+                    {savingDraft ? 'Saving Draft...' : 'Save Draft'}
+                  </button>
+                )}
               </div>
             </div>
           ) : (
@@ -1165,17 +1743,12 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
                             </div>
                           </div>
 
-                          {/* TL Verify Action Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenVerifyModal(empBlock, selectedProjectForDetail.project)}
-                            className="w-full py-1.5 px-3 bg-[#0d6e49] hover:bg-[#128a5c] text-white rounded-xl text-xs font-extrabold shadow-2xs transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                          >
-                            <svg className="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span className="truncate">{isVerified ? 'Edit TL Verification Remarks' : 'Verify & Add TL Remarks'}</span>
-                          </button>
+                          {/* TL / Manager Verify Action Button - Small Right Corner */}
+                          <div className="flex justify-end pt-0.5">
+                            {renderVerifyButton(submissionStatus, () =>
+                              handleOpenVerifyModal(empBlock, selectedProjectForDetail.project)
+                            )}
+                          </div>
 
                           {/* Point-Wise Work Updates List */}
                           <div className="space-y-1.5">
