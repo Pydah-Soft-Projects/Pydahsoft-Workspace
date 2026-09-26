@@ -406,8 +406,42 @@ export default function SettingsPage({ currentUser }) {
       {/* Add Custom Role Modal */}
       {showRoleModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-gray-100 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-bold text-[#09233d] mb-4">Add Custom System Role</h3>
+          <div className="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl border border-gray-100 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="text-base font-bold text-[#09233d]">Add Custom System Role</h3>
+              <button onClick={() => setShowRoleModal(false)} className="text-xs font-bold text-gray-400 hover:text-gray-600" aria-label="Close">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Existing Roles Section */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#09233d] uppercase tracking-wider flex items-center gap-1.5">
+                  <svg className="w-4 h-4 text-[#20b875]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Existing Roles ({roles.length})
+                </span>
+                <span className="text-[10px] font-semibold text-gray-400">Currently Configured</span>
+              </div>
+              <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
+                {roles.map((r) => (
+                  <div key={r._id || r.name} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs shadow-2xs">
+                    <span className="font-bold text-gray-800">{r.label || r.name}</span>
+                    <span className="text-[10px] text-gray-400 font-mono">({r.name})</span>
+                    <span className={`px-1.5 py-0.5 text-[9px] font-extrabold uppercase rounded-full ${
+                      r.isSystem ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                    }`}>
+                      {r.isSystem ? 'System' : 'Custom'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <form onSubmit={handleCreateCustomRole} className="space-y-3">
               <div>
                 <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Role Title / Label</label>

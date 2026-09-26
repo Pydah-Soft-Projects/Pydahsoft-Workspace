@@ -24,6 +24,7 @@ const reportRoutes = require('./routes/reportRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const meetingRoutes = require('./routes/meetingRoutes');
+const workUpdateRoutes = require('./routes/workUpdateRoutes');
 
 const http = require('http');
 const { Server } = require('socket.io');
@@ -311,6 +312,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/meetings', meetingRoutes);
+app.use('/api/work-updates', workUpdateRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {

@@ -10,6 +10,8 @@ export default function UserManagement() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
+  const [roles, setRoles] = useState([]);
+
   const fetchUsers = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/users`);
@@ -22,8 +24,22 @@ export default function UserManagement() {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/roles`);
+      const data = await res.json();
+      if (data.success && data.data.length > 0) {
+        setRoles(data.data);
+        if (!role) setRole(data.data[0].name);
+      }
+    } catch (err) {
+      console.error('Failed to fetch roles:', err);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
   }, []);
 
   const handleCreateUser = async (e) => {
@@ -109,10 +125,13 @@ export default function UserManagement() {
               onChange={(e) => setRole(e.target.value)}
               className="w-full border border-gray-300 rounded p-2 text-sm bg-white"
             >
-              <option value="employee">Employee</option>
-              <option value="teamlead">Team Lead</option>
-              <option value="superior">Superior</option>
-              <option value="superadmin">SuperAdmin</option>
+              {roles.length > 0 ? (
+                roles.map((r) => (
+                  <option key={r.name} value={r.name}>{r.label || r.name}</option>
+                ))
+              ) : (
+                <option value="employee">Employee</option>
+              )}
             </select>
           </div>
 

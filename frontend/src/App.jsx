@@ -16,6 +16,7 @@ import TeamsAndTasks from './pages/Teams/TeamsAndTasks';
 import TimeTracker from './pages/TimeTracking/TimeTracker';
 import TaskReviewQueue from './pages/Reviews/TaskReviewQueue';
 import DailyWorkPlans from './pages/DailyPlans/DailyWorkPlans';
+import WorkUpdatesPage from './pages/WorkUpdates/WorkUpdatesPage';
 import PerformanceAndReports from './pages/Analytics/PerformanceAndReports';
 import AuditLogsView from './pages/AuditLogs/AuditLogsView';
 import SettingsPage from './pages/Settings/SettingsPage';
@@ -178,21 +179,42 @@ function HeaderEmployeeSelector({ employeeList, viewAsEmployeeId, setViewAsEmplo
 
 function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Determine initial tab from localStorage for perfect refresh persistence
-  const getInitialTab = () => {
+  const validTabs = [
+    'overview', 'meetings', 'chat', 'users', 'employees', 'projects',
+    'teams', 'time-tracker', 'reviews', 'daily-plans', 'work-updates',
+    'analytics', 'audit-logs', 'settings'
+  ];
+
+  // Dynamically resolve active tab from URL location pathname
+  const getTabFromLocation = (pathname) => {
     if (initialMeetingId) return 'meetings';
+    const match = pathname.match(/\/dashboard\/([^\/#?]+)/) || pathname.match(/\/([^\/#?]+)/);
+    if (match && match[1] && validTabs.includes(match[1])) {
+      return match[1];
+    }
     const stored = localStorage.getItem('pydahsoft_active_tab');
-    if (stored) return stored;
+    if (stored && validTabs.includes(stored)) return stored;
     return 'overview';
   };
 
-  const [activeTab, setActiveTabState] = useState(getInitialTab);
+  const activeTab = getTabFromLocation(location.pathname);
+
   const [subTab, setSubTab] = useState('default');
   const [viewAsEmployeeId, setViewAsEmployeeId] = useState(null);
   const [employeeList, setEmployeeList] = useState([]);
-  const [visitedTabs, setVisitedTabs] = useState(() => new Set([getInitialTab()]));
+  const [visitedTabs, setVisitedTabs] = useState(() => new Set([activeTab]));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Sync route URL if at bare /dashboard or /dashboard/
+  useEffect(() => {
+    if (location.pathname === '/dashboard' || location.pathname === '/dashboard/') {
+      const stored = localStorage.getItem('pydahsoft_active_tab');
+      const target = (stored && validTabs.includes(stored)) ? stored : 'overview';
+      navigate(`/dashboard/${target}`, { replace: true });
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     setVisitedTabs((prev) => {
@@ -214,8 +236,10 @@ function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting })
   }, [user]);
 
   const setActiveTab = (tab) => {
-    setActiveTabState(tab);
     localStorage.setItem('pydahsoft_active_tab', tab);
+    if (location.pathname !== `/dashboard/${tab}`) {
+      navigate(`/dashboard/${tab}`);
+    }
   };
 
   useEffect(() => {
@@ -247,6 +271,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting })
       'time-tracker': 'PydahSoft | Time Tracker',
       reviews: 'PydahSoft | Task Review Queue',
       'daily-plans': 'PydahSoft | Daily Work Plans',
+      'work-updates': 'PydahSoft | Work Updates & Reports',
       analytics: 'PydahSoft | Performance & Reports',
       'audit-logs': 'PydahSoft | Audit Logs',
       settings: 'PydahSoft | Settings',
@@ -266,6 +291,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting })
       case 'time-tracker': return 'Time Tracker';
       case 'reviews': return 'Reviews';
       case 'daily-plans': return 'Daily Plans';
+      case 'work-updates': return 'Work Updates';
       case 'analytics': return 'Analytics';
       case 'audit-logs': return 'Audit Logs';
       case 'settings': return 'Settings';
@@ -285,6 +311,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting })
       case 'time-tracker': return 'Interactive Time Tracking & Task Submission';
       case 'reviews': return 'Task Review & Quality Approval Queue';
       case 'daily-plans': return 'Daily Work Plan Assignment';
+      case 'work-updates': return 'Work Updates';
       case 'analytics': return 'Performance Analytics & Reports Generator';
       case 'audit-logs': return 'System Audit Trail Logs';
       case 'settings': return 'System Settings & Role Default Privileges';
@@ -293,7 +320,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting })
   };
 
   return (
-    <div className={`dashboard-shell flex h-screen overflow-hidden bg-gray-50 text-gray-900 font-sans relative ${activeTab === 'chat' ? 'chat-active' : ''}`}>
+    <div className={`dashboard-shell flex h-screen overflow-hidden bg-slate-100 text-gray-900 font-sans relative ${activeTab === 'chat' ? 'chat-active' : ''}`}>
       {/* Mobile Drawer Dark Backdrop Overlay */}
       {mobileSidebarOpen && (
         <div
@@ -315,9 +342,10 @@ function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting })
       />
 
       <main className="dashboard-main flex-1 h-screen w-full overflow-y-auto">
-        <header className="dashboard-header bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3 flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 justify-between items-center sticky top-0 z-30 shadow-xs">
-          <div className="dashboard-header__title flex items-center justify-between gap-2.5 flex-1 min-w-0">
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        {activeTab !== 'work-updates' && (
+          <header className="dashboard-header bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3 flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 justify-between items-center sticky top-0 z-30 shadow-xs">
+            <div className="dashboard-header__title flex items-center justify-between gap-2.5 flex-1 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
               {/* Mobile Sidebar Hamburger Toggle */}
               <button
                 type="button"
@@ -540,6 +568,7 @@ function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting })
               )}
             </div>
         </header>
+        )}
 
         <div className="dashboard-content p-3 sm:p-6">
           <Suspense fallback={<PageLoader />}>
@@ -597,6 +626,11 @@ function DashboardLayout({ user, onLogout, initialMeetingId, preJoinedMeeting })
             {visitedTabs.has('daily-plans') && (
               <div style={{ display: activeTab === 'daily-plans' ? 'block' : 'none' }}>
                 <DailyWorkPlans currentUser={user} />
+              </div>
+            )}
+            {visitedTabs.has('work-updates') && (
+              <div style={{ display: activeTab === 'work-updates' ? 'block' : 'none' }}>
+                <WorkUpdatesPage currentUser={user} onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
               </div>
             )}
             {visitedTabs.has('analytics') && (
@@ -995,6 +1029,22 @@ function App() {
             )
           }
         />
+
+        {/* Direct Root Route Aliases mapping to /dashboard/:tabId */}
+        <Route path="/overview" element={user ? <Navigate to="/dashboard/overview" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/work-updates" element={user ? <Navigate to="/dashboard/work-updates" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/projects" element={user ? <Navigate to="/dashboard/projects" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/teams" element={user ? <Navigate to="/dashboard/teams" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/employees" element={user ? <Navigate to="/dashboard/employees" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/time-tracker" element={user ? <Navigate to="/dashboard/time-tracker" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/daily-plans" element={user ? <Navigate to="/dashboard/daily-plans" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/meetings" element={user ? <Navigate to="/dashboard/meetings" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/chat" element={user ? <Navigate to="/dashboard/chat" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/users" element={user ? <Navigate to="/dashboard/users" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/reviews" element={user ? <Navigate to="/dashboard/reviews" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/analytics" element={user ? <Navigate to="/dashboard/analytics" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/audit-logs" element={user ? <Navigate to="/dashboard/audit-logs" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/settings" element={user ? <Navigate to="/dashboard/settings" replace /> : <Navigate to="/login" replace />} />
         <Route path="*" element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} />
       </Routes>
 
