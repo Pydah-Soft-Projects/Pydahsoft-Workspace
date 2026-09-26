@@ -45,6 +45,12 @@ const Icon = ({ name, className = "w-4 h-4" }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
       );
+    case 'work-updates':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+      );
     case 'analytics':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,6 +103,7 @@ const ALL_SIDEBAR_ITEMS = [
   { id: 'time-tracker', label: 'Time Tracker', permKey: 'canViewTimeTracker', icon: 'time-tracker' },
   { id: 'reviews', label: 'Task Approvals Queue', permKey: 'canViewReviews', icon: 'reviews' },
   { id: 'daily-plans', label: 'Daily Work Plans', permKey: 'canViewDailyPlans', icon: 'daily-plans' },
+  { id: 'work-updates', label: 'Work Updates & Reports', permKey: 'canViewWorkUpdates', icon: 'work-updates' },
   { id: 'analytics', label: 'Performance & Reports', permKey: 'canViewAnalytics', icon: 'analytics' },
   { id: 'users', label: 'User Accounts', permKey: 'canViewUsers', icon: 'users' },
   { id: 'audit-logs', label: 'Audit Trail Logs', permKey: 'canViewAuditLogs', icon: 'audit-logs' },
@@ -116,9 +123,9 @@ const getRoleMenuItems = (user) => {
     }
     if (user.role === 'superior') return true;
     if (user.role === 'teamlead') {
-      return ['overview', 'meetings', 'chat', 'users', 'projects', 'teams', 'time-tracker', 'reviews', 'daily-plans', 'analytics'].includes(item.id);
+      return ['overview', 'meetings', 'chat', 'users', 'projects', 'teams', 'time-tracker', 'reviews', 'daily-plans', 'work-updates', 'analytics'].includes(item.id);
     }
-    return ['overview', 'meetings', 'chat', 'teams', 'time-tracker', 'daily-plans', 'analytics'].includes(item.id);
+    return ['overview', 'meetings', 'chat', 'teams', 'time-tracker', 'daily-plans', 'work-updates', 'analytics'].includes(item.id);
   });
 
   return allowed.length > 0 ? allowed : ALL_SIDEBAR_ITEMS.slice(0, 1);

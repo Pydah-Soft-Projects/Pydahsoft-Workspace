@@ -29,6 +29,7 @@ const roleSchema = new mongoose.Schema(
         canViewTimeTracker: 'write',
         canViewReviews: 'none',
         canViewDailyPlans: 'read',
+        canViewWorkUpdates: 'write',
         canViewAnalytics: 'read',
         canViewAuditLogs: 'none',
         canViewSettings: 'none'
