@@ -153,10 +153,13 @@ const submitWorkUpdate = async (req, res) => {
           }
         });
       } else {
-        // If saving draft, keep 'Draft' status unless it was already submitted/verified
-        if (!['Submitted', 'Verified'].includes(existingRecord.submissionStatus)) {
-          existingRecord.submissionStatus = 'Draft';
-        }
+        // If user explicitly saves as draft, set status to 'Draft'
+        existingRecord.submissionStatus = 'Draft';
+        existingRecord.projectUpdates.forEach((pu) => {
+          if (pu.submissionStatus !== 'Verified') {
+            pu.submissionStatus = 'Draft';
+          }
+        });
       }
 
       savedRecord = await existingRecord.save();
