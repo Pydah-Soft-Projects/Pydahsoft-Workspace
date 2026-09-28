@@ -529,7 +529,7 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
               <h1 className="text-base sm:text-lg font-black text-[#09233d] tracking-tight truncate">
                 Work Updates
               </h1>
-              <p className="text-xs text-slate-400 font-medium truncate">
+              <p className="hidden sm:block text-xs text-slate-400 font-medium truncate">
                 Track project work updates, write daily bullet points, and manage submissions.
               </p>
             </div>
@@ -718,7 +718,7 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
                 </button>
               </div>
             ) : (
-              <div className="p-4 sm:p-5 bg-slate-50/90 rounded-2xl border-2 border-emerald-500/30 space-y-4 shadow-2xs">
+              <div className="p-0 sm:p-5 bg-transparent sm:bg-slate-50/90 rounded-2xl border-0 sm:border-2 sm:border-emerald-500/30 space-y-4 shadow-none sm:shadow-2xs">
                 {/* SINGLE CARD CONTAINER GROUPING ALL PROJECTS FOR THE DATE */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   {myWorkUpdatesForDate.map((item) => {
@@ -1149,23 +1149,16 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
                 </div>
 
                 {/* MODAL FOOTER ACTION BUTTONS */}
-                <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setIsWriteModalOpen(false)}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-extrabold transition-colors cursor-pointer"
-                  >
-                    Close
-                  </button>
-
-                  {/* Save as Draft Button (Private to User - Keeps Modal Open for multi-project updates) */}
+                <div className="flex flex-row items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
+                  {/* Save as Draft Button */}
                   <button
                     type="button"
                     onClick={handleSaveDraft}
                     disabled={savingDraft}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer disabled:opacity-50"
+                    className="flex-1 sm:flex-initial px-3 sm:px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer disabled:opacity-50 text-center truncate"
                   >
-                    {savingDraft ? 'Saving Draft...' : 'Save as Draft (Private)'}
+                    <span className="sm:hidden">{savingDraft ? 'Saving...' : 'Save&Draft'}</span>
+                    <span className="hidden sm:inline">{savingDraft ? 'Saving Draft...' : 'Save as Draft (Private)'}</span>
                   </button>
 
                   {/* Save & Submit Button */}
@@ -1173,9 +1166,10 @@ export default function WorkUpdatesPage({ currentUser, onOpenMobileSidebar }) {
                     type="button"
                     onClick={handleSaveAndSubmit}
                     disabled={submittingDaily}
-                    className="w-full sm:w-auto px-5 py-2.5 bg-[#0d6e49] hover:bg-[#128a5c] text-white rounded-xl text-xs font-black shadow-xs cursor-pointer disabled:opacity-50"
+                    className="flex-1 sm:flex-initial px-3 sm:px-5 py-2.5 bg-[#0d6e49] hover:bg-[#128a5c] text-white rounded-xl text-xs font-black shadow-xs cursor-pointer disabled:opacity-50 text-center truncate"
                   >
-                    {submittingDaily ? 'Submitting...' : 'Save & Submit All Updates'}
+                    <span className="sm:hidden">{submittingDaily ? 'Submitting...' : 'Save&Submit'}</span>
+                    <span className="hidden sm:inline">{submittingDaily ? 'Submitting...' : 'Save & Submit All Updates'}</span>
                   </button>
                 </div>
               </div>
