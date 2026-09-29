@@ -686,6 +686,7 @@ const verifyWorkUpdate = async (req, res) => {
 const deleteWorkUpdate = async (req, res) => {
   try {
     const { id } = req.params;
+    const { projectId, projectUpdateId } = req.query;
     const record = await WorkUpdate.findById(id);
 
     if (!record) {
@@ -706,18 +707,55 @@ const deleteWorkUpdate = async (req, res) => {
       });
     }
 
-    await WorkUpdate.findByIdAndDelete(id);
+    const isSuperAdminOrSuperior = ['superadmin', 'superior'].includes(req.user.role);
+    if (record.submissionStatus === 'Verified' && !isSuperAdminOrSuperior) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Verified work updates cannot be deleted.' }
+      });
+    }
+
+    if (projectUpdateId || projectId) {
+      if (projectUpdateId) {
+        record.projectUpdates = record.projectUpdates.filter(
+          (pu) => pu._id.toString() !== projectUpdateId.toString()
+        );
+      } else if (projectId) {
+        record.projectUpdates = record.projectUpdates.filter(
+          (pu) => pu.project && (pu.project._id ? pu.project._id.toString() : pu.project.toString()) !== projectId.toString()
+        );
+      }
+
+      if (record.projectUpdates.length === 0) {
+        await WorkUpdate.findByIdAndDelete(id);
+      } else {
+        // Recalculate total hours
+        let calculatedTotalHours = 0;
+        record.projectUpdates.forEach((pu) => {
+          if (Array.isArray(pu.updates)) {
+            pu.updates.forEach((u) => {
+              calculatedTotalHours += Number(u.hoursSpent) || 0;
+            });
+          }
+        });
+        record.totalHours = calculatedTotalHours;
+        await record.save();
+      }
+    } else {
+      await WorkUpdate.findByIdAndDelete(id);
+    }
 
     await logAudit({
       entityType: 'WorkUpdate',
       entityId: id,
       action: 'DELETE_WORK_UPDATE',
-      performedBy: req.user._id
+      performedBy: req.user._id,
+      details: { projectId, projectUpdateId }
     });
 
     res.status(200).json({
       success: true,
-      message: 'Work update deleted successfully'
+      message: 'Work update removed successfully'
     });
   } catch (error) {
     console.error('[Delete Work Update Error]:', error);
