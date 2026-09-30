@@ -4,6 +4,33 @@ const Team = require('../models/Team');
 const User = require('../models/User');
 const { logAudit } = require('../services/auditService');
 
+// Helper to generate guaranteed unique updateId (e.g. WUP-0001, WUP-0002) avoiding duplicate key collisions
+const generateUniqueUpdateId = async () => {
+  const records = await WorkUpdate.find({}, { updateId: 1 }).lean();
+  let maxNum = 0;
+  for (const r of records) {
+    if (r.updateId && typeof r.updateId === 'string') {
+      const match = r.updateId.match(/WUP-(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    }
+  }
+
+  let nextNum = maxNum + 1;
+  while (true) {
+    const candidateId = `WUP-${String(nextNum).padStart(4, '0')}`;
+    const exists = await WorkUpdate.exists({ updateId: candidateId });
+    if (!exists) {
+      return candidateId;
+    }
+    nextNum++;
+  }
+};
+
 // Submit or update a daily work update (Point-wise work updates per project)
 // Submit or update a daily work update (Point-wise work updates per project)
 const submitWorkUpdate = async (req, res) => {
@@ -164,20 +191,32 @@ const submitWorkUpdate = async (req, res) => {
 
       savedRecord = await existingRecord.save();
     } else {
-      const count = await WorkUpdate.countDocuments();
-      const generatedUpdateId = `WUP-${String(count + 1).padStart(4, '0')}`;
+      let attempts = 0;
+      while (attempts < 5) {
+        try {
+          const generatedUpdateId = await generateUniqueUpdateId();
 
-      savedRecord = await WorkUpdate.create({
-        updateId: generatedUpdateId,
-        date: updateDate,
-        employee: targetEmployeeId,
-        team: userTeam ? userTeam._id : null,
-        projectUpdates: mergedProjectUpdates,
-        overallSummary: overallSummary || '',
-        totalHours: calculatedTotalHours,
-        submissionStatus: targetStatus,
-        submittedAt: targetStatus === 'Submitted' ? new Date() : null
-      });
+          savedRecord = await WorkUpdate.create({
+            updateId: generatedUpdateId,
+            date: updateDate,
+            employee: targetEmployeeId,
+            team: userTeam ? userTeam._id : null,
+            projectUpdates: mergedProjectUpdates,
+            overallSummary: overallSummary || '',
+            totalHours: calculatedTotalHours,
+            submissionStatus: targetStatus,
+            submittedAt: targetStatus === 'Submitted' ? new Date() : null
+          });
+          break;
+        } catch (err) {
+          if (err.code === 11000) {
+            attempts++;
+            if (attempts >= 5) throw err;
+          } else {
+            throw err;
+          }
+        }
+      }
     }
 
     const populated = await WorkUpdate.findById(savedRecord._id)
