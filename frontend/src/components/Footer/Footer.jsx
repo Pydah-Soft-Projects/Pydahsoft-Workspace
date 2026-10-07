@@ -9,7 +9,7 @@ export default function Footer() {
       {/* Main Content Area - Full Width */}
       <div className="w-full px-8 py-12 lg:px-16 lg:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-14">
-          
+
           {/* Column 1: Company Branding & Info */}
           <div className="space-y-4">
             <div>
@@ -20,7 +20,7 @@ export default function Footer() {
                 PRIVATE LIMITED
               </p>
             </div>
-            
+
             <p className="text-xs text-gray-300 font-medium leading-relaxed max-w-sm">
               Building future-ready digital solutions that drive innovation and business transformation.
             </p>
@@ -74,33 +74,63 @@ export default function Footer() {
               </h3>
               <ul className="space-y-2.5 text-xs font-medium text-gray-300">
                 <li>
-                  <a href="#home" className="hover:text-[#20b875] transition-colors inline-block">
+                  <a
+                    href="#home"
+                    onClick={(e) => {
+                      const el = document.getElementById('home');
+                      if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); window.history.pushState(null, '', '#home'); }
+                    }}
+                    className="hover:text-[#20b875] transition-colors inline-block cursor-pointer"
+                  >
                     Home
                   </a>
                 </li>
                 <li>
-                  <a href="#about" className="hover:text-[#20b875] transition-colors inline-block">
+                  <a
+                    href="#about"
+                    onClick={(e) => {
+                      const el = document.getElementById('about');
+                      if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); window.history.pushState(null, '', '#about'); }
+                    }}
+                    className="hover:text-[#20b875] transition-colors inline-block cursor-pointer"
+                  >
                     About Us
                   </a>
                 </li>
                 <li>
-                  <a href="#services" className="hover:text-[#20b875] transition-colors inline-block">
+                  <a
+                    href="#services"
+                    onClick={(e) => {
+                      const el = document.getElementById('services');
+                      if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); window.history.pushState(null, '', '#services'); }
+                    }}
+                    className="hover:text-[#20b875] transition-colors inline-block cursor-pointer"
+                  >
                     Services
                   </a>
                 </li>
                 <li>
-                  <a href="#solutions" className="hover:text-[#20b875] transition-colors inline-block">
+                  <a
+                    href="#solutions"
+                    onClick={(e) => {
+                      const el = document.getElementById('solutions');
+                      if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); window.history.pushState(null, '', '#solutions'); }
+                    }}
+                    className="hover:text-[#20b875] transition-colors inline-block cursor-pointer"
+                  >
                     Solutions
                   </a>
                 </li>
                 <li>
-                  <a href="#contact" className="hover:text-[#20b875] transition-colors inline-block">
+                  <a
+                    href="#contact"
+                    onClick={(e) => {
+                      const el = document.getElementById('contact');
+                      if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); window.history.pushState(null, '', '#contact'); }
+                    }}
+                    className="hover:text-[#20b875] transition-colors inline-block cursor-pointer"
+                  >
                     Contact
-                  </a>
-                </li>
-                <li>
-                  <a href="#products" className="hover:text-[#20b875] transition-colors inline-block">
-                    Buy Our Products
                   </a>
                 </li>
               </ul>
@@ -125,7 +155,7 @@ export default function Footer() {
                 <li>
                   <a href="#cloud" className="hover:text-[#20b875] transition-colors inline-block">
                     Cloud Solutions
-                </a>
+                  </a>
                 </li>
                 <li>
                   <a href="#ai" className="hover:text-[#20b875] transition-colors inline-block">
