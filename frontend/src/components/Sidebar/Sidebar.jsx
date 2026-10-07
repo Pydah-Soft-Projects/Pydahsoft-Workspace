@@ -140,9 +140,8 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, mobil
   };
 
   return (
-    <aside className={`dashboard-sidebar fixed inset-y-0 left-0 z-50 w-64 bg-[#072b1e] text-[#ffffff] flex flex-col h-[100dvh] md:h-screen p-4 border-r border-[#0e4733] shrink-0 shadow-xl transition-transform duration-300 ${
-      mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-    } md:sticky md:top-0`}>
+    <aside className={`dashboard-sidebar fixed inset-y-0 left-0 z-50 w-64 bg-[#072b1e] text-[#ffffff] flex flex-col h-[100dvh] md:h-screen p-4 border-r border-[#0e4733] shrink-0 shadow-xl transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      } md:sticky md:top-0`}>
       {/* Scrollable Top Header & Navigation Container */}
       <div className="dashboard-sidebar__navigation flex-1 overflow-y-auto min-h-0 pr-1">
         <div className="dashboard-sidebar__brand flex items-center justify-between mb-6 pb-4 border-b border-[#0e4733]">
@@ -174,11 +173,10 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, mobil
               <button
                 key={item.id}
                 onClick={() => handleTabClick(item.id)}
-                className={`w-full text-left px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all flex items-center gap-3 ${
-                  isActive
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all flex items-center gap-3 ${isActive
                     ? 'bg-[#20b875] text-[#ffffff] font-bold shadow-md shadow-[#20b875]/30'
                     : 'text-[#e5e7eb] hover:bg-[#0d3b2b] hover:text-[#ffffff]'
-                }`}
+                  }`}
               >
                 <Icon name={item.icon} className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#4ade80]'}`} />
                 <span className="truncate">{item.label}</span>

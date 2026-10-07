@@ -25,7 +25,7 @@ export default function Login({ onLoginSuccess }) {
     // Preload dashboard overview module in background for zero-delay login transition
     try {
       import('../Dashboard/DashboardOverview');
-    } catch (e) {}
+    } catch (e) { }
 
     return () => {
       root.classList.remove('login-page-open');
